@@ -6,29 +6,25 @@ import RememberedButton from "../components/remembered_button";
 import ForgottenButton from "../components/forgotten_button";
 import {buttonContainer} from "../styles/Buttons";
 import useNextFlashcard from "../hooks/useNextFlashcard";
-import useCreateReview from "../hooks/useCreateReview";
+import createReview from "../functions/createReview";
+
 
 const FlashcardScreen = () => {
     const user = useUser(1);
     const [activeDecksIds, setActiveDecksIds] = useState([0]);
-    const [flashcard, setFlashcard] = useState(null);
-    const [triggerFetch, setTriggerFetch] = useState(false);
+    const [fetchCount, setFetchCount] = useState(0);
+    const flashcard = useNextFlashcard(user?.user_id, activeDecksIds, fetchCount);
 
-    useEffect(() => {
-        if (user?.user_id) {
-            const fetchFlashcard = async () => {
-                const initialFlashcard = await useNextFlashcard(user.user_id, activeDecksIds);
-                setFlashcard(initialFlashcard);
-            };
-            fetchFlashcard();
-        }
-    }, [user, activeDecksIds, triggerFetch]); // Add triggerFetch to the dependency array
+    const handleButtonPress = async (remembered) => {
+        console.log("creating review", remembered);
+        // First create the review
+        const reviewResponse = await createReview(flashcard, remembered, user?.user_id);
+        // Handle the response from creating a review
+        console.log("Review response:", reviewResponse);
 
-    const handleButtonPress = (remembered) => {
-        //useCreateReview(flashcard.flashcard_id, remembered);
-
-        // Update the flashcard
-        setTriggerFetch(!triggerFetch);
+        // Update the flashcard and Create a review
+        console.log("count: ", fetchCount );
+        setFetchCount(prevCount => prevCount + 1);
     }
 
     return (
@@ -36,9 +32,8 @@ const FlashcardScreen = () => {
             {user ? <Text>Welcome {user.first_name}</Text> : <Text>Loading...</Text>}
             {flashcard && <Flashcard flashcard={flashcard} />}
             <View style={buttonContainer.container}>
-                <ForgottenButton onPress={() => handleButtonPress( false)}/>
+                <ForgottenButton onPress={() => handleButtonPress( false) }/>
                 <RememberedButton onPress={() => handleButtonPress( true)}/>
-
             </View>
         </View>
     );
