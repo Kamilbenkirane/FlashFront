@@ -7,13 +7,31 @@ import ForgottenButton from "../components/forgotten_button";
 import {buttonContainer} from "../styles/Buttons";
 import useNextFlashcard from "../hooks/useNextFlashcard";
 import createReview from "../functions/createReview";
+import ReviewStats from "../components/review_stats";
+import useUsers from "../hooks/useUsers";
+import UsersDropdown from "../components/UsersDropdown";
+import useSubscribedDecks from "../hooks/useSubscribedDecks";
+import DecksMultiSelect from "../components/DecksMultiSelect";
 
 
 const FlashcardScreen = () => {
-    const user = useUser(1);
-    const [activeDecksIds, setActiveDecksIds] = useState([0]);
+    const users = useUsers();
+    const [user, setUser] = useState(null);
+    const decks = useSubscribedDecks(user?.user_id);
+    // use decks from 0 to 80 as initial active decks
+    const [activeDecksIds, setActiveDecksIds] = useState(Array.from({length: 80}, (_, i) => i));
     const [fetchCount, setFetchCount] = useState(0);
     const flashcard = useNextFlashcard(user?.user_id, activeDecksIds, fetchCount);
+
+    const handleUserSelect = (selectedUser) => {
+        setUser(selectedUser);
+    }
+
+    const handleDeckSelect = (selectedDeckIds) => {
+        // Ensure we're setting an array here, even if it's with a single ID
+        setActiveDecksIds(selectedDeckIds);
+    };
+
 
     const handleButtonPress = async (remembered) => {
         console.log("creating review", remembered);
@@ -27,14 +45,18 @@ const FlashcardScreen = () => {
         setFetchCount(prevCount => prevCount + 1);
     }
 
+
+
     return (
         <View>
-            {user ? <Text>Welcome {user.first_name}</Text> : <Text>Loading...</Text>}
+            <UsersDropdown users={users} onSelectUser={handleUserSelect} />
+            {user && <DecksMultiSelect decks={decks} onSelectDecks={handleDeckSelect} />}
             {flashcard && <Flashcard flashcard={flashcard} />}
             <View style={buttonContainer.container}>
                 <ForgottenButton onPress={() => handleButtonPress( false) }/>
                 <RememberedButton onPress={() => handleButtonPress( true)}/>
             </View>
+            {flashcard && <ReviewStats flashcard={flashcard} />}
         </View>
     );
 };

@@ -1,7 +1,9 @@
+import API_URL from "../config";
+
 async function createReview(flashcard , success, user_id) {
     console.log("createReview", flashcard, success, user_id);
     const review = {...flashcard, success: success, user_id: user_id};
-    const url= `http://127.0.0.1:5000/review/create`
+    const url= `${API_URL}/review/create`
     const requestOptions = {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

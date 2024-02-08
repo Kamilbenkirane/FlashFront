@@ -1,5 +1,4 @@
 import {StyleSheet} from "react-native";
-
 export const flashcardStyles = StyleSheet.create({
     flashcard: {
         padding: 20,
@@ -15,16 +14,17 @@ export const flashcardStyles = StyleSheet.create({
         elevation: 5,
         textAlign: 'center',
         margin: 10,
-        height: 300, // Example height
+        height: 400, // Example height
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'center',
         alignItems: 'center', // Ensures content is centered horizontally
+
     },
     flashcardHeader: { // pour le h2
         marginBottom: 10,
         color: '#333',
-        fontSize: 50, // Vous pouvez ajuster la taille de la police selon vos besoins
+        fontSize: 40, // Vous pouvez ajuster la taille de la police selon vos besoins
     },
     flashcardText: { // pour le p
         color: '#666',
@@ -35,6 +35,8 @@ export const flashcardStyles = StyleSheet.create({
         position: 'absolute',
         top: -10,
         left: -10,
+        padding: 5,
+        // circle
         width: 30,
         height: 30,
         borderRadius: 15,
