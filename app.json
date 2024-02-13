@@ -1,11 +1,17 @@
 {
   "expo": {
-    "name": "FlashFront",
+    "name": "FlashFrontKB24",
     "slug": "FlashFront",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
+    "jsEngine": "hermes",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.kams96.FlashFrontKB24",
+       "buildNumber": "1.0.4"
+    },
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
@@ -14,9 +20,6 @@
     "assetBundlePatterns": [
       "**/*"
     ],
-    "ios": {
-      "supportsTablet": true
-    },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
@@ -26,6 +29,10 @@
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "assets": ['./assets/fonts/']
+    "extra": {
+      "eas": {
+        "projectId": "cdc4ac5c-e279-4b3d-86d5-ca6d77e74a90"
+      }
+    }
   }
 }

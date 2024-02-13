@@ -12,16 +12,30 @@ import useUsers from "../hooks/useUsers";
 import UsersDropdown from "../components/UsersDropdown";
 import useSubscribedDecks from "../hooks/useSubscribedDecks";
 import DecksMultiSelect from "../components/DecksMultiSelect";
+import useSessionData from "../hooks/useSessionData";
+import useSession from "../hooks/useSession";
+import useSyncLocalReviews from "../hooks/useSyncLocalReviews";
+
 
 
 const FlashcardScreen = () => {
+    console.log("Rendering FlashcardScreen")
     const users = useUsers();
+    console.log("fetching users"    );
     const [user, setUser] = useState(null);
+
     const decks = useSubscribedDecks(user?.user_id);
     // use decks from 0 to 80 as initial active decks
     const [activeDecksIds, setActiveDecksIds] = useState(Array.from({length: 80}, (_, i) => i));
     const [fetchCount, setFetchCount] = useState(0);
-    const flashcard = useNextFlashcard(user?.user_id, activeDecksIds, fetchCount);
+
+    const sessionData = useSessionData(user?.user_id, activeDecksIds);
+    const session = useSession(sessionData);
+    const [flashcard, setFlashcard] = useState(session?.getNextCard());
+
+    // Sync Local Reviews
+    useSyncLocalReviews()
+
 
     const handleUserSelect = (selectedUser) => {
         setUser(selectedUser);
@@ -34,15 +48,18 @@ const FlashcardScreen = () => {
 
 
     const handleButtonPress = async (remembered) => {
-        console.log("creating review", remembered);
+        // console.log("creating review", remembered);
+
         // First create the review
         const reviewResponse = await createReview(flashcard, remembered, user?.user_id);
         // Handle the response from creating a review
-        console.log("Review response:", reviewResponse);
+        // console.log("Review response:", reviewResponse);
 
         // Update the flashcard and Create a review
         console.log("count: ", fetchCount );
-        setFetchCount(prevCount => prevCount + 1);
+        // update the flashcard
+        flashcard && flashcard.updateCard(remembered);
+        setFlashcard(session.getNextCard());
     }
 
 
@@ -56,7 +73,7 @@ const FlashcardScreen = () => {
                 <ForgottenButton onPress={() => handleButtonPress( false) }/>
                 <RememberedButton onPress={() => handleButtonPress( true)}/>
             </View>
-            {flashcard && <ReviewStats flashcard={flashcard} />}
+            {flashcard && <ReviewStats session={session} />}
         </View>
     );
 };

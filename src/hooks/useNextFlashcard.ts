@@ -6,14 +6,14 @@ const useNextFlashcard = (userId, activeDecksIds, fetchCount) => {
 
     useEffect(() => {
         console.log(API_URL)
-        console.log("fetchCOunt", fetchCount)
+        //console.log("fetchCOunt", fetchCount)
         const queryParams = activeDecksIds.map(id => `active_decks_id=${id}`).join('&');
         const url = `${API_URL}/stack/next_card/${userId}?${queryParams}`;
         const fetchNextFlashcard = async () => {
             console.log("url", url);
             const response = await fetch(url);
             const flashcard = await response.json();
-            console.log("flashcard", flashcard);
+            // console.log("flashcard", flashcard);
             setNextFlashcard(flashcard);
         };
 

@@ -16,6 +16,32 @@ export default function Flashcard({ flashcard }) {
         setIsRectoVisible(true);
     }, [flashcard]);
 
+    // Function to format the time since the last review
+    const formatTimeSinceLastReview = (seconds) => {
+        if (seconds === undefined) return "No Review"; // Handle null case
+        if (seconds < 60) {
+            return `${seconds} sec`;
+        } else if (seconds < 3600) {
+            return `${Math.floor(seconds / 60)} min`;
+        } else if (seconds < 86400) {
+            const hours = Math.floor(seconds / 3600);
+            const minutes = Math.floor((seconds % 3600) / 60);
+            return `${hours}h ${minutes}min`;
+        } else {
+            const days = Math.floor(seconds / 86400);
+            const hours = Math.floor((seconds % 86400) / 3600);
+            return `${days}d ${hours}h`;
+        }
+    };
+
+    // Function to format the popupScore as a percentage
+    const formatPopupScore = (score) => {
+        return `${(score * 100).toFixed(2)}%`; // Convert to percentage and format to 2 decimal places
+    };
+
+
+
+
     const backgroundColor = isRectoVisible ? '#e7f4ff' : '#e5fde6'; // Example colors: blue for recto, green for verso
 
     return (
@@ -31,10 +57,14 @@ export default function Flashcard({ flashcard }) {
                 </View>
                 {/* Optional: Other elements */}
                 <View style={flashcardStyles.timeSinceReview}>
-                    <Text style={{color: 'black', textAlign: 'center'}}>{flashcard.time_since_last_review}</Text>
+                    <Text style={{color: 'black', textAlign: 'center'}}>
+                        {formatTimeSinceLastReview(flashcard.secondsSinceLastReview)}
+                    </Text>
                 </View>
                 <View style={flashcardStyles.popupScore} >
-                    <Text style={{color: 'black', textAlign: 'center'}}>{flashcard.popup_score}</Text>
+                    <Text style={{color: 'black', textAlign: 'center'}}>
+                        {formatPopupScore(flashcard.popupScore)}
+                    </Text>
                 </View>
 
             </View>
