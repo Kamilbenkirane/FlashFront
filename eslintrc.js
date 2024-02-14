@@ -1,29 +1,29 @@
 module.exports = {
   extends: [
-    "eslint:recommended",
-    "plugin:react/recommended",
-    "plugin:react-hooks/recommended",
-    "prettier",
+    'eslint:recommended',
+    'plugin:react/recommended',
+    'plugin:react-hooks/recommended',
+    'prettier'
   ],
-  plugins: ["react", "react-hooks"],
+  plugins: ['react', 'react-hooks'],
   env: {
     es6: true,
     node: true,
-    "react-native/react-native": true,
+    'react-native/react-native': true
   },
   parserOptions: {
     ecmaFeatures: {
-      jsx: true,
+      jsx: true
     },
     ecmaVersion: 2018,
-    sourceType: "module",
+    sourceType: 'module'
   },
   rules: {
     // Add custom rules here
   },
   settings: {
     react: {
-      version: "detect",
-    },
-  },
-};
+      version: 'detect'
+    }
+  }
+}
