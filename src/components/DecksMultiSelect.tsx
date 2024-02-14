@@ -1,12 +1,6 @@
-import React, { useState } from "react";
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  FlatList,
-  StyleSheet,
-} from "react-native";
-import DecksMultiSelectStyles from "../styles/DecksMultiSelect";
+import React, { useState } from 'react';
+import { View, Text, TouchableOpacity, FlatList } from 'react-native';
+import DecksMultiSelectStyles from '../styles/DecksMultiSelect';
 
 const DecksMultiSelect = ({ decks, onSelectDecks }) => {
   const [isVisible, setIsVisible] = useState(false);
@@ -24,11 +18,11 @@ const DecksMultiSelect = ({ decks, onSelectDecks }) => {
   };
 
   const getSelectedDecksText = () => {
-    if (selectedDeckIds.length === 0) return "Select Decks";
+    if (selectedDeckIds.length === 0) return 'Select Decks';
     const selectedNames = decks
       .filter((deck) => selectedDeckIds.includes(deck.deck_id))
       .map((deck) => deck.deck_name);
-    return selectedNames.join(", ");
+    return selectedNames.join(', ');
   };
 
   const subjects = [...new Set(decks.map((deck) => deck.subject))];
@@ -43,7 +37,7 @@ const DecksMultiSelect = ({ decks, onSelectDecks }) => {
         style={DecksMultiSelectStyles.button}
       >
         <Text style={DecksMultiSelectStyles.buttonText}>
-          {selectedSubject ? getSelectedDecksText() : "Select Subject/Decks"}
+          {selectedSubject ? getSelectedDecksText() : 'Select Subject/Decks'}
         </Text>
       </TouchableOpacity>
       {isVisible && (
@@ -74,8 +68,8 @@ const DecksMultiSelect = ({ decks, onSelectDecks }) => {
                       DecksMultiSelectStyles.item,
                       {
                         backgroundColor: selectedDeckIds.includes(item.deck_id)
-                          ? "#D3D3D3"
-                          : "white",
+                          ? '#D3D3D3'
+                          : 'white',
                       },
                     ]}
                   >

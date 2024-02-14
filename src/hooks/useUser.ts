@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import API_URL from "../config";
+import { useEffect, useState } from 'react';
+import API_URL from '../config';
 
 const useUser = (id: number) => {
   const [user, setUser] = useState(null);

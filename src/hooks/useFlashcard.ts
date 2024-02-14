@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import API_URL from "../config";
+import { useEffect, useState } from 'react';
+import API_URL from '../config';
 
 const useFlashcard = (id: number) => {
   const [flashcard, setFlashcard] = useState(null);

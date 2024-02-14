@@ -1,5 +1,5 @@
 // Session.ts
-import Flashcard from "./Flashcard";
+import Flashcard from './Flashcard';
 
 class Session {
   pile: Flashcard[];

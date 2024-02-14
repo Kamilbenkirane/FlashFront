@@ -1,11 +1,11 @@
-import React, { useState } from "react";
+import React, { useState } from 'react';
 import {
   View,
   Text,
   TouchableOpacity,
   FlatList,
   StyleSheet,
-} from "react-native";
+} from 'react-native';
 
 // Assuming users is an array of user objects
 const UsersDropdown = ({ users, onSelectUser }) => {
@@ -25,7 +25,7 @@ const UsersDropdown = ({ users, onSelectUser }) => {
         style={styles.button}
       >
         <Text style={styles.buttonText}>
-          {selectedUser ? selectedUser.user_name : "Select User"}
+          {selectedUser ? selectedUser.user_name : 'Select User'}
         </Text>
       </TouchableOpacity>
       {isVisible && (
@@ -54,26 +54,26 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   button: {
-    backgroundColor: "#007bff",
+    backgroundColor: '#007bff',
     padding: 10,
     borderRadius: 5,
   },
   buttonText: {
-    color: "#ffffff",
-    textAlign: "center",
+    color: '#ffffff',
+    textAlign: 'center',
   },
   list: {
     maxHeight: 200, // Adjust based on your needs
-    borderColor: "#ccc",
+    borderColor: '#ccc',
     borderWidth: 1,
     marginTop: 5,
   },
   item: {
     padding: 10,
     borderBottomWidth: 1,
-    borderBottomColor: "#ccc",
+    borderBottomColor: '#ccc',
   },
   itemText: {
-    textAlign: "center",
+    textAlign: 'center',
   },
 });

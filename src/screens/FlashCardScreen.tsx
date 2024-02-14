@@ -1,25 +1,23 @@
-import React, { useEffect, useState } from "react";
-import { View, Text } from "react-native";
-import Flashcard from "../components/flashcard"; // Adjust the import path
-import useUser from "../hooks/useUser";
-import RememberedButton from "../components/remembered_button";
-import ForgottenButton from "../components/forgotten_button";
-import { buttonContainer } from "../styles/Buttons";
-import useNextFlashcard from "../hooks/useNextFlashcard";
-import createReview from "../functions/createReview";
-import ReviewStats from "../components/review_stats";
-import useUsers from "../hooks/useUsers";
-import UsersDropdown from "../components/UsersDropdown";
-import useSubscribedDecks from "../hooks/useSubscribedDecks";
-import DecksMultiSelect from "../components/DecksMultiSelect";
-import useSessionData from "../hooks/useSessionData";
-import useSession from "../hooks/useSession";
-import useSyncLocalReviews from "../hooks/useSyncLocalReviews";
+import React, { useState } from 'react';
+import { View } from 'react-native';
+import Flashcard from '../components/flashcard'; // Adjust the import path
+import RememberedButton from '../components/remembered_button';
+import ForgottenButton from '../components/forgotten_button';
+import { buttonContainer } from '../styles/Buttons';
+import createReview from '../functions/createReview';
+import ReviewStats from '../components/review_stats';
+import useUsers from '../hooks/useUsers';
+import UsersDropdown from '../components/UsersDropdown';
+import useSubscribedDecks from '../hooks/useSubscribedDecks';
+import DecksMultiSelect from '../components/DecksMultiSelect';
+import useSessionData from '../hooks/useSessionData';
+import useSession from '../hooks/useSession';
+import useSyncLocalReviews from '../hooks/useSyncLocalReviews';
 
 const FlashcardScreen = () => {
-  console.log("Rendering FlashcardScreen");
+  console.log('Rendering FlashcardScreen');
   const users = useUsers();
-  console.log("fetching users");
+  console.log('fetching users');
   const [user, setUser] = useState(null);
 
   const decks = useSubscribedDecks(user?.user_id);
@@ -27,7 +25,6 @@ const FlashcardScreen = () => {
   const [activeDecksIds, setActiveDecksIds] = useState(
     Array.from({ length: 80 }, (_, i) => i),
   );
-  const [fetchCount, setFetchCount] = useState(0);
 
   const sessionData = useSessionData(user?.user_id, activeDecksIds);
   const session = useSession(sessionData);
@@ -36,16 +33,16 @@ const FlashcardScreen = () => {
   // Sync Local Reviews
   useSyncLocalReviews();
 
-  const handleUserSelect = (selectedUser) => {
+  const handleUserSelect = (selectedUser = null) => {
     setUser(selectedUser);
   };
 
-  const handleDeckSelect = (selectedDeckIds) => {
+  const handleDeckSelect = (selectedDeckIds = []) => {
     // Ensure we're setting an array here, even if it's with a single ID
     setActiveDecksIds(selectedDeckIds);
   };
 
-  const handleButtonPress = async (remembered) => {
+  const handleButtonPress = async (remembered = true) => {
     // console.log("creating review", remembered);
 
     // First create the review
@@ -54,11 +51,8 @@ const FlashcardScreen = () => {
       remembered,
       user?.user_id,
     );
-    // Handle the response from creating a review
-    // console.log("Review response:", reviewResponse);
+    console.log('reviewResponse', reviewResponse);
 
-    // Update the flashcard and Create a review
-    console.log("count: ", fetchCount);
     // update the flashcard
     flashcard && flashcard.updateCard(remembered);
     setFlashcard(session.getNextCard());

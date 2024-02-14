@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import Session from "../models/Session";
+import { useEffect, useState } from 'react';
+import Session from '../models/Session';
 
 // Assuming that `sessionId` is a number or string that uniquely identifies the session
 const useSession = (sessionData) => {

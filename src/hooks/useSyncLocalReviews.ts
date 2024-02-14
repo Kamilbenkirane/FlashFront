@@ -1,6 +1,6 @@
-import { useEffect } from "react";
-import NetInfo from "@react-native-community/netinfo";
-import syncLocalReviews from "../functions/syncLocalReviews";
+import { useEffect } from 'react';
+import NetInfo from '@react-native-community/netinfo';
+import syncLocalReviews from '../functions/syncLocalReviews';
 
 // Define the custom hook
 const useSyncLocalReviews = () => {
