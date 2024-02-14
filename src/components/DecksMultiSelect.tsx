@@ -1,11 +1,5 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  FlatList,
-  StyleSheet,
-} from 'react-native';
+import { View, Text, TouchableOpacity, FlatList } from 'react-native';
 import DecksMultiSelectStyles from '../styles/DecksMultiSelect';
 
 const DecksMultiSelect = ({ decks, onSelectDecks }) => {
