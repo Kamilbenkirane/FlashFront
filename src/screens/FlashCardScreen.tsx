@@ -1,23 +1,23 @@
-import React, { useState } from "react";
-import { View } from "react-native";
-import Flashcard from "../components/flashcard"; // Adjust the import path
-import RememberedButton from "../components/remembered_button";
-import ForgottenButton from "../components/forgotten_button";
-import { buttonContainer } from "../styles/Buttons";
-import createReview from "../functions/createReview";
-import ReviewStats from "../components/review_stats";
-import useUsers from "../hooks/useUsers";
-import UsersDropdown from "../components/UsersDropdown";
-import useSubscribedDecks from "../hooks/useSubscribedDecks";
-import DecksMultiSelect from "../components/DecksMultiSelect";
-import useSessionData from "../hooks/useSessionData";
-import useSession from "../hooks/useSession";
-import useSyncLocalReviews from "../hooks/useSyncLocalReviews";
+import React, { useState } from 'react';
+import { View } from 'react-native';
+import Flashcard from '../components/flashcard'; // Adjust the import path
+import RememberedButton from '../components/remembered_button';
+import ForgottenButton from '../components/forgotten_button';
+import { buttonContainer } from '../styles/Buttons';
+import createReview from '../functions/createReview';
+import ReviewStats from '../components/review_stats';
+import useUsers from '../hooks/useUsers';
+import UsersDropdown from '../components/UsersDropdown';
+import useSubscribedDecks from '../hooks/useSubscribedDecks';
+import DecksMultiSelect from '../components/DecksMultiSelect';
+import useSessionData from '../hooks/useSessionData';
+import useSession from '../hooks/useSession';
+import useSyncLocalReviews from '../hooks/useSyncLocalReviews';
 
 const FlashcardScreen = () => {
-  console.log("Rendering FlashcardScreen");
+  console.log('Rendering FlashcardScreen');
   const users = useUsers();
-  console.log("fetching users");
+  console.log('fetching users');
   const [user, setUser] = useState(null);
 
   const decks = useSubscribedDecks(user?.user_id);
@@ -51,7 +51,7 @@ const FlashcardScreen = () => {
       remembered,
       user?.user_id,
     );
-    console.log("reviewResponse", reviewResponse);
+    console.log('reviewResponse', reviewResponse);
 
     // update the flashcard
     flashcard && flashcard.updateCard(remembered);

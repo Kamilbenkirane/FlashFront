@@ -20,7 +20,7 @@
   "scripts": {
     "android": "expo run:android",
     "ios": "expo run:ios",
-    "lint": "eslint . -- --fix",
+    "lint": "eslint src --fix",
     "format": "prettier --write ."
   },
   "devDependencies": {

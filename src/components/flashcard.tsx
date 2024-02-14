@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from "react";
-import { Text, TouchableOpacity, View } from "react-native";
-import { flashcardStyles } from "../styles/FlashcardStyles"; // Adjust the path as necessary
+import React, { useEffect, useState } from 'react';
+import { Text, TouchableOpacity, View } from 'react-native';
+import { flashcardStyles } from '../styles/FlashcardStyles'; // Adjust the path as necessary
 
 // Adjust the props to accept the entire flashcard object
 export default function Flashcard({ flashcard }) {
@@ -18,7 +18,7 @@ export default function Flashcard({ flashcard }) {
 
   // Function to format the time since the last review
   const formatTimeSinceLastReview = (seconds) => {
-    if (seconds === undefined) return "No Review"; // Handle null case
+    if (seconds === undefined) return 'No Review'; // Handle null case
     if (seconds < 60) {
       return `${seconds} sec`;
     } else if (seconds < 3600) {
@@ -39,7 +39,7 @@ export default function Flashcard({ flashcard }) {
     return `${(score * 100).toFixed(2)}%`; // Convert to percentage and format to 2 decimal places
   };
 
-  const backgroundColor = isRectoVisible ? "#e7f4ff" : "#e5fde6"; // Example colors: blue for recto, green for verso
+  const backgroundColor = isRectoVisible ? '#e7f4ff' : '#e5fde6'; // Example colors: blue for recto, green for verso
 
   return (
     <TouchableOpacity onPress={handlePress}>
@@ -50,22 +50,22 @@ export default function Flashcard({ flashcard }) {
         </Text>
         {/* The rest of the content */}
         <Text style={flashcardStyles.flashcardText}>
-          {isRectoVisible ? "recto" : "verso"}
+          {isRectoVisible ? 'recto' : 'verso'}
         </Text>
         {/* Displaying the streak */}
         <View style={flashcardStyles.streakCircle}>
-          <Text style={{ color: "black", textAlign: "center" }}>
+          <Text style={{ color: 'black', textAlign: 'center' }}>
             {flashcard.streak}
           </Text>
         </View>
         {/* Optional: Other elements */}
         <View style={flashcardStyles.timeSinceReview}>
-          <Text style={{ color: "black", textAlign: "center" }}>
+          <Text style={{ color: 'black', textAlign: 'center' }}>
             {formatTimeSinceLastReview(flashcard.secondsSinceLastReview)}
           </Text>
         </View>
         <View style={flashcardStyles.popupScore}>
-          <Text style={{ color: "black", textAlign: "center" }}>
+          <Text style={{ color: 'black', textAlign: 'center' }}>
             {formatPopupScore(flashcard.popupScore)}
           </Text>
         </View>

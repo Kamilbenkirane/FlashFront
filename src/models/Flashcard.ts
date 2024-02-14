@@ -1,6 +1,6 @@
 // models/Flashcard.ts
-import { IFlashcard } from "../interfaces/IFlashcard";
-import moment, { Moment } from "moment";
+import { IFlashcard } from '../interfaces/IFlashcard';
+import moment, { Moment } from 'moment';
 
 class Flashcard implements IFlashcard {
   // Properties of the Flashcard class
@@ -28,7 +28,7 @@ class Flashcard implements IFlashcard {
       : null;
     // If lastReviewTimestamp is not null, subtract 1 hour from it
     if (this.lastReviewTimestamp) {
-      this.lastReviewTimestamp.subtract(1, "hours");
+      this.lastReviewTimestamp.subtract(1, 'hours');
     }
     this.updateSecondsSinceLastReview(); // Update secondsSinceLastReview
     this.streak = dictCard.streak || 0; // Default streak to 0 if not specified
@@ -44,7 +44,7 @@ class Flashcard implements IFlashcard {
     if (this.lastReviewTimestamp) {
       this.secondsSinceLastReview = moment().diff(
         this.lastReviewTimestamp,
-        "seconds",
+        'seconds',
       );
     } else {
       this.secondsSinceLastReview = undefined; // Reset or keep undefined if there's no lastReviewTimestamp
