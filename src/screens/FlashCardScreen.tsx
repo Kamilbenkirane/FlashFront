@@ -15,9 +15,7 @@ import useSession from '../hooks/useSession';
 import useSyncLocalReviews from '../hooks/useSyncLocalReviews';
 
 const FlashcardScreen = () => {
-  console.log('Rendering FlashcardScreen');
   const users = useUsers();
-  console.log('fetching users');
   const [user, setUser] = useState(null);
 
   const decks = useSubscribedDecks(user?.user_id);
@@ -29,9 +27,10 @@ const FlashcardScreen = () => {
   const sessionData = useSessionData(user?.user_id, activeDecksIds);
   const session = useSession(sessionData);
   const [flashcard, setFlashcard] = useState(session?.getNextCard());
+  const [review_count, setReviewCount] = useState(0);
 
   // Sync Local Reviews
-  useSyncLocalReviews();
+  useSyncLocalReviews(review_count);
 
   const handleUserSelect = (selectedUser = null) => {
     setUser(selectedUser);
@@ -44,6 +43,9 @@ const FlashcardScreen = () => {
 
   const handleButtonPress = async (remembered = true) => {
     // console.log("creating review", remembered);
+    // try syncing local review by incrementing the review_count
+    console.log('review_count', review_count);
+    setReviewCount(review_count + 1);
 
     // First create the review
     const reviewResponse = await createReview(

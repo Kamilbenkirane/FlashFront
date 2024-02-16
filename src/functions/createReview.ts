@@ -15,7 +15,8 @@ async function createReview(flashcard, success, user_id) {
   };
   try {
     const connectionInfo = await NetInfo.fetch();
-    const isConnected = connectionInfo.isInternetReachable;
+    const isConnected = connectionInfo.isConnected;
+    console.log('isConnected:', isConnected);
 
     if (!isConnected) {
       // save review locally if offline

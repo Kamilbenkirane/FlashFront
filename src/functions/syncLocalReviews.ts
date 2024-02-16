@@ -9,8 +9,10 @@ async function syncLocalReviews() {
     if (reviews.length > 0) {
       const connectionInfo = await NetInfo.fetch();
       const isConnected = connectionInfo.isInternetReachable;
+      console.log('isConnected:', isConnected);
       if (isConnected) {
         for (const review of reviews) {
+          console.log(review);
           await createReview(review, review.success, review.user_id);
         }
         // Clear local reviews after syncing

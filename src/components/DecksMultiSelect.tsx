@@ -3,6 +3,9 @@ import { View, Text, TouchableOpacity, FlatList } from 'react-native';
 import DecksMultiSelectStyles from '../styles/DecksMultiSelect';
 
 const DecksMultiSelect = ({ decks, onSelectDecks }) => {
+  if (!Array.isArray(decks)) {
+    decks = [];
+  }
   const [isVisible, setIsVisible] = useState(false);
   const [selectedSubject, setSelectedSubject] = useState(null);
   const [selectedDeckIds, setSelectedDeckIds] = useState([]);
