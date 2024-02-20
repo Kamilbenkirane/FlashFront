@@ -40,7 +40,11 @@ const DecksMultiSelect = ({ decks, onSelectDecks }) => {
         onPress={() => setIsVisible(!isVisible)}
         style={DecksMultiSelectStyles.button}
       >
-        <Text style={DecksMultiSelectStyles.buttonText} numberOfLines={1} ellipsizeMode='tail'>
+        <Text
+          style={DecksMultiSelectStyles.buttonText}
+          numberOfLines={1}
+          ellipsizeMode="tail"
+        >
           {selectedSubject ? getSelectedDecksText() : 'Select Subject/Decks'}
         </Text>
       </TouchableOpacity>

@@ -57,7 +57,7 @@ const LibraryScreen = () => {
         <FlatList
           data={Object.entries(decksBySubject)}
           renderItem={renderItem}
-          keyExtractor={item => item[0]}
+          keyExtractor={(item) => item[0]}
         />
       </View>
     </View>
