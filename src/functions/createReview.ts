@@ -14,16 +14,6 @@ async function createReview(flashcard, success, user_id) {
     body: JSON.stringify(review),
   };
   try {
-    const connectionInfo = await NetInfo.fetch();
-    const isConnected = connectionInfo.isConnected;
-    console.log('isConnected:', isConnected);
-
-    if (!isConnected) {
-      // save review locally if offline
-      await saveReviewLocally(review);
-      return { savedLocally: true };
-    }
-
     const response = await fetch(url, requestOptions);
     if (!response.ok) {
       // Handle non-2xx responses
@@ -36,6 +26,10 @@ async function createReview(flashcard, success, user_id) {
     return reviewResponse; // Return the response for further processing if needed
   } catch (error) {
     console.error('Failed to create review', error);
+    // If fetch fails, assume it's a network issue and save review locally
+    console.log('Saving review locally');
+    await saveReviewLocally(review);
+    return { savedLocally: true };
   }
 }
 

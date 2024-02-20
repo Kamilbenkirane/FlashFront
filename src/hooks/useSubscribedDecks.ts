@@ -1,21 +1,22 @@
 import { useEffect, useState } from 'react';
 import API_URL from '../config';
 
-const useSubscribedDecks = (userId) => {
+const useSubscribedDecks = (user) => {
   const [decks, setDecks] = useState([]);
-  console.log('useSubscribedDecks', userId);
+  console.log('useSubscribedDecks', user);
 
   useEffect(() => {
-    if (userId) {
+    if (user?.user_id) {
       const fetchDecks = async () => {
-        console.log('fetching decks for user:', userId);
-        const response = await fetch(`${API_URL}/subscription/${userId}`); // Adjust endpoint as necessary
+        console.log('fetching decks for user:', user?.user_id);
+        const url = `${API_URL}/subscription/${user?.user_id}`;
+        const response = await fetch(url); // Adjust endpoint as necessary
         const data = await response.json();
         setDecks(data);
       };
       fetchDecks();
     }
-  }, [userId]);
+  }, [user]);
 
   return decks;
 };

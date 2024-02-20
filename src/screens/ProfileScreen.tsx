@@ -3,11 +3,12 @@ import { View, Text } from 'react-native';
 import UsersDropdown from '../components/UsersDropdown';
 import useUsers from '../hooks/useUsers';
 import useSubscribedDecks from '../hooks/useSubscribedDecks';
+import { useUser } from '../context/UserContext';
 
 const ProfileScreen = () => {
   const users = useUsers(); // Custom hook to fetch users
-  const [user, setUser] = useState(null);
-  const decks = useSubscribedDecks(user?.user_id); // Fetch decks for the selected user
+  const { user, setUser } = useUser();
+  const decks = useSubscribedDecks(user); // Fetch decks for the selected user
 
   const handleUserSelect = (selectedUser = null) => {
     setUser(selectedUser);

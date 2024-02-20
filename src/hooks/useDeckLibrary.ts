@@ -18,7 +18,7 @@ const useDeckLibrary = (): Deck[] => {
       setDecks(data);
     };
     fetchDecks();
-  });
+  }, []);
 
   return decks;
 };

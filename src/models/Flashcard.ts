@@ -41,7 +41,7 @@ class Flashcard implements IFlashcard {
 
   updateSecondsSinceLastReview(): void {
     // Calculate the time since the last review in seconds
-    if (this.lastReviewTimestamp) {
+    if (moment.isMoment(this.lastReviewTimestamp)) {
       this.secondsSinceLastReview = moment().diff(
         this.lastReviewTimestamp,
         'seconds',
@@ -60,7 +60,7 @@ class Flashcard implements IFlashcard {
       this.malus += 1; // Increment malus on failure
     }
     this.updateSecondsSinceLastReview();
-    this.popupScore = this.calculatePopupScore(); // Recalculate popup score after updating streak
+    this.calculatePopupScore(); // Recalculate popup score after updating streak
   }
 
   calculatePopupScore(): number {
@@ -91,7 +91,7 @@ class Flashcard implements IFlashcard {
         popupScore = this.secondsSinceLastReview / Tmax + this.malus;
       }
     }
-    return popupScore; // Return the calculated popup score
+    this.popupScore = popupScore; // Return the calculated popup score
   }
 
   updateCard(success: boolean): void {
@@ -101,4 +101,4 @@ class Flashcard implements IFlashcard {
   }
 }
 
-export default Flashcard; // Export the Flashcard class for use elsewhere
+export default Flashcard;

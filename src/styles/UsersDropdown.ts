@@ -1,6 +1,6 @@
 import { StyleSheet } from 'react-native';
 
-const DecksMultiSelectStyles = StyleSheet.create({
+const UsersDropdownStyles = StyleSheet.create({
   container: {
     marginTop: 10,
   },
@@ -14,7 +14,7 @@ const DecksMultiSelectStyles = StyleSheet.create({
     textAlign: 'center',
   },
   list: {
-    maxHeight: 200,
+    maxHeight: 200, // Adjust based on your needs
     borderColor: '#ccc',
     borderWidth: 1,
     marginTop: 5,
@@ -27,16 +27,6 @@ const DecksMultiSelectStyles = StyleSheet.create({
   itemText: {
     textAlign: 'center',
   },
-  backButton: {
-    backgroundColor: '#f0f0f0', // Light grey, adjust as necessary
-    padding: 10,
-    margin: 10,
-    borderRadius: 5,
-  },
-  backButtonText: {
-    color: '#000000', // Black, adjust as necessary
-    textAlign: 'center',
-  },
 });
 
-export default DecksMultiSelectStyles;
+export default UsersDropdownStyles;
