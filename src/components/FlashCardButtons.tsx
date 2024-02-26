@@ -1,10 +1,6 @@
 import React from 'react';
-import { TouchableOpacity, Text, Alert } from 'react-native';
-import {
-  forgotButton,
-  optionsButton,
-  rememberedButton,
-} from '../styles/Buttons';
+import { TouchableOpacity, Text } from 'react-native';
+import { forgotButton, rememberedButton } from '../styles/Buttons';
 
 // Props could include a function to handle the "forgotten" action
 const ForgottenButton = ({ onPress }) => {
