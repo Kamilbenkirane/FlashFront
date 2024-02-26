@@ -10,7 +10,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.kams96.FlashFrontKB24",
-      "buildNumber": "1.1.16"
+      "buildNumber": "1.2.0"
     },
     "splash": {
       "image": "./assets/splash.png",

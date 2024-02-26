@@ -14,6 +14,7 @@ import useSessionData from '../hooks/useSessionData';
 import useSession from '../hooks/useSession';
 import useSyncLocalReviews from '../hooks/useSyncLocalReviews';
 import { useUser } from '../context/UserContext';
+import KnownButton from '../components/KnownButton';
 
 const FlashcardScreen = () => {
   const users = useUsers();
@@ -38,10 +39,19 @@ const FlashcardScreen = () => {
     setActiveDecksIds(selectedDeckIds);
   };
   const handleButtonPress = async (remembered = true) => {
+    const currentFlashcard = flashcard;
+    setFlashcard(session.getNextCard());
     setReviewCount(review_count + 1);
     await createReview(flashcard, remembered, user?.user_id);
-    flashcard && flashcard.updateCard(remembered);
+    currentFlashcard && currentFlashcard.updateCard(remembered);
+  };
+  const handleKnownButtonPress = async () => {
+    const currentFlashcard = flashcard;
     setFlashcard(session.getNextCard());
+    setReviewCount(review_count + 1);
+    currentFlashcard.streak += 5;
+    await createReview(currentFlashcard, true, user?.user_id);
+    currentFlashcard && currentFlashcard.updateCard(true);
   };
 
   return (
@@ -50,9 +60,10 @@ const FlashcardScreen = () => {
       {user && (
         <DecksMultiSelect decks={decks} onSelectDecks={handleDeckSelect} />
       )}
-      {flashcard && <Flashcard flashcard={flashcard} />}
+      {flashcard && <Flashcard key={review_count} flashcard={flashcard} />}
       <View style={buttonContainer.container}>
         <ForgottenButton onPress={() => handleButtonPress(false)} />
+        <KnownButton onPress={() => handleKnownButtonPress()} />
         <RememberedButton onPress={() => handleButtonPress(true)} />
       </View>
       {flashcard && <ReviewStats session={session} />}

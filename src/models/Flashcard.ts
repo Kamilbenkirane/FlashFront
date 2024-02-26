@@ -28,14 +28,18 @@ class Flashcard implements IFlashcard {
       : null;
     // If lastReviewTimestamp is not null, subtract 1 hour from it
     if (this.lastReviewTimestamp) {
-      this.lastReviewTimestamp.subtract(1, 'hours');
+      this.lastReviewTimestamp.add(
+        this.lastReviewTimestamp._d.getTimezoneOffset(),
+        'minutes',
+      );
+      console.log(this.lastReviewTimestamp._d.getTimezoneOffset());
     }
     this.updateSecondsSinceLastReview(); // Update secondsSinceLastReview
     this.streak = dictCard.streak || 0; // Default streak to 0 if not specified
     this.success = dictCard.success; // Success is optional, may not be provided
     this.difficulty = dictCard.difficulty; // Difficulty rating of the flashcard
     this.malus = 0; // Initial malus is set to 0
-    this.popupScore = this.calculatePopupScore(); // Calculate initial popup score
+    this.calculatePopupScore(); // Calculate initial popup score
     this.probability = 1; // Initial probability is set to 0
   }
 
