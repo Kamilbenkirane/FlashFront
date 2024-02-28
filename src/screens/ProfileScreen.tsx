@@ -1,0 +1,37 @@
+import React, { useState, useEffect } from 'react';
+import { View, Text } from 'react-native';
+import UsersDropdown from '../components/UsersDropdown';
+import useUsers from '../hooks/useUsers';
+import useSubscribedDecks from '../hooks/useSubscribedDecks';
+import { useUser } from '../context/UserContext';
+
+const ProfileScreen = () => {
+  const users = useUsers(); // Custom hook to fetch users
+  const { user, setUser } = useUser();
+  const decks = useSubscribedDecks(user); // Fetch decks for the selected user
+
+  const handleUserSelect = (selectedUser = null) => {
+    setUser(selectedUser);
+  };
+
+  useEffect(() => {
+    // Fetch user data here and set it using setUser
+  }, []);
+
+  return (
+    <View>
+      <Text>Profile Screen</Text>
+      <UsersDropdown users={users} onSelectUser={handleUserSelect} />
+      {user && (
+        <View>
+          <Text>{`User ID: ${user.user_id}`}</Text>
+          <Text>{`User Name: ${user.user_name}`}</Text>
+          <Text>{`Subscription Date: ${user.subscription_date}`}</Text>
+          <Text>{`Subscribed Decks: ${decks?.length}`}</Text>
+        </View>
+      )}
+    </View>
+  );
+};
+
+export default ProfileScreen;

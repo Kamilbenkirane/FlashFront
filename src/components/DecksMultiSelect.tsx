@@ -3,6 +3,9 @@ import { View, Text, TouchableOpacity, FlatList } from 'react-native';
 import DecksMultiSelectStyles from '../styles/DecksMultiSelect';
 
 const DecksMultiSelect = ({ decks, onSelectDecks }) => {
+  if (!Array.isArray(decks)) {
+    decks = [];
+  }
   const [isVisible, setIsVisible] = useState(false);
   const [selectedSubject, setSelectedSubject] = useState(null);
   const [selectedDeckIds, setSelectedDeckIds] = useState([]);
@@ -30,13 +33,18 @@ const DecksMultiSelect = ({ decks, onSelectDecks }) => {
     (deck) => deck.subject === selectedSubject,
   );
 
+  // @ts-ignore
   return (
     <View style={DecksMultiSelectStyles.container}>
       <TouchableOpacity
         onPress={() => setIsVisible(!isVisible)}
         style={DecksMultiSelectStyles.button}
       >
-        <Text style={DecksMultiSelectStyles.buttonText}>
+        <Text
+          style={DecksMultiSelectStyles.buttonText}
+          numberOfLines={1}
+          ellipsizeMode="tail"
+        >
           {selectedSubject ? getSelectedDecksText() : 'Select Subject/Decks'}
         </Text>
       </TouchableOpacity>

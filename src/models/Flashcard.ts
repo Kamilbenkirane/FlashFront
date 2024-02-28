@@ -28,20 +28,24 @@ class Flashcard implements IFlashcard {
       : null;
     // If lastReviewTimestamp is not null, subtract 1 hour from it
     if (this.lastReviewTimestamp) {
-      this.lastReviewTimestamp.subtract(1, 'hours');
+      this.lastReviewTimestamp.add(
+        this.lastReviewTimestamp._d.getTimezoneOffset(),
+        'minutes',
+      );
+      console.log(this.lastReviewTimestamp._d.getTimezoneOffset());
     }
     this.updateSecondsSinceLastReview(); // Update secondsSinceLastReview
     this.streak = dictCard.streak || 0; // Default streak to 0 if not specified
     this.success = dictCard.success; // Success is optional, may not be provided
     this.difficulty = dictCard.difficulty; // Difficulty rating of the flashcard
     this.malus = 0; // Initial malus is set to 0
-    this.popupScore = this.calculatePopupScore(); // Calculate initial popup score
+    this.calculatePopupScore(); // Calculate initial popup score
     this.probability = 1; // Initial probability is set to 0
   }
 
   updateSecondsSinceLastReview(): void {
     // Calculate the time since the last review in seconds
-    if (this.lastReviewTimestamp) {
+    if (moment.isMoment(this.lastReviewTimestamp)) {
       this.secondsSinceLastReview = moment().diff(
         this.lastReviewTimestamp,
         'seconds',
@@ -60,7 +64,7 @@ class Flashcard implements IFlashcard {
       this.malus += 1; // Increment malus on failure
     }
     this.updateSecondsSinceLastReview();
-    this.popupScore = this.calculatePopupScore(); // Recalculate popup score after updating streak
+    this.calculatePopupScore(); // Recalculate popup score after updating streak
   }
 
   calculatePopupScore(): number {
@@ -91,7 +95,7 @@ class Flashcard implements IFlashcard {
         popupScore = this.secondsSinceLastReview / Tmax + this.malus;
       }
     }
-    return popupScore; // Return the calculated popup score
+    this.popupScore = popupScore; // Return the calculated popup score
   }
 
   updateCard(success: boolean): void {
@@ -101,4 +105,4 @@ class Flashcard implements IFlashcard {
   }
 }
 
-export default Flashcard; // Export the Flashcard class for use elsewhere
+export default Flashcard;

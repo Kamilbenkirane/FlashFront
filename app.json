@@ -6,11 +6,11 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "jsEngine": "hermes",
+    "jsEngine": "jsc",
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.kams96.FlashFrontKB24",
-      "buildNumber": "1.0.7"
+      "buildNumber": "1.2.1"
     },
     "splash": {
       "image": "./assets/splash.png",
@@ -30,7 +30,7 @@
     },
     "extra": {
       "eas": {
-        "projectId": "cdc4ac5c-e279-4b3d-86d5-ca6d77e74a90"
+        "projectId": "f0d87184-f966-4f70-9be0-72b6d7887e92"
       }
     }
   }

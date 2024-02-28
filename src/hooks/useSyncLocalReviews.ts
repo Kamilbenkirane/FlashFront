@@ -1,19 +1,28 @@
 import { useEffect } from 'react';
-import NetInfo from '@react-native-community/netinfo';
 import syncLocalReviews from '../functions/syncLocalReviews';
+import API_URL from '../config';
 
-// Define the custom hook
-const useSyncLocalReviews = () => {
+// useSyncLocalReviews depends each review
+const useSyncLocalReviews = (review_count) => {
   useEffect(() => {
-    const unsubscribe = NetInfo.addEventListener((state) => {
-      if (state.isConnected) {
+    const syncReviews = async () => {
+      try {
+        const url = `${API_URL}/review/ask`;
+        const response = await fetch(url);
+        if (!response.ok) {
+          throw new Error(
+            `Network response was not ok, status: ${response.status}`,
+          );
+        }
+        console.log('Syncing local reviews');
         syncLocalReviews();
+      } catch (error) {
+        console.log('Failed to connect to the API, skipping sync');
       }
-    });
+    };
 
-    // Clean up
-    return () => unsubscribe();
-  }, []); // Empty dependency array means this effect runs only once after the initial render
+    syncReviews();
+  }, [review_count]);
 };
 
 export default useSyncLocalReviews;

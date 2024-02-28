@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Text, TouchableOpacity, View } from 'react-native';
-import { flashcardStyles } from '../styles/FlashcardStyles'; // Adjust the path as necessary
+import { flashcardStyles } from '../styles/FlashcardStyles';
+import OptionsButton from './OptionsButton';
 
 // Adjust the props to accept the entire flashcard object
 export default function Flashcard({ flashcard }) {
@@ -70,6 +71,10 @@ export default function Flashcard({ flashcard }) {
           </Text>
         </View>
       </View>
+      <OptionsButton
+        onPress={() => console.log('Options button pressed')}
+        flashcard={flashcard}
+      />
     </TouchableOpacity>
   );
 }

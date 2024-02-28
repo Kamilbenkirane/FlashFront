@@ -1,31 +1,26 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  FlatList,
-  StyleSheet,
-} from 'react-native';
+import { View, Text, TouchableOpacity, FlatList } from 'react-native';
+import { useUser } from '../context/UserContext';
+import UsersDropdownStyles from '../styles/UsersDropdown';
 
-// Assuming users is an array of user objects
 const UsersDropdown = ({ users, onSelectUser }) => {
   const [isVisible, setIsVisible] = useState(false);
-  const [selectedUser, setSelectedUser] = useState(null);
+  const { user, setUser } = useUser();
 
-  const handleSelectUser = (user) => {
-    setSelectedUser(user);
+  const handleSelectUser = (selectedUser) => {
+    setUser(selectedUser);
     setIsVisible(false); // Close the dropdown after selection
-    onSelectUser(user);
+    onSelectUser(selectedUser);
   };
 
   return (
-    <View style={styles.container}>
+    <View style={UsersDropdownStyles.container}>
       <TouchableOpacity
         onPress={() => setIsVisible(!isVisible)}
-        style={styles.button}
+        style={UsersDropdownStyles.button}
       >
-        <Text style={styles.buttonText}>
-          {selectedUser ? selectedUser.user_name : 'Select User'}
+        <Text style={UsersDropdownStyles.buttonText}>
+          {user ? user.user_name : 'Select User'}
         </Text>
       </TouchableOpacity>
       {isVisible && (
@@ -35,12 +30,12 @@ const UsersDropdown = ({ users, onSelectUser }) => {
           renderItem={({ item }) => (
             <TouchableOpacity
               onPress={() => handleSelectUser(item)}
-              style={styles.item}
+              style={UsersDropdownStyles.item}
             >
-              <Text style={styles.itemText}>{item.user_name}</Text>
+              <Text style={UsersDropdownStyles.itemText}>{item.user_name}</Text>
             </TouchableOpacity>
           )}
-          style={styles.list}
+          style={UsersDropdownStyles.list}
         />
       )}
     </View>
@@ -48,32 +43,3 @@ const UsersDropdown = ({ users, onSelectUser }) => {
 };
 
 export default UsersDropdown;
-
-const styles = StyleSheet.create({
-  container: {
-    marginTop: 10,
-  },
-  button: {
-    backgroundColor: '#007bff',
-    padding: 10,
-    borderRadius: 5,
-  },
-  buttonText: {
-    color: '#ffffff',
-    textAlign: 'center',
-  },
-  list: {
-    maxHeight: 200, // Adjust based on your needs
-    borderColor: '#ccc',
-    borderWidth: 1,
-    marginTop: 5,
-  },
-  item: {
-    padding: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#ccc',
-  },
-  itemText: {
-    textAlign: 'center',
-  },
-});

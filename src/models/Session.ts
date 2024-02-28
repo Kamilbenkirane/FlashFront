@@ -39,10 +39,7 @@ class Session {
         const newCard = this.pile.shift();
         if (newCard) {
           this.flashcards.push(newCard);
-          this.totalScore = this.flashcards.reduce(
-            (acc, card) => acc + card.popupScore,
-            0,
-          );
+          this.totalScore = this.getTotalScore();
         }
       }
     }
