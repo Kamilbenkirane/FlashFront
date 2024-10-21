@@ -46,7 +46,11 @@ export default function Flashcard({ flashcard }) {
     <TouchableOpacity onPress={handlePress}>
       <View style={[flashcardStyles.flashcard, { backgroundColor }]}>
         {/* Toggle between recto and verso based on isRectoVisible */}
-        <Text style={flashcardStyles.flashcardHeader}>
+        <Text
+          style={flashcardStyles.flashcardHeader}
+          adjustsFontSizeToFit
+          numberOfLines={8}
+        >
           {isRectoVisible ? flashcard.recto : flashcard.verso}
         </Text>
         {/* The rest of the content */}
