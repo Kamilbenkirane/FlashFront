@@ -1,9 +1,8 @@
-import API_URL from '../config';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import NetInfo from '@react-native-community/netinfo';
+import API_URL from '../config';
 
 async function createSubscription(user, deck) {
-  console.log('createSubscription', user, user);
   const subscriptionData = { user_id: user.user_id, deck_id: deck.deck_id };
   // convert names to api names :
   const url = `${API_URL}/subscription/create`;
@@ -16,8 +15,6 @@ async function createSubscription(user, deck) {
   try {
     const connectionInfo = await NetInfo.fetch();
     const isConnected = connectionInfo.isConnected;
-    console.log('isConnected:', isConnected);
-    console.log(requestOptions.body);
 
     if (!isConnected) {
       // save subscription locally if offline
@@ -33,10 +30,9 @@ async function createSubscription(user, deck) {
       );
     }
     const subscriptionResponse = await response.json();
-    console.log('Subscription created', subscriptionResponse);
-    return subscriptionResponse; // Return the response for further processing if needed
+    return subscriptionResponse;
   } catch (error) {
-    console.error('Failed to create subscription', error);
+    // Silent failure - subscription creation failed
   }
 }
 
@@ -51,7 +47,7 @@ async function saveSubscriptionLocally(subscription) {
       JSON.stringify(subscriptions),
     );
   } catch (error) {
-    console.error('Failed to save subscription locally', error);
+    // Silent failure - could not save subscription locally
   }
 }
 export default createSubscription;

@@ -1,13 +1,12 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import createReview from './createReview';
 import API_URL from '../config';
+import createReview from './createReview';
 
 async function syncLocalReviews() {
   try {
     const localReviews = (await AsyncStorage.getItem('localReviews')) || '[]';
     const reviews = JSON.parse(localReviews);
     if (reviews.length > 0) {
-      console.log('Syncing local reviews');
       try {
         const url = `${API_URL}/review/ask`;
         const response = await fetch(url);
@@ -17,17 +16,15 @@ async function syncLocalReviews() {
           );
         }
         for (const review of reviews) {
-          console.log(review);
           await createReview(review, review.success, review.user_id);
         }
-        // Clear local reviews after syncing
         await AsyncStorage.removeItem('localReviews');
       } catch (error) {
-        console.log('Failed to connect to the API, skipping sync');
+        // Silent failure - API not available, skip sync
       }
     }
   } catch (error) {
-    console.error('Failed to sync local reviews', error);
+    // Silent failure - failed to sync local reviews
   }
 }
 
