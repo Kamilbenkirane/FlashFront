@@ -1,9 +1,13 @@
 // hooks/useSessionData.js
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import API_URL from '../config';
+import type { SessionData } from '../interfaces';
 
-const useSessionData = (userId, activeDecksIds) => {
-  const [sessionData, setSessionData] = useState(null);
+const useSessionData = (
+  userId: string | number | undefined,
+  activeDecksIds: (string | number)[],
+): SessionData[] | null => {
+  const [sessionData, setSessionData] = useState<SessionData[] | null>(null);
 
   useEffect(() => {
     if (userId && activeDecksIds.length > 0) {
@@ -13,12 +17,11 @@ const useSessionData = (userId, activeDecksIds) => {
       const url = `${API_URL}/stack/get_session_df/${userId}?${queryParams}`;
       const fetchSessionData = async () => {
         try {
-          console.log('fetching Data, API_URL:', `${url}`);
           const response = await fetch(url);
           const sessionData = await response.json();
           setSessionData(sessionData);
         } catch (error) {
-          console.error('Failed to fetch session data', error);
+          // Silent failure - session data fetch failed
         }
       };
 

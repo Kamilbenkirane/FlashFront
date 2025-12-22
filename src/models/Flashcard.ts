@@ -1,6 +1,7 @@
+import moment, { type Moment } from 'moment';
+import type { SessionData } from '../interfaces';
 // models/Flashcard.ts
-import { IFlashcard } from '../interfaces/IFlashcard';
-import moment, { Moment } from 'moment';
+import type { IFlashcard } from '../interfaces/IFlashcard';
 
 class Flashcard implements IFlashcard {
   // Properties of the Flashcard class
@@ -16,23 +17,21 @@ class Flashcard implements IFlashcard {
   probability?: number; // Probability of being chosen for the next review
   secondsSinceLastReview?: number; // Time since the last review in seconds
 
-  constructor(dictCard: any) {
-    // Initializes a new Flashcard object with data from dictCard
+  constructor(dictCard: SessionData) {
+    // Initializes a new Flashcard object with properly typed SessionData
     // Assigning values from dictCard to properties, using null coalescing for optional properties
     this.card_id = dictCard.card_id;
     this.recto = dictCard.recto;
     this.verso = dictCard.verso;
     // Parsing the lastReviewTimestamp to a Moment object, or null if not provided
-    this.lastReviewTimestamp = dictCard.last_review_timestamp
-      ? moment(dictCard.last_review_timestamp)
+    this.lastReviewTimestamp = dictCard.lastReviewTimestamp
+      ? moment(dictCard.lastReviewTimestamp)
       : null;
-    // If lastReviewTimestamp is not null, subtract 1 hour from it
     if (this.lastReviewTimestamp) {
-      this.lastReviewTimestamp.add(
-        this.lastReviewTimestamp._d.getTimezoneOffset(),
-        'minutes',
-      );
-      console.log(this.lastReviewTimestamp._d.getTimezoneOffset());
+      const timezoneOffset = this.lastReviewTimestamp
+        .toDate()
+        .getTimezoneOffset();
+      this.lastReviewTimestamp.add(timezoneOffset, 'minutes');
     }
     this.updateSecondsSinceLastReview(); // Update secondsSinceLastReview
     this.streak = dictCard.streak || 0; // Default streak to 0 if not specified
@@ -85,17 +84,24 @@ class Flashcard implements IFlashcard {
       // Calculate the time since the last review in seconds
 
       // Adjust the popup score based on how long it's been since the last review relative to Tmax
-      if (this.secondsSinceLastReview < Tmax) {
+      if (
+        this.secondsSinceLastReview !== undefined &&
+        this.secondsSinceLastReview < Tmax
+      ) {
         popupScore =
           Math.min(
             10000,
             Math.exp(0.01 * (this.secondsSinceLastReview - Tmax)),
           ) + this.malus;
-      } else {
+      } else if (this.secondsSinceLastReview !== undefined) {
         popupScore = this.secondsSinceLastReview / Tmax + this.malus;
+      } else {
+        // Fallback if secondsSinceLastReview is undefined
+        popupScore = 2 + this.malus;
       }
     }
-    this.popupScore = popupScore; // Return the calculated popup score
+    this.popupScore = popupScore; // Set the calculated popup score
+    return popupScore; // Return the calculated popup score
   }
 
   updateCard(success: boolean): void {
