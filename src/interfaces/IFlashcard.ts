@@ -1,5 +1,5 @@
 // interfaces/IFlashcard.ts
-import { Moment } from 'moment';
+import type { Moment } from 'moment';
 
 export interface IFlashcard {
   card_id: string;

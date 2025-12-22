@@ -1,16 +1,26 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, FlatList } from 'react-native';
-import DecksMultiSelectStyles from '../styles/DecksMultiSelect';
+import type React from 'react';
+import { useState } from 'react';
+import { FlatList, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { useTheme } from '../context/ThemeContext';
+import type { Deck, DecksMultiSelectProps } from '../interfaces';
+import { Typography } from './ui/Typography';
 
-const DecksMultiSelect = ({ decks, onSelectDecks }) => {
+const DecksMultiSelect: React.FC<DecksMultiSelectProps> = ({
+  decks,
+  onSelectDecks,
+}) => {
+  const { theme } = useTheme();
+
   if (!Array.isArray(decks)) {
     decks = [];
   }
   const [isVisible, setIsVisible] = useState(false);
-  const [selectedSubject, setSelectedSubject] = useState(null);
-  const [selectedDeckIds, setSelectedDeckIds] = useState([]);
+  const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
+  const [selectedDeckIds, setSelectedDeckIds] = useState<(string | number)[]>(
+    [],
+  );
 
-  const handleSelectDeck = (deck) => {
+  const handleSelectDeck = (deck: Deck) => {
     const isAlreadySelected = selectedDeckIds.includes(deck.deck_id);
     const newSelectedDeckIds = isAlreadySelected
       ? selectedDeckIds.filter((id) => id !== deck.deck_id)
@@ -33,20 +43,61 @@ const DecksMultiSelect = ({ decks, onSelectDecks }) => {
     (deck) => deck.subject === selectedSubject,
   );
 
-  // @ts-ignore
+  const styles = StyleSheet.create({
+    container: {
+      marginTop: theme.spacing.sm,
+    },
+    button: {
+      backgroundColor: theme.colors.primary[500],
+      padding: theme.spacing.md,
+      borderRadius: theme.borderRadius.md,
+      ...theme.shadows.sm,
+    },
+    list: {
+      maxHeight: 200,
+      backgroundColor: theme.colors.neutral[50],
+      borderColor: theme.colors.neutral[200],
+      borderWidth: 1,
+      borderRadius: theme.borderRadius.md,
+      marginTop: theme.spacing.xs,
+      ...theme.shadows.md,
+    },
+    item: {
+      padding: theme.spacing.md,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.colors.neutral[200],
+      backgroundColor: theme.colors.neutral[50],
+    },
+    itemSelected: {
+      backgroundColor: theme.colors.primary[100],
+    },
+    itemLast: {
+      borderBottomWidth: 0,
+    },
+    backButton: {
+      backgroundColor: theme.colors.neutral[100],
+      padding: theme.spacing.md,
+      margin: theme.spacing.md,
+      borderRadius: theme.borderRadius.md,
+      ...theme.shadows.sm,
+    },
+  });
+
   return (
-    <View style={DecksMultiSelectStyles.container}>
+    <View style={styles.container}>
       <TouchableOpacity
         onPress={() => setIsVisible(!isVisible)}
-        style={DecksMultiSelectStyles.button}
+        style={styles.button}
       >
-        <Text
-          style={DecksMultiSelectStyles.buttonText}
+        <Typography
+          variant="body"
+          color="neutral"
+          style={{ color: '#ffffff', textAlign: 'center' }}
           numberOfLines={1}
           ellipsizeMode="tail"
         >
           {selectedSubject ? getSelectedDecksText() : 'Select Subject/Decks'}
-        </Text>
+        </Typography>
       </TouchableOpacity>
       {isVisible && (
         <View>
@@ -54,47 +105,62 @@ const DecksMultiSelect = ({ decks, onSelectDecks }) => {
             <FlatList
               data={subjects}
               keyExtractor={(item) => item}
-              renderItem={({ item }) => (
+              renderItem={({ item, index }) => (
                 <TouchableOpacity
                   onPress={() => setSelectedSubject(item)}
-                  style={DecksMultiSelectStyles.item}
+                  style={[
+                    styles.item,
+                    index === subjects.length - 1 && styles.itemLast,
+                  ]}
                 >
-                  <Text style={DecksMultiSelectStyles.itemText}>{item}</Text>
+                  <Typography
+                    variant="body"
+                    color="neutral"
+                    style={{ textAlign: 'center' }}
+                  >
+                    {item}
+                  </Typography>
                 </TouchableOpacity>
               )}
-              style={DecksMultiSelectStyles.list}
+              style={styles.list}
             />
           ) : (
             <View>
               <FlatList
                 data={filteredDecks}
                 keyExtractor={(item) => item.deck_id.toString()}
-                renderItem={({ item }) => (
+                renderItem={({ item, index }) => (
                   <TouchableOpacity
                     onPress={() => handleSelectDeck(item)}
                     style={[
-                      DecksMultiSelectStyles.item,
-                      {
-                        backgroundColor: selectedDeckIds.includes(item.deck_id)
-                          ? '#D3D3D3'
-                          : 'white',
-                      },
+                      styles.item,
+                      selectedDeckIds.includes(item.deck_id) &&
+                        styles.itemSelected,
+                      index === filteredDecks.length - 1 && styles.itemLast,
                     ]}
                   >
-                    <Text style={DecksMultiSelectStyles.itemText}>
+                    <Typography
+                      variant="body"
+                      color="neutral"
+                      style={{ textAlign: 'center' }}
+                    >
                       {item.deck_name}
-                    </Text>
+                    </Typography>
                   </TouchableOpacity>
                 )}
-                style={DecksMultiSelectStyles.list}
+                style={styles.list}
               />
               <TouchableOpacity
                 onPress={() => setSelectedSubject(null)}
-                style={DecksMultiSelectStyles.backButton}
+                style={styles.backButton}
               >
-                <Text style={DecksMultiSelectStyles.backButtonText}>
+                <Typography
+                  variant="body"
+                  color="neutral"
+                  style={{ textAlign: 'center' }}
+                >
                   Back to Subjects
-                </Text>
+                </Typography>
               </TouchableOpacity>
             </View>
           )}

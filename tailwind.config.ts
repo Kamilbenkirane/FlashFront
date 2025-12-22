@@ -1,0 +1,110 @@
+import type { Config } from 'tailwindcss';
+
+export default {
+  content: ['./App.tsx', './src/**/*.{js,jsx,ts,tsx}'],
+  presets: [require('nativewind/preset')],
+  darkMode: 'class',
+  theme: {
+    extend: {
+      colors: {
+        // Primary (Blue)
+        primary: {
+          50: '#eff6ff',
+          100: '#dbeafe',
+          200: '#bfdbfe',
+          300: '#93c5fd',
+          400: '#60a5fa',
+          500: '#3b82f6',
+          600: '#2563eb',
+          700: '#1d4ed8',
+          800: '#1e40af',
+          900: '#1e3a8a',
+        },
+        // Success (Green)
+        success: {
+          50: '#f0fdf4',
+          100: '#dcfce7',
+          200: '#bbf7d0',
+          300: '#86efac',
+          400: '#4ade80',
+          500: '#22c55e',
+          600: '#16a34a',
+          700: '#15803d',
+          800: '#166534',
+          900: '#14532d',
+        },
+        // Warning (Amber)
+        warning: {
+          50: '#fffbeb',
+          100: '#fef3c7',
+          200: '#fde68a',
+          300: '#fcd34d',
+          400: '#fbbf24',
+          500: '#f59e0b',
+          600: '#d97706',
+          700: '#b45309',
+          800: '#92400e',
+          900: '#78350f',
+        },
+        // Error (Red)
+        error: {
+          50: '#fef2f2',
+          100: '#fee2e2',
+          200: '#fecaca',
+          300: '#fca5a5',
+          400: '#f87171',
+          500: '#ef4444',
+          600: '#dc2626',
+          700: '#b91c1c',
+          800: '#991b1b',
+          900: '#7f1d1d',
+        },
+        // Neutral (Slate)
+        neutral: {
+          50: '#f8fafc',
+          100: '#f1f5f9',
+          200: '#e2e8f0',
+          300: '#cbd5e1',
+          400: '#94a3b8',
+          500: '#64748b',
+          600: '#475569',
+          700: '#334155',
+          800: '#1e293b',
+          900: '#0f172a',
+        },
+      },
+      spacing: {
+        xs: '4px',
+        sm: '8px',
+        md: '16px',
+        lg: '24px',
+        xl: '32px',
+        xxl: '48px',
+        xxxl: '64px',
+      },
+      borderRadius: {
+        sm: '6px',
+        md: '8px',
+        lg: '12px',
+        xl: '16px',
+        xxl: '24px',
+      },
+      fontSize: {
+        heading1: ['32px', { lineHeight: '40px', fontWeight: '700' }],
+        heading2: ['24px', { lineHeight: '32px', fontWeight: '600' }],
+        heading3: ['20px', { lineHeight: '28px', fontWeight: '600' }],
+        body: ['16px', { lineHeight: '24px', fontWeight: '400' }],
+        caption: ['14px', { lineHeight: '20px', fontWeight: '400' }],
+        button: ['16px', { lineHeight: '20px', fontWeight: '600' }],
+        small: ['12px', { lineHeight: '16px', fontWeight: '400' }],
+      },
+      boxShadow: {
+        sm: '0 1px 2px rgba(0, 0, 0, 0.05)',
+        md: '0 2px 4px rgba(0, 0, 0, 0.1)',
+        lg: '0 4px 8px rgba(0, 0, 0, 0.15)',
+        xl: '0 8px 16px rgba(0, 0, 0, 0.2)',
+      },
+    },
+  },
+  plugins: [],
+} satisfies Config;

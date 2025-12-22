@@ -6,11 +6,10 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "jsEngine": "jsc",
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.kams96.FlashFrontKB24",
-      "buildNumber": "1.2.1"
+      "buildNumber": "1.2.2"
     },
     "splash": {
       "image": "./assets/splash.png",

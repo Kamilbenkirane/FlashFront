@@ -1,3 +1,4 @@
+import type { SessionData } from '../interfaces';
 // Session.ts
 import Flashcard from './Flashcard';
 
@@ -7,8 +8,8 @@ class Session {
   totalCards: number;
   totalScore: number;
 
-  constructor(sessionData: any[]) {
-    // Consider a more specific type for sessionData if possible
+  constructor(sessionData: SessionData[]) {
+    // sessionData is now properly typed as SessionData array
     this.pile = sessionData
       ? sessionData.map((data) => new Flashcard(data))
       : [];
@@ -69,6 +70,18 @@ class Session {
 
   getTotalScore(): number {
     return this.flashcards.reduce((acc, card) => acc + card.popupScore, 0);
+  }
+
+  getTotalCount(): number {
+    return this.flashcards.length + this.pile.length;
+  }
+
+  getRemainingCount(): number {
+    // Count cards that haven't been reviewed yet or need more reviews
+    const unreviewedCards = this.flashcards.filter(
+      (card) => card.lastReviewTimestamp === null || card.streak < 3,
+    );
+    return unreviewedCards.length + this.pile.length;
   }
 
   updateAllPopupScores(): void {

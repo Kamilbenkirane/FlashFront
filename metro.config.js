@@ -1,6 +1,6 @@
-const { getDefaultConfig } = require('@expo/metro-config');
+const { getDefaultConfig } = require('expo/metro-config');
+const { withNativewind } = require('nativewind/metro');
 
-const defaultConfig = getDefaultConfig(__dirname);
+const config = getDefaultConfig(__dirname);
 
-// Customize the default configuration as needed
-module.exports = defaultConfig;
+module.exports = withNativewind(config);

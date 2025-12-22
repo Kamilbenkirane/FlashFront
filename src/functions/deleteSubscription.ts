@@ -3,7 +3,6 @@ import NetInfo from '@react-native-community/netinfo';
 import API_URL from '../config';
 
 async function deleteSubscription(user, deck) {
-  console.log('deleteSubscription', user, deck);
   const subscriptionData = {
     user_id: user.user_id,
     deck_id: deck.deck_id,
@@ -19,8 +18,6 @@ async function deleteSubscription(user, deck) {
   try {
     const connectionInfo = await NetInfo.fetch();
     const isConnected = connectionInfo.isConnected;
-    console.log('isConnected:', isConnected);
-    console.log(requestOptions.body);
 
     if (!isConnected) {
       // delete subscription locally if offline
@@ -36,10 +33,9 @@ async function deleteSubscription(user, deck) {
       );
     }
     const subscriptionResponse = await response.json();
-    console.log('Subscription deleted', subscriptionResponse);
-    return subscriptionResponse; // Return the response for further processing if needed
+    return subscriptionResponse;
   } catch (error) {
-    console.error('Failed to delete subscription', error);
+    // Silent failure - subscription deletion failed
   }
 }
 
@@ -61,7 +57,7 @@ async function deleteSubscriptionLocally(subscription) {
       );
     }
   } catch (error) {
-    console.error('Failed to delete subscription locally', error);
+    // Silent failure - could not delete subscription locally
   }
 }
 

@@ -1,15 +1,9 @@
 import { useEffect, useState } from 'react';
 import API_URL from '../config';
-
-type Deck = {
-  id: string;
-  deck_name: string;
-  subject: string;
-  // include other properties as needed
-};
+import type { Deck } from '../interfaces';
 
 const useDeckLibrary = (): Deck[] => {
-  const [decks, setDecks] = useState([]);
+  const [decks, setDecks] = useState<Deck[]>([]);
 
   useEffect(() => {
     const fetchDecks = async () => {

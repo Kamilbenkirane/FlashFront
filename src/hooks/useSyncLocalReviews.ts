@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
-import syncLocalReviews from '../functions/syncLocalReviews';
 import API_URL from '../config';
+import syncLocalReviews from '../functions/syncLocalReviews';
 
 // useSyncLocalReviews depends each review
 const useSyncLocalReviews = (review_count) => {
@@ -14,10 +14,9 @@ const useSyncLocalReviews = (review_count) => {
             `Network response was not ok, status: ${response.status}`,
           );
         }
-        console.log('Syncing local reviews');
         syncLocalReviews();
       } catch (error) {
-        console.log('Failed to connect to the API, skipping sync');
+        // Silent failure - API not available, skip sync
       }
     };
 
