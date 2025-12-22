@@ -1,6 +1,6 @@
 import type React from 'react';
 import { useState } from 'react';
-import { FlatList, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 import { useUser } from '../context/UserContext';
 import type { User, UsersDropdownProps } from '../interfaces';
@@ -65,11 +65,10 @@ const UsersDropdown: React.FC<UsersDropdownProps> = ({
         </Typography>
       </TouchableOpacity>
       {isVisible && (
-        <FlatList
-          data={users}
-          keyExtractor={(item) => item.user_id.toString()}
-          renderItem={({ item, index }) => (
+        <ScrollView style={styles.list}>
+          {users.map((item, index) => (
             <TouchableOpacity
+              key={item.user_id.toString()}
               onPress={() => handleSelectUser(item)}
               style={[
                 styles.item,
@@ -84,9 +83,8 @@ const UsersDropdown: React.FC<UsersDropdownProps> = ({
                 {item.user_name}
               </Typography>
             </TouchableOpacity>
-          )}
-          style={styles.list}
-        />
+          ))}
+        </ScrollView>
       )}
     </View>
   );

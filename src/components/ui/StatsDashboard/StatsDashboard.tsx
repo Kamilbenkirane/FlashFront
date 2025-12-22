@@ -1,6 +1,6 @@
 import type React from 'react';
 import { useState } from 'react';
-import { ScrollView, View } from 'react-native';
+import { View } from 'react-native';
 import { useAnalytics } from '../../../context/AnalyticsContext';
 import { AnalyticsChart } from '../AnalyticsChart';
 import { Button } from '../Button';
@@ -79,7 +79,7 @@ export const StatsDashboard: React.FC<StatsDashboardProps> = ({ userId }) => {
   );
 
   return (
-    <ScrollView className="flex-1 p-4" showsVerticalScrollIndicator={false}>
+    <View className="flex-1 p-4">
       {/* Summary Stats */}
       <View className="mb-6">
         <Typography variant="heading2" className="mb-4 text-center">
@@ -249,6 +249,6 @@ export const StatsDashboard: React.FC<StatsDashboardProps> = ({ userId }) => {
           ))
         )}
       </View>
-    </ScrollView>
+    </View>
   );
 };

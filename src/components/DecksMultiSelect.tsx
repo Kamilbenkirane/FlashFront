@@ -1,6 +1,6 @@
 import type React from 'react';
 import { useState } from 'react';
-import { FlatList, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 import type { Deck, DecksMultiSelectProps } from '../interfaces';
 import { Typography } from './ui/Typography';
@@ -102,11 +102,10 @@ const DecksMultiSelect: React.FC<DecksMultiSelectProps> = ({
       {isVisible && (
         <View>
           {selectedSubject === null ? (
-            <FlatList
-              data={subjects}
-              keyExtractor={(item) => item}
-              renderItem={({ item, index }) => (
+            <ScrollView style={styles.list}>
+              {subjects.map((item, index) => (
                 <TouchableOpacity
+                  key={item}
                   onPress={() => setSelectedSubject(item)}
                   style={[
                     styles.item,
@@ -121,16 +120,14 @@ const DecksMultiSelect: React.FC<DecksMultiSelectProps> = ({
                     {item}
                   </Typography>
                 </TouchableOpacity>
-              )}
-              style={styles.list}
-            />
+              ))}
+            </ScrollView>
           ) : (
             <View>
-              <FlatList
-                data={filteredDecks}
-                keyExtractor={(item) => item.deck_id.toString()}
-                renderItem={({ item, index }) => (
+              <ScrollView style={styles.list}>
+                {filteredDecks.map((item, index) => (
                   <TouchableOpacity
+                    key={item.deck_id.toString()}
                     onPress={() => handleSelectDeck(item)}
                     style={[
                       styles.item,
@@ -147,9 +144,8 @@ const DecksMultiSelect: React.FC<DecksMultiSelectProps> = ({
                       {item.deck_name}
                     </Typography>
                   </TouchableOpacity>
-                )}
-                style={styles.list}
-              />
+                ))}
+              </ScrollView>
               <TouchableOpacity
                 onPress={() => setSelectedSubject(null)}
                 style={styles.backButton}
