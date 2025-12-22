@@ -269,7 +269,7 @@ export const AchievementGallery: React.FC<AchievementGalleryProps> = ({
         </View>
       )}
 
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <View>
         {filteredAchievements.length > 0 ? (
           <View style={styles.achievementsGrid}>
             {filteredAchievements.map(renderAchievement)}
@@ -289,7 +289,7 @@ export const AchievementGallery: React.FC<AchievementGalleryProps> = ({
             </Typography>
           </View>
         )}
-      </ScrollView>
+      </View>
     </View>
   );
 };
