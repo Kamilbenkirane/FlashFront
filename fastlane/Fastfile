@@ -18,8 +18,10 @@ platform :ios do
     api_key = app_store_connect_api_key(
       key_id: ENV.fetch("ASC_KEY_ID"),
       issuer_id: ENV.fetch("ASC_ISSUER_ID"),
+      # The .p8 is a plain PEM file and GitHub secrets accept multi-line
+      # values, so it is pasted verbatim rather than base64-encoded.
       key_content: ENV.fetch("ASC_KEY_P8"),
-      is_key_content_base64: true,
+      is_key_content_base64: false,
       in_house: false
     )
 
