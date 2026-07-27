@@ -1,26 +1,11 @@
 import { useEffect } from 'react';
-import API_URL from '../config';
 import syncLocalReviews from '../functions/syncLocalReviews';
 
-// useSyncLocalReviews depends each review
-const useSyncLocalReviews = (review_count) => {
+// Flush reviews queued while offline, re-running whenever a review lands.
+// syncLocalReviews already checks the API is reachable before it posts anything.
+const useSyncLocalReviews = (review_count: number) => {
   useEffect(() => {
-    const syncReviews = async () => {
-      try {
-        const url = `${API_URL}/review/ask`;
-        const response = await fetch(url);
-        if (!response.ok) {
-          throw new Error(
-            `Network response was not ok, status: ${response.status}`,
-          );
-        }
-        syncLocalReviews();
-      } catch (error) {
-        // Silent failure - API not available, skip sync
-      }
-    };
-
-    syncReviews();
+    syncLocalReviews();
   }, [review_count]);
 };
 

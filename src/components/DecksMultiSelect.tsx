@@ -3,7 +3,8 @@ import { useState } from 'react';
 import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 import type { Deck, DecksMultiSelectProps } from '../interfaces';
-import { Typography } from './ui/Typography';
+import { createDropdownStyles } from './dropdownStyles';
+import { Typography } from './ui/Typography/Typography';
 
 const DecksMultiSelect: React.FC<DecksMultiSelectProps> = ({
   decks,
@@ -43,45 +44,21 @@ const DecksMultiSelect: React.FC<DecksMultiSelectProps> = ({
     (deck) => deck.subject === selectedSubject,
   );
 
-  const styles = StyleSheet.create({
-    container: {
-      marginTop: theme.spacing.sm,
-    },
-    button: {
-      backgroundColor: theme.colors.primary[500],
-      padding: theme.spacing.md,
-      borderRadius: theme.borderRadius.md,
-      ...theme.shadows.sm,
-    },
-    list: {
-      maxHeight: 200,
-      backgroundColor: theme.colors.neutral[50],
-      borderColor: theme.colors.neutral[200],
-      borderWidth: 1,
-      borderRadius: theme.borderRadius.md,
-      marginTop: theme.spacing.xs,
-      ...theme.shadows.md,
-    },
-    item: {
-      padding: theme.spacing.md,
-      borderBottomWidth: 1,
-      borderBottomColor: theme.colors.neutral[200],
-      backgroundColor: theme.colors.neutral[50],
-    },
-    itemSelected: {
-      backgroundColor: theme.colors.primary[100],
-    },
-    itemLast: {
-      borderBottomWidth: 0,
-    },
-    backButton: {
-      backgroundColor: theme.colors.neutral[100],
-      padding: theme.spacing.md,
-      margin: theme.spacing.md,
-      borderRadius: theme.borderRadius.md,
-      ...theme.shadows.sm,
-    },
-  });
+  const styles = {
+    ...createDropdownStyles(theme),
+    ...StyleSheet.create({
+      itemSelected: {
+        backgroundColor: theme.colors.primary[100],
+      },
+      backButton: {
+        backgroundColor: theme.colors.neutral[100],
+        padding: theme.spacing.md,
+        margin: theme.spacing.md,
+        borderRadius: theme.borderRadius.md,
+        ...theme.shadows.sm,
+      },
+    }),
+  };
 
   return (
     <View style={styles.container}>

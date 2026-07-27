@@ -1,7 +1,14 @@
 import type React from 'react';
 import { ActivityIndicator, View } from 'react-native';
-import { Typography } from '../Typography';
-import type { LoadingStateProps } from './LoadingState.types';
+import { Typography } from '../Typography/Typography';
+
+export interface LoadingStateProps {
+  message?: string;
+  size?: 'small' | 'large';
+  overlay?: boolean;
+  className?: string;
+  testID?: string;
+}
 
 const baseClasses = 'flex items-center justify-center p-8';
 const overlayClasses = 'absolute inset-0 z-[1000] bg-white/90 dark:bg-black/70';

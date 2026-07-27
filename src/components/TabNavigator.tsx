@@ -2,7 +2,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import FlashcardScreen from '../screens/FlashCardScreen';
 import LibraryScreen from '../screens/LibraryScreen';
 import ProfileScreen from '../screens/ProfileScreen';
-import { TabBar } from './ui/TabBar';
+import { TabBar } from './ui/TabBar/TabBar';
 
 const Tab = createBottomTabNavigator();
 

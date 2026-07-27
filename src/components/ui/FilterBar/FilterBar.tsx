@@ -1,9 +1,18 @@
 import type React from 'react';
 import { ScrollView, View } from 'react-native';
 import { triggerHaptic } from '../../../utils/haptics';
-import { Button } from '../Button';
-import { Typography } from '../Typography';
-import type { FilterBarProps } from './FilterBar.types';
+import { Button } from '../Button/Button';
+import { Typography } from '../Typography/Typography';
+
+export interface FilterBarProps {
+  subjects: string[];
+  selectedSubject: string | null;
+  onSubjectSelect: (subject: string | null) => void;
+  showSubscribedOnly: boolean;
+  onToggleSubscribed: () => void;
+  className?: string;
+  testID?: string;
+}
 
 export const FilterBar: React.FC<FilterBarProps> = ({
   subjects,
