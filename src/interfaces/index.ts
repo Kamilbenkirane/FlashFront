@@ -1,6 +1,4 @@
 // Central interface exports
-export * from './IFlashcard';
-export * from './StudySession';
 
 // Re-export User from UserContext to avoid conflicts
 export type { User } from '../context/UserContext';
@@ -14,6 +12,12 @@ export interface Deck {
   difficulty?: string;
 }
 
+/**
+ * A single card, in both its raw API form and its parsed `Flashcard` model form.
+ * `lastReviewTimestamp` arrives as a string over the wire and is parsed to a
+ * `Date` by the `Flashcard` constructor; `secondsSinceLastReview` is derived by
+ * the model and absent on raw payloads.
+ */
 export interface SessionData {
   card_id: string;
   recto: string;
@@ -25,6 +29,7 @@ export interface SessionData {
   malus: number;
   popupScore: number;
   probability?: number;
+  secondsSinceLastReview?: number;
 }
 
 // Import Session class for proper typing

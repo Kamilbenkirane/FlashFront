@@ -7,17 +7,9 @@ import {
   View,
 } from 'react-native';
 import UsersDropdown from '../components/UsersDropdown';
-import { AchievementGallery } from '../components/ui/AchievementGallery';
-import { AchievementModal } from '../components/ui/AchievementModal';
-import { Button } from '../components/ui/Button';
-import { Card } from '../components/ui/Card';
-import { StatsDashboard } from '../components/ui/StatsDashboard';
-import { Typography } from '../components/ui/Typography';
-import {
-  type Achievement,
-  useAchievements,
-} from '../context/AchievementContext';
-import { useAnalytics } from '../context/AnalyticsContext';
+import { Button } from '../components/ui/Button/Button';
+import { Card } from '../components/ui/Card/Card';
+import { Typography } from '../components/ui/Typography/Typography';
 import { useTheme } from '../context/ThemeContext';
 import { useUser } from '../context/UserContext';
 import useSubscribedDecks from '../hooks/useSubscribedDecks';
@@ -25,29 +17,13 @@ import useUsers from '../hooks/useUsers';
 import type { User } from '../interfaces';
 import { triggerHaptic } from '../utils/haptics';
 
-interface UserStats {
-  totalStudySessions: number;
-  currentStreak: number;
-  longestStreak: number;
-  averageAccuracy: number;
-  totalCardsStudied: number;
-  timeSpentStudying: number; // in minutes
-  favoriteSubject: string;
-}
-
 const ProfileScreen = () => {
   const { theme, isDark, toggleTheme } = useTheme();
   const { user, setUser } = useUser();
-  const { achievements, stats, checkAchievements } = useAchievements();
-  const analytics = useAnalytics();
   const users = useUsers();
   const decks = useSubscribedDecks(user);
 
   const [showSettings, setShowSettings] = useState(false);
-  const [showAnalytics, setShowAnalytics] = useState(false);
-  const [selectedAchievement, setSelectedAchievement] =
-    useState<Achievement | null>(null);
-  const [showAchievementModal, setShowAchievementModal] = useState(false);
 
   const handleUserSelect = (selectedUser: User | null = null) => {
     setUser(selectedUser);
@@ -56,11 +32,6 @@ const ProfileScreen = () => {
 
   const handleToggleSettings = () => {
     setShowSettings(!showSettings);
-    triggerHaptic('impact');
-  };
-
-  const handleToggleAnalytics = () => {
-    setShowAnalytics(!showAnalytics);
     triggerHaptic('impact');
   };
 
@@ -95,52 +66,6 @@ const ProfileScreen = () => {
       color: '#ffffff',
       fontWeight: 'bold',
     },
-    statsGrid: {
-      flexDirection: 'row',
-      flexWrap: 'wrap',
-      justifyContent: 'space-between',
-      marginBottom: theme.spacing.lg,
-    },
-    statCard: {
-      width: '48%',
-      marginBottom: theme.spacing.md,
-    },
-    statNumber: {
-      textAlign: 'center',
-      marginBottom: theme.spacing.xs,
-    },
-    statLabel: {
-      textAlign: 'center',
-    },
-    achievementCard: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      marginBottom: theme.spacing.sm,
-    },
-    achievementIcon: {
-      fontSize: 24,
-      marginRight: theme.spacing.md,
-    },
-    achievementContent: {
-      flex: 1,
-    },
-    achievementProgress: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      marginTop: theme.spacing.xs,
-    },
-    progressBar: {
-      flex: 1,
-      height: 4,
-      backgroundColor: theme.colors.neutral[200],
-      borderRadius: 2,
-      marginRight: theme.spacing.sm,
-    },
-    progressFill: {
-      height: '100%',
-      backgroundColor: theme.colors.primary[500],
-      borderRadius: 2,
-    },
     settingRow: {
       flexDirection: 'row',
       justifyContent: 'space-between',
@@ -166,37 +91,6 @@ const ProfileScreen = () => {
       .join('')
       .toUpperCase()
       .slice(0, 2);
-  };
-
-  const renderStatCard = (
-    title: string,
-    value: string | number,
-    subtitle?: string,
-  ) => (
-    <Card variant="elevated" style={styles.statCard}>
-      <Typography variant="heading2" style={styles.statNumber} color="primary">
-        {value}
-      </Typography>
-      <Typography variant="caption" style={styles.statLabel} color="secondary">
-        {title}
-      </Typography>
-      {subtitle && (
-        <Typography variant="small" style={styles.statLabel}>
-          {subtitle}
-        </Typography>
-      )}
-    </Card>
-  );
-
-  const handleAchievementPress = (achievement: Achievement) => {
-    setSelectedAchievement(achievement);
-    setShowAchievementModal(true);
-    triggerHaptic('selection');
-  };
-
-  const handleCloseAchievementModal = () => {
-    setShowAchievementModal(false);
-    setSelectedAchievement(null);
   };
 
   return (
@@ -225,48 +119,13 @@ const ProfileScreen = () => {
           👤 Profile
         </Typography>
         <UsersDropdown users={users} onSelectUser={handleUserSelect} />
+        {user && (
+          <Typography variant="caption" color="secondary">
+            Subscribed to {decks?.length || 0} deck
+            {decks?.length === 1 ? '' : 's'}
+          </Typography>
+        )}
       </Card>
-
-      {user && (
-        <>
-          {/* Statistics Dashboard */}
-          <Card variant="default" style={styles.cardSpacing}>
-            <Typography variant="heading3" style={styles.sectionTitle}>
-              📊 Study Statistics
-            </Typography>
-            <View style={styles.statsGrid}>
-              {renderStatCard('Study Sessions', stats.totalStudySessions)}
-              {renderStatCard('Current Streak', stats.currentStreak, '🔥 days')}
-              {renderStatCard('Cards Studied', stats.totalCardsStudied)}
-              {renderStatCard('Accuracy', `${stats.averageAccuracy}%`)}
-              {renderStatCard('Study Time', `${stats.totalStudyTime}m`)}
-              {renderStatCard('Subscribed Decks', decks?.length || 0)}
-            </View>
-          </Card>
-
-          {/* Achievements Section */}
-          <Card variant="default" style={styles.cardSpacing}>
-            <AchievementGallery
-              onAchievementPress={handleAchievementPress}
-              showFilters={false}
-              compactView={true}
-            />
-          </Card>
-
-          {/* Analytics Section */}
-          <Card variant="outlined" style={styles.cardSpacing}>
-            <TouchableOpacity onPress={handleToggleAnalytics}>
-              <Typography variant="heading3" style={styles.sectionTitle}>
-                📊 Detailed Analytics {showAnalytics ? '▼' : '▶️'}
-              </Typography>
-            </TouchableOpacity>
-
-            {showAnalytics && user && (
-              <StatsDashboard userId={user.user_id.toString()} />
-            )}
-          </Card>
-        </>
-      )}
 
       {/* Settings Section */}
       <Card variant="outlined" style={styles.cardSpacing}>
@@ -277,44 +136,18 @@ const ProfileScreen = () => {
         </TouchableOpacity>
 
         {showSettings && (
-          <>
-            <View style={styles.settingRow}>
-              <Typography variant="body">Dark Mode</Typography>
-              <Switch
-                value={isDark}
-                onValueChange={handleThemeToggle}
-                trackColor={{
-                  false: theme.colors.neutral[200],
-                  true: theme.colors.primary[500],
-                }}
-                thumbColor={isDark ? '#ffffff' : theme.colors.neutral[100]}
-              />
-            </View>
-
-            <View style={styles.settingRow}>
-              <Typography variant="body">Notifications</Typography>
-              <Switch
-                value={false}
-                onValueChange={() => triggerHaptic('impact')}
-                trackColor={{
-                  false: theme.colors.neutral[200],
-                  true: theme.colors.primary[500],
-                }}
-              />
-            </View>
-
-            <View style={styles.settingRow}>
-              <Typography variant="body">Study Reminders</Typography>
-              <Switch
-                value={true}
-                onValueChange={() => triggerHaptic('impact')}
-                trackColor={{
-                  false: theme.colors.neutral[200],
-                  true: theme.colors.primary[500],
-                }}
-              />
-            </View>
-          </>
+          <View style={styles.settingRow}>
+            <Typography variant="body">Dark Mode</Typography>
+            <Switch
+              value={isDark}
+              onValueChange={handleThemeToggle}
+              trackColor={{
+                false: theme.colors.neutral[200],
+                true: theme.colors.primary[500],
+              }}
+              thumbColor={isDark ? '#ffffff' : theme.colors.neutral[100]}
+            />
+          </View>
         )}
       </Card>
 
@@ -329,17 +162,6 @@ const ProfileScreen = () => {
             className="mb-4"
           />
         </View>
-      )}
-
-      {/* Achievement Modal */}
-      {selectedAchievement && (
-        <AchievementModal
-          visible={showAchievementModal}
-          title={selectedAchievement.title}
-          description={selectedAchievement.description}
-          icon={selectedAchievement.icon}
-          onClose={handleCloseAchievementModal}
-        />
       )}
     </ScrollView>
   );

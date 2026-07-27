@@ -1,8 +1,17 @@
 import type React from 'react';
 import { View } from 'react-native';
 import { triggerHaptic } from '../../../utils/haptics';
-import { Button } from '../Button';
-import type { ActionButtonsProps } from './ActionButtons.types';
+import { Button } from '../Button/Button';
+
+export interface ActionButtonsProps {
+  onForgotten: () => void;
+  onRemembered: () => void;
+  onKnown: () => void;
+  disabled?: boolean;
+  loading?: boolean;
+  className?: string;
+  testID?: string;
+}
 
 export const ActionButtons: React.FC<ActionButtonsProps> = ({
   onForgotten,

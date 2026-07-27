@@ -4,8 +4,6 @@ import React, { type ReactNode, type ErrorInfo } from 'react';
 import { Text, View } from 'react-native';
 import 'react-native-gesture-handler';
 import TabNavigator from './src/components/TabNavigator';
-import { AchievementProvider } from './src/context/AchievementContext';
-import { AnalyticsProvider } from './src/context/AnalyticsContext';
 import { ThemeProvider } from './src/context/ThemeContext';
 import { UserProvider } from './src/context/UserContext';
 
@@ -70,13 +68,9 @@ const App = () => {
     <ErrorBoundary>
       <ThemeProvider>
         <UserProvider>
-          <AchievementProvider>
-            <AnalyticsProvider>
-              <NavigationContainer>
-                <TabNavigator />
-              </NavigationContainer>
-            </AnalyticsProvider>
-          </AchievementProvider>
+          <NavigationContainer>
+            <TabNavigator />
+          </NavigationContainer>
         </UserProvider>
       </ThemeProvider>
     </ErrorBoundary>

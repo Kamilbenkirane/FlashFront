@@ -1,10 +1,18 @@
 import type React from 'react';
-import { Pressable, TextInput, View } from 'react-native';
+import { Pressable, TextInput, View, type ViewStyle } from 'react-native';
 import { useTheme } from '../../../context/ThemeContext';
 import { triggerHaptic } from '../../../utils/haptics';
-import { Typography } from '../Typography';
+import { Typography } from '../Typography/Typography';
 import { createSearchBarStyles } from './SearchBar.styles';
-import type { SearchBarProps } from './SearchBar.types';
+
+export interface SearchBarProps {
+  value: string;
+  onChangeText: (text: string) => void;
+  onClear: () => void;
+  placeholder?: string;
+  style?: ViewStyle;
+  testID?: string;
+}
 
 export const SearchBar: React.FC<SearchBarProps> = ({
   value,

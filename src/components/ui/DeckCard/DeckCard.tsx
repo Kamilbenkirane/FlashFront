@@ -1,11 +1,20 @@
 import type React from 'react';
 import { Pressable, View } from 'react-native';
+import type { Deck } from '../../../interfaces';
 import { triggerHaptic } from '../../../utils/haptics';
-import { Button } from '../Button';
-import { Card } from '../Card';
-import { ProgressBar } from '../ProgressBar';
-import { Typography } from '../Typography';
-import type { DeckCardProps } from './DeckCard.types';
+import { Button } from '../Button/Button';
+import { Card } from '../Card/Card';
+import { ProgressBar } from '../ProgressBar/ProgressBar';
+import { Typography } from '../Typography/Typography';
+
+export interface DeckCardProps {
+  deck: Deck;
+  isSubscribed: boolean;
+  onSubscriptionToggle: (deck: Deck, subscribe: boolean) => void;
+  onPress: (deck: Deck) => void;
+  testID?: string;
+  className?: string;
+}
 
 export const DeckCard: React.FC<DeckCardProps> = ({
   deck,

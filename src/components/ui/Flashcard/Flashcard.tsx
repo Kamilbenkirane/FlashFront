@@ -1,6 +1,6 @@
 import type React from 'react';
 import { useEffect, useState } from 'react';
-import { Platform, Pressable, Text, View } from 'react-native';
+import { Platform, Pressable, Text, View, type ViewStyle } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -9,9 +9,16 @@ import Animated, {
   runOnJS,
 } from 'react-native-reanimated';
 import { useTheme } from '../../../context/ThemeContext';
+import type { SessionData } from '../../../interfaces';
 import { triggerHaptic } from '../../../utils/haptics';
 import { createFlashcardStyles } from './Flashcard.styles';
-import type { FlashcardProps } from './Flashcard.types';
+
+export interface FlashcardProps {
+  flashcard: SessionData;
+  onFlip?: (isFlipped: boolean) => void;
+  style?: ViewStyle;
+  testID?: string;
+}
 
 export const Flashcard: React.FC<FlashcardProps> = ({
   flashcard,

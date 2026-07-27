@@ -5,12 +5,21 @@ import Animated, {
   useAnimatedStyle,
   withTiming,
 } from 'react-native-reanimated';
-import { Typography } from '../Typography';
-import type {
-  ProgressBarColor,
-  ProgressBarProps,
-  ProgressBarSize,
-} from './ProgressBar.types';
+import { Typography } from '../Typography/Typography';
+
+export type ProgressBarColor = 'primary' | 'success' | 'warning' | 'error';
+export type ProgressBarSize = 'sm' | 'md' | 'lg';
+
+export interface ProgressBarProps {
+  progress: number;
+  total: number;
+  showLabel?: boolean;
+  showPercentage?: boolean;
+  color?: ProgressBarColor;
+  size?: ProgressBarSize;
+  className?: string;
+  testID?: string;
+}
 
 const sizeClasses: Record<ProgressBarSize, { track: string; fill: string }> = {
   sm: { track: 'h-1 rounded-sm', fill: 'rounded-sm' },

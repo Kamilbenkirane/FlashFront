@@ -10,12 +10,7 @@ const useSession = (
 
   useEffect(() => {
     if (sessionData) {
-      const loadSession = async () => {
-        // use model Session(sessionData) to create a new session object
-        const newSession = new Session(sessionData);
-        setSession(newSession);
-      };
-      loadSession();
+      setSession(new Session(sessionData));
     }
   }, [sessionData]);
 

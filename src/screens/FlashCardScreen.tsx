@@ -1,20 +1,16 @@
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useEffect, useState } from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
+import { ScrollView, View } from 'react-native';
 import { StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import DecksMultiSelect from '../components/DecksMultiSelect';
 import UsersDropdown from '../components/UsersDropdown';
-import { ActionButtons } from '../components/ui/ActionButtons';
-import { Card } from '../components/ui/Card';
-import { Flashcard } from '../components/ui/Flashcard';
-import { LoadingState } from '../components/ui/LoadingState';
-import { ProgressBar } from '../components/ui/ProgressBar';
-import {
-  QuickSettings,
-  type SessionSettings,
-} from '../components/ui/QuickSettings';
-import { Typography } from '../components/ui/Typography';
+import { ActionButtons } from '../components/ui/ActionButtons/ActionButtons';
+import { Card } from '../components/ui/Card/Card';
+import { Flashcard } from '../components/ui/Flashcard/Flashcard';
+import { LoadingState } from '../components/ui/LoadingState/LoadingState';
+import { ProgressBar } from '../components/ui/ProgressBar/ProgressBar';
+import { Typography } from '../components/ui/Typography/Typography';
 import { useTheme } from '../context/ThemeContext';
 import { useUser } from '../context/UserContext';
 import createReview from '../functions/createReview';
@@ -46,12 +42,6 @@ const FlashcardScreen = () => {
     correct: 0,
     incorrect: 0,
     known: 0,
-  });
-  const [showQuickSettings, setShowQuickSettings] = useState(false);
-  const [sessionSettings, setSessionSettings] = useState<SessionSettings>({
-    autoAdvance: false,
-    studyMode: 'normal',
-    cardsPerSession: 20,
   });
 
   // Handle navigation parameters for auto-deck selection
@@ -158,7 +148,7 @@ const FlashcardScreen = () => {
 
   const styles = createStyles(theme, isDark);
 
-  // Calculate session progress with safe fallbacks
+  // Calculate session progress
   const totalReviews =
     sessionStats.correct + sessionStats.incorrect + sessionStats.known;
   const accuracy =
@@ -166,26 +156,8 @@ const FlashcardScreen = () => {
       ? (sessionStats.correct + sessionStats.known) / totalReviews
       : 0;
 
-  // Safe method calls with fallbacks
-  let remainingCards = 0;
-  let totalCards = 0;
-  let completedCards = 0;
-
-  try {
-    if (session && typeof session.getRemainingCount === 'function') {
-      remainingCards = session.getRemainingCount();
-    }
-    if (session && typeof session.getTotalCount === 'function') {
-      totalCards = session.getTotalCount();
-    }
-    completedCards = totalCards - remainingCards;
-  } catch (error) {
-    console.warn('Session method error:', error);
-    // Use session data length as fallback
-    totalCards = sessionData?.length || 0;
-    completedCards = totalReviews;
-    remainingCards = Math.max(0, totalCards - completedCards);
-  }
+  const totalCards = session?.getTotalCount() ?? 0;
+  const completedCards = totalCards - (session?.getRemainingCount() ?? 0);
 
   const renderHeader = () => (
     <View style={styles.header}>
@@ -195,16 +167,6 @@ const FlashcardScreen = () => {
             ? `Studying: ${selectedDeckName}`
             : 'Study Session'}
         </Typography>
-        {user && activeDecksIds.length > 0 && (
-          <Pressable
-            onPress={() => setShowQuickSettings(true)}
-            style={styles.settingsButton}
-          >
-            <Typography variant="body" style={styles.settingsIcon}>
-              ⚙️
-            </Typography>
-          </Pressable>
-        )}
       </View>
 
       {totalCards > 0 && (
@@ -339,15 +301,6 @@ const FlashcardScreen = () => {
         {/* Spacing for bottom */}
         <View style={styles.bottomSpacing} />
       </ScrollView>
-
-      {/* Quick Settings Modal */}
-      <QuickSettings
-        visible={showQuickSettings}
-        onClose={() => setShowQuickSettings(false)}
-        sessionSettings={sessionSettings}
-        onSettingsChange={setSessionSettings}
-        testID="quick-settings"
-      />
     </SafeAreaView>
   );
 };
@@ -375,14 +328,6 @@ const createStyles = (theme: Theme, isDark: boolean) =>
       textAlign: 'center',
       color: theme.colors.foreground,
       flex: 1,
-    },
-    settingsButton: {
-      padding: theme.spacing.sm,
-      borderRadius: theme.borderRadius.md,
-      backgroundColor: `${theme.colors.muted}20`,
-    },
-    settingsIcon: {
-      fontSize: 20,
     },
     content: {
       flex: 1,

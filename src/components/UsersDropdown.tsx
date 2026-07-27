@@ -1,10 +1,11 @@
 import type React from 'react';
 import { useState } from 'react';
-import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { ScrollView, TouchableOpacity, View } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 import { useUser } from '../context/UserContext';
 import type { User, UsersDropdownProps } from '../interfaces';
-import { Typography } from './ui/Typography';
+import { createDropdownStyles } from './dropdownStyles';
+import { Typography } from './ui/Typography/Typography';
 
 const UsersDropdown: React.FC<UsersDropdownProps> = ({
   users,
@@ -20,35 +21,7 @@ const UsersDropdown: React.FC<UsersDropdownProps> = ({
     onSelectUser(selectedUser);
   };
 
-  const styles = StyleSheet.create({
-    container: {
-      marginTop: theme.spacing.sm,
-    },
-    button: {
-      backgroundColor: theme.colors.primary[500],
-      padding: theme.spacing.md,
-      borderRadius: theme.borderRadius.md,
-      ...theme.shadows.sm,
-    },
-    list: {
-      maxHeight: 200,
-      backgroundColor: theme.colors.neutral[50],
-      borderColor: theme.colors.neutral[200],
-      borderWidth: 1,
-      borderRadius: theme.borderRadius.md,
-      marginTop: theme.spacing.xs,
-      ...theme.shadows.md,
-    },
-    item: {
-      padding: theme.spacing.md,
-      borderBottomWidth: 1,
-      borderBottomColor: theme.colors.neutral[200],
-      backgroundColor: theme.colors.neutral[50],
-    },
-    itemLast: {
-      borderBottomWidth: 0,
-    },
-  });
+  const styles = createDropdownStyles(theme);
 
   return (
     <View style={styles.container}>

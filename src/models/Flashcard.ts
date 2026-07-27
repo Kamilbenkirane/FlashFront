@@ -1,14 +1,12 @@
-import moment, { type Moment } from 'moment';
-import type { SessionData } from '../interfaces';
 // models/Flashcard.ts
-import type { IFlashcard } from '../interfaces/IFlashcard';
+import type { SessionData } from '../interfaces';
 
-class Flashcard implements IFlashcard {
+class Flashcard implements SessionData {
   // Properties of the Flashcard class
   card_id: string;
   recto: string; // Front side of the flashcard
   verso: string; // Back side of the flashcard
-  lastReviewTimestamp?: Moment | null; // Last time the card was reviewed
+  lastReviewTimestamp: Date | null; // Last time the card was reviewed
   streak: number; // Current streak of correct answers
   success?: boolean | null; // Outcome of the last review (true if successful)
   difficulty: number; // Difficulty rating of the flashcard
@@ -23,15 +21,17 @@ class Flashcard implements IFlashcard {
     this.card_id = dictCard.card_id;
     this.recto = dictCard.recto;
     this.verso = dictCard.verso;
-    // Parsing the lastReviewTimestamp to a Moment object, or null if not provided
+    // Parsing the lastReviewTimestamp to a Date object, or null if not provided
     this.lastReviewTimestamp = dictCard.lastReviewTimestamp
-      ? moment(dictCard.lastReviewTimestamp)
+      ? new Date(dictCard.lastReviewTimestamp)
       : null;
     if (this.lastReviewTimestamp) {
-      const timezoneOffset = this.lastReviewTimestamp
-        .toDate()
-        .getTimezoneOffset();
-      this.lastReviewTimestamp.add(timezoneOffset, 'minutes');
+      // The API returns the timestamp in local wall-clock terms, so shift it by
+      // the zone offset to recover the true instant.
+      const timezoneOffset = this.lastReviewTimestamp.getTimezoneOffset();
+      this.lastReviewTimestamp.setMinutes(
+        this.lastReviewTimestamp.getMinutes() + timezoneOffset,
+      );
     }
     this.updateSecondsSinceLastReview(); // Update secondsSinceLastReview
     this.streak = dictCard.streak || 0; // Default streak to 0 if not specified
@@ -44,10 +44,9 @@ class Flashcard implements IFlashcard {
 
   updateSecondsSinceLastReview(): void {
     // Calculate the time since the last review in seconds
-    if (moment.isMoment(this.lastReviewTimestamp)) {
-      this.secondsSinceLastReview = moment().diff(
-        this.lastReviewTimestamp,
-        'seconds',
+    if (this.lastReviewTimestamp instanceof Date) {
+      this.secondsSinceLastReview = Math.trunc(
+        (Date.now() - this.lastReviewTimestamp.getTime()) / 1000,
       );
     } else {
       this.secondsSinceLastReview = undefined; // Reset or keep undefined if there's no lastReviewTimestamp
@@ -106,7 +105,7 @@ class Flashcard implements IFlashcard {
 
   updateCard(success: boolean): void {
     // Updates the card with the result of the latest review
-    this.lastReviewTimestamp = moment(); // Set the last review timestamp to now
+    this.lastReviewTimestamp = new Date(); // Set the last review timestamp to now
     this.updateStreak(success); // Update streak based on the review outcome
   }
 }

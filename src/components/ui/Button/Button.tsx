@@ -1,6 +1,30 @@
 import type React from 'react';
 import { ActivityIndicator, Text, TouchableOpacity, View } from 'react-native';
-import type { ButtonProps, ButtonSize, ButtonVariant } from './Button.types';
+
+export type ButtonVariant =
+  | 'primary'
+  | 'secondary'
+  | 'success'
+  | 'warning'
+  | 'error'
+  | 'ghost';
+
+export type ButtonSize = 'sm' | 'md' | 'lg';
+
+export interface ButtonProps {
+  title: string;
+  onPress: () => void;
+  variant?: ButtonVariant;
+  size?: ButtonSize;
+  disabled?: boolean;
+  loading?: boolean;
+  fullWidth?: boolean;
+  icon?: React.ReactNode;
+  iconPosition?: 'left' | 'right';
+  className?: string;
+  textClassName?: string;
+  testID?: string;
+}
 
 const baseClasses =
   'flex flex-row items-center justify-center rounded-lg shadow-sm';
