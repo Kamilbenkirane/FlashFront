@@ -1,0 +1,5 @@
+app_identifier("com.kams96.FlashFrontKB24")
+
+# No apple_id / itc_team_id here on purpose: authentication goes through the
+# App Store Connect API key supplied via ASC_* env vars in the Fastfile, which
+# carries the team context with it.
