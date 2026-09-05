@@ -8,6 +8,5 @@ export interface ProgressBarProps {
   showPercentage?: boolean;
   color?: ProgressBarColor;
   size?: ProgressBarSize;
-  className?: string;
   testID?: string;
 }

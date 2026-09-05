@@ -174,10 +174,7 @@ const OnboardingScreen: React.FC = () => {
                 />
               ) : step === 1 ? (
                 decksLoading ? (
-                  <LoadingState
-                    message="Loading decks…"
-                    className="justify-center"
-                  />
+                  <LoadingState message="Loading decks…" />
                 ) : decksError ? (
                   <FeedbackState
                     title="Couldn't load decks"

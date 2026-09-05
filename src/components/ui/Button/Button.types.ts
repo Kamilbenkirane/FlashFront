@@ -24,8 +24,6 @@ export interface ButtonProps {
   fullWidth?: boolean;
   icon?: React.ReactNode;
   iconPosition?: 'left' | 'right';
-  className?: string;
-  textClassName?: string;
   testID?: string;
   accessibilityLabel?: string;
   accessibilityHint?: string;

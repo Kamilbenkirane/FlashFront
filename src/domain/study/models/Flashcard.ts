@@ -1,5 +1,4 @@
 import type { SessionData } from '@/interfaces';
-import moment from 'moment';
 
 export type StudyReviewOutcome = 'remembered' | 'forgotten' | 'known';
 
@@ -34,40 +33,51 @@ const normalizeReviewTimestamp = (
     return null;
   }
 
-  const parsedValue = moment(value);
-  if (!parsedValue.isValid()) {
-    return null;
+  const parsedValue = new Date(
+    value instanceof Date
+      ? value.getTime()
+      : /^\d{4}-\d{2}-\d{2}$/.test(value)
+        ? `${value}T00:00:00`
+        : value.replace(' ', 'T'),
+  );
+  if (!Number.isFinite(parsedValue.getTime())) return null;
+
+  // Date rolls impossible calendar dates forward; keep rejecting them.
+  const datePart =
+    typeof value === 'string'
+      ? value.match(/^(\d{4}-\d{2}-\d{2})(?=$|[T ])/)?.[1]
+      : undefined;
+  if (datePart) {
+    const calendarDate = new Date(`${datePart}T00:00:00Z`);
+    if (
+      !Number.isFinite(calendarDate.getTime()) ||
+      calendarDate.toISOString().slice(0, 10) !== datePart
+    )
+      return null;
   }
 
   if (typeof value === 'string' && !hasExplicitTimezone(value)) {
-    return parsedValue
-      .clone()
-      .add(parsedValue.toDate().getTimezoneOffset(), 'minutes')
-      .toISOString();
+    parsedValue.setTime(
+      parsedValue.getTime() + parsedValue.getTimezoneOffset() * 60_000,
+    );
   }
-
   return parsedValue.toISOString();
 };
 
 const getSecondsSinceLastReview = (
   lastReviewTimestamp: string | null,
-  now: moment.Moment = moment(),
+  now: Date = new Date(),
 ): number | undefined => {
-  if (!lastReviewTimestamp) {
-    return undefined;
-  }
-
-  const parsedTimestamp = moment(lastReviewTimestamp);
-  if (!parsedTimestamp.isValid()) {
-    return undefined;
-  }
-
-  return now.diff(parsedTimestamp, 'seconds');
+  if (!lastReviewTimestamp) return undefined;
+  const timestamp = Date.parse(lastReviewTimestamp);
+  if (!Number.isFinite(timestamp)) return undefined;
+  const seconds = Math.trunc((now.getTime() - timestamp) / 1000);
+  return seconds === 0 ? 0 : seconds;
 };
 
 const calculatePopupScore = (
   card: Pick<StudyCard, 'lastReviewTimestamp' | 'streak' | 'malus'>,
-  now: moment.Moment = moment(),
+  now: Date = new Date(),
 ): number => {
   const secondsSinceLastReview = getSecondsSinceLastReview(
     card.lastReviewTimestamp,
@@ -105,7 +115,7 @@ export const rehydrateStudyCard = (
     StudyCard,
     'popupScore' | 'probability' | 'secondsSinceLastReview'
   >,
-  now: moment.Moment = moment(),
+  now: Date = new Date(),
 ): StudyCard => {
   const secondsSinceLastReview = getSecondsSinceLastReview(
     card.lastReviewTimestamp,
@@ -122,7 +132,7 @@ export const rehydrateStudyCard = (
 
 export const createStudyCard = (
   sessionData: SessionData,
-  now: moment.Moment = moment(),
+  now: Date = new Date(),
 ): StudyCard =>
   rehydrateStudyCard(
     {
@@ -143,7 +153,7 @@ export const createStudyCard = (
 export const applyReviewToStudyCard = (
   card: StudyCard,
   outcome: StudyReviewOutcome,
-  now: moment.Moment = moment(),
+  now: Date = new Date(),
 ): StudyCard => {
   const reviewTimestamp = now.toISOString();
   const isSuccess = outcome !== 'forgotten';

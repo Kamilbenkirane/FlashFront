@@ -1,5 +1,4 @@
-import moment from 'moment';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { createStudyCard } from './Flashcard';
 import {
   type StudySessionState,
@@ -27,7 +26,7 @@ const buildSessionState = ({
 
 describe('study session transitions', () => {
   it('applies the review before selecting the next card', () => {
-    const now = moment('2026-04-02T10:00:00Z');
+    const now = new Date('2026-04-02T10:00:00Z');
     const currentCard = createStudyCard(
       {
         card_id: 1,
@@ -74,7 +73,7 @@ describe('study session transitions', () => {
   });
 
   it('emits a fresh card token when the same card is selected again', () => {
-    const now = moment('2026-04-02T10:05:00Z');
+    const now = new Date('2026-04-02T10:05:00Z');
     const currentCard = createStudyCard(
       {
         card_id: 3,
@@ -109,8 +108,8 @@ describe('study session transitions', () => {
   });
 
   it('keeps a current card after consecutive reviews', () => {
-    const initialNow = moment('2026-04-02T10:10:00Z');
-    const nextNow = moment('2026-04-02T10:11:00Z');
+    const initialNow = new Date('2026-04-02T10:10:00Z');
+    const nextNow = new Date('2026-04-02T10:11:00Z');
     const currentCard = createStudyCard(
       {
         card_id: 4,
@@ -150,7 +149,7 @@ describe('study session transitions', () => {
   });
 
   it('patches the current card without resetting the session', () => {
-    const now = moment('2026-04-02T10:20:00Z');
+    const now = new Date('2026-04-02T10:20:00Z');
     const currentCard = createStudyCard(
       {
         card_id: 10,
@@ -196,7 +195,7 @@ describe('study session transitions', () => {
   });
 
   it('inserts a created card into the pile without interrupting the current step', () => {
-    const now = moment('2026-04-02T10:25:00Z');
+    const now = new Date('2026-04-02T10:25:00Z');
     const currentCard = createStudyCard(
       {
         card_id: 12,
@@ -230,4 +229,78 @@ describe('study session transitions', () => {
     expect(nextSession.pile[0]?.card_id).toBe(13);
     expect(nextSession.pile[0]?.recto).toBe('Inserted front');
   });
+});
+
+it('preserves timestamp normalization and elapsed seconds without Moment', () => {
+  const now = new Date('2026-04-02T11:00:00Z');
+  const cardAt = (lastReviewTimestamp: string | Date | null) =>
+    createStudyCard(
+      {
+        card_id: 1,
+        recto: 'Question',
+        verso: 'Answer',
+        lastReviewTimestamp,
+      },
+      now,
+    );
+  try {
+    for (const [zone, naive, dateOnly, springGap] of [
+      [
+        'UTC',
+        '2026-04-02T10:00:00.000Z',
+        '2026-04-02T00:00:00.000Z',
+        '2026-03-29T02:30:00.000Z',
+      ],
+      [
+        'Europe/Paris',
+        '2026-04-02T06:00:00.000Z',
+        '2026-04-01T20:00:00.000Z',
+        '2026-03-28T23:30:00.000Z',
+      ],
+      [
+        'America/New_York',
+        '2026-04-02T18:00:00.000Z',
+        '2026-04-02T08:00:00.000Z',
+        '2026-03-29T10:30:00.000Z',
+      ],
+      [
+        'Asia/Kolkata',
+        '2026-04-01T23:00:00.000Z',
+        '2026-04-01T13:00:00.000Z',
+        '2026-03-28T15:30:00.000Z',
+      ],
+    ]) {
+      vi.stubEnv('TZ', zone);
+      expect(cardAt('2026-04-02T10:00:00').lastReviewTimestamp).toBe(naive);
+      expect(cardAt('2026-04-02').lastReviewTimestamp).toBe(dateOnly);
+      expect(cardAt('2026-03-29T02:30:00').lastReviewTimestamp).toBe(springGap);
+      for (const value of [
+        '2026-04-02T10:00:00Z',
+        '2026-04-02T12:00:00+02:00',
+        new Date('2026-04-02T10:00:00Z'),
+      ]) {
+        expect(cardAt(value)).toMatchObject({
+          lastReviewTimestamp: '2026-04-02T10:00:00.000Z',
+          secondsSinceLastReview: 3600,
+        });
+      }
+      for (const invalid of [
+        null,
+        'invalid',
+        '2026-02-30T10:00:00Z',
+        new Date(Number.NaN),
+      ]) {
+        expect(cardAt(invalid)).toMatchObject({
+          lastReviewTimestamp: null,
+          secondsSinceLastReview: undefined,
+        });
+      }
+      expect(cardAt('2026-04-02T11:00:00.500Z').secondsSinceLastReview).toBe(0);
+      expect(cardAt('2026-04-02T11:00:01.500Z').secondsSinceLastReview).toBe(
+        -1,
+      );
+    }
+  } finally {
+    vi.unstubAllEnvs();
+  }
 });
