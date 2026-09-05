@@ -1,8 +1,9 @@
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { MathText } from '@/components/ui/MathText';
+import { normalizePlainTextContent } from '@/components/ui/MathText/mathHtml';
 import { Typography } from '@/components/ui/Typography';
-import useReducedMotion from '@/hooks/useReducedMotion';
+import { AppIcon } from '@/components/ui/icons';
 import type {
   StudyChatFlashcardProposal,
   StudyChatNewFlashcardProposal,
@@ -10,8 +11,8 @@ import type {
 } from '@/services/studyChat/types';
 import { theme } from '@/tokens/theme';
 import type React from 'react';
-import { useEffect, useRef, useState } from 'react';
-import { Animated, Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { useState } from 'react';
+import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 
 import { StudyChatMessageContent } from './StudyChatMessageContent';
 
@@ -41,44 +42,31 @@ export const StudyChatProposalCard: React.FC<StudyChatProposalCardProps> = ({
   onValidate,
   onChangeDraft,
 }) => {
-  const prefersReducedMotion = useReducedMotion();
   const [isFlipped, setIsFlipped] = useState(false);
-  const rotation = useRef(new Animated.Value(0)).current;
   const isSubmitting = state.status === 'submitting';
   const isSuccess = state.status === 'success';
   const deckName = 'deckName' in proposal ? proposal.deckName : null;
   const previewFront = state.proposedRecto.trim() || 'Add a front prompt';
   const previewBack = state.proposedVerso.trim() || 'Add a back answer';
 
-  useEffect(() => {
-    Animated.spring(rotation, {
-      toValue: isFlipped ? 1 : 0,
-      useNativeDriver: true,
-      damping: prefersReducedMotion ? 100 : 18,
-      stiffness: prefersReducedMotion ? 1200 : 220,
-      mass: 1,
-    }).start();
-  }, [isFlipped, prefersReducedMotion, rotation]);
-
-  const frontRotation = rotation.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['0deg', '180deg'],
-  });
-  const backRotation = rotation.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['180deg', '360deg'],
-  });
   const validateLabel = isSuccess
     ? kind === 'edit'
-      ? 'Applied'
-      : 'Created'
-    : 'Validate';
+      ? 'Changes saved'
+      : 'Added to deck'
+    : kind === 'edit'
+      ? 'Save changes'
+      : 'Add to deck';
 
   return (
     <Card variant="outline" padding="none" style={styles.card}>
       <View style={styles.header}>
         <View style={styles.badge}>
-          <Typography variant="caption" color="muted">
+          <AppIcon
+            name={kind === 'edit' ? 'sparkles' : 'plus'}
+            size={15}
+            color={theme.colors.primary}
+          />
+          <Typography variant="caption" color="primary">
             {kind === 'edit' ? 'Draft edit' : 'New card draft'}
           </Typography>
         </View>
@@ -91,99 +79,67 @@ export const StudyChatProposalCard: React.FC<StudyChatProposalCardProps> = ({
 
       <Pressable
         onPress={() => setIsFlipped((current) => !current)}
-        style={styles.previewPressable}
+        style={({ pressed }) => [
+          styles.previewPressable,
+          pressed && styles.previewPressed,
+        ]}
         accessibilityRole="button"
-        accessibilityLabel={`Draft flashcard preview. ${
-          isFlipped ? 'Showing back.' : 'Showing front.'
-        } Tap to flip.`}
+        accessibilityLabel={`Draft flashcard ${isFlipped ? 'back' : 'front'}. ${normalizePlainTextContent(isFlipped ? previewBack : previewFront)}`}
+        accessibilityHint={
+          isFlipped
+            ? 'Shows the front of this draft.'
+            : 'Shows the back of this draft.'
+        }
       >
-        <View style={styles.previewStack}>
-          <Animated.View
-            pointerEvents="none"
-            style={[
-              styles.previewFace,
-              styles.previewFaceFront,
-              {
-                transform: [{ perspective: 1200 }, { rotateY: frontRotation }],
-              },
-            ]}
-          >
-            <Typography variant="caption" color="muted">
-              Front
-            </Typography>
-            <View style={styles.previewContent}>
-              <MathText
-                content={previewFront}
-                renderKey={`proposal-front-${proposal.proposalId}-${previewFront}`}
-                textColor={theme.colors.foreground}
-                fontSize={theme.typography.heading3.fontSize}
-                lineHeight={theme.typography.heading3.lineHeight}
-                textAlign="center"
-                style={styles.previewMath}
-              />
-            </View>
-            <Typography variant="caption" color="dim">
-              Tap to flip
-            </Typography>
-          </Animated.View>
-
-          <Animated.View
-            pointerEvents="none"
-            style={[
-              styles.previewFace,
-              styles.previewFaceBack,
-              {
-                transform: [{ perspective: 1200 }, { rotateY: backRotation }],
-              },
-            ]}
-          >
-            <Typography variant="caption" color="muted">
-              Back
-            </Typography>
-            <View style={styles.previewContent}>
-              <MathText
-                content={previewBack}
-                renderKey={`proposal-back-${proposal.proposalId}-${previewBack}`}
-                textColor={theme.colors.foreground}
-                fontSize={theme.typography.heading3.fontSize}
-                lineHeight={theme.typography.heading3.lineHeight}
-                textAlign="center"
-                style={styles.previewMath}
-              />
-            </View>
-            <Typography variant="caption" color="dim">
-              Tap to flip
-            </Typography>
-          </Animated.View>
+        <View style={styles.previewFace} pointerEvents="none">
+          <Typography variant="caption" color="primary">
+            {isFlipped ? 'ANSWER' : 'QUESTION'}
+          </Typography>
+          <View style={styles.previewContent}>
+            <MathText
+              content={isFlipped ? previewBack : previewFront}
+              renderKey={`proposal-${proposal.proposalId}-${isFlipped ? 'back' : 'front'}`}
+              textColor={theme.colors.foreground}
+              fontSize={theme.typography.heading3.fontSize}
+              lineHeight={theme.typography.heading3.lineHeight}
+              textAlign="left"
+              verticalAlign="top"
+              fillContainer={false}
+              layoutMode="auto"
+              style={styles.previewMath}
+            />
+          </View>
+          <Typography variant="caption" color="muted">
+            {isFlipped ? 'Tap to see the question' : 'Tap to see the answer'}
+          </Typography>
         </View>
       </Pressable>
 
       <View style={styles.meta}>
         <View style={styles.metaBlock}>
-          <Typography variant="caption" color="muted">
+          <Typography variant="caption" color="muted" style={styles.metaLabel}>
             Goal
           </Typography>
           <StudyChatMessageContent content={proposal.changeGoal} />
         </View>
         <View style={styles.metaBlock}>
-          <Typography variant="caption" color="muted">
+          <Typography variant="caption" color="muted" style={styles.metaLabel}>
             Why this draft
           </Typography>
           <StudyChatMessageContent content={proposal.rationale} />
         </View>
         {proposal.userFeedbackSummary.trim() ? (
           <View style={styles.metaBlock}>
-            <Typography variant="caption" color="muted">
+            <Typography
+              variant="caption"
+              color="muted"
+              style={styles.metaLabel}
+            >
               Based on your request
             </Typography>
             <StudyChatMessageContent content={proposal.userFeedbackSummary} />
           </View>
         ) : null}
-        <Typography variant="caption" color="muted">
-          {kind === 'edit'
-            ? 'Nothing changes until you validate this draft.'
-            : 'Nothing is added to your deck until you validate this draft.'}
-        </Typography>
       </View>
 
       {state.isEditing ? (
@@ -222,7 +178,7 @@ export const StudyChatProposalCard: React.FC<StudyChatProposalCardProps> = ({
 
           <View style={styles.field}>
             <Typography variant="caption" color="muted">
-              Difficulty
+              Difficulty · 0 or higher
             </Typography>
             <TextInput
               value={state.proposedDifficulty}
@@ -241,31 +197,31 @@ export const StudyChatProposalCard: React.FC<StudyChatProposalCardProps> = ({
       ) : null}
 
       {state.errorMessage ? (
-        <View style={styles.errorBanner}>
+        <View style={styles.errorBanner} accessibilityRole="alert">
           <Typography variant="caption" color="error">
             {state.errorMessage}
           </Typography>
         </View>
       ) : null}
 
-      <View style={styles.actions}>
+      <View style={styles.actions} accessibilityLiveRegion="polite">
         <View style={styles.actionButton}>
           <Button
             title={validateLabel}
             onPress={onValidate}
             loading={isSubmitting}
             disabled={isSubmitting || isSuccess}
-            size="sm"
+            size="lg"
             variant={isSuccess ? 'success' : 'primary'}
             fullWidth
           />
         </View>
         <View style={styles.actionButton}>
           <Button
-            title={state.isEditing ? 'Done editing' : 'Adjust'}
+            title={state.isEditing ? 'Done editing' : 'Edit draft'}
             onPress={onToggleEditing}
             disabled={isSubmitting || isSuccess}
-            size="sm"
+            size="lg"
             variant="outline"
             fullWidth
           />
@@ -279,55 +235,51 @@ const styles = StyleSheet.create({
   card: {
     width: '100%',
     overflow: 'hidden',
-    backgroundColor: theme.colors.background,
+    backgroundColor: theme.colors.card,
+    borderRadius: theme.borderRadius.xl,
   },
   header: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: theme.spacing.sm,
-    paddingHorizontal: theme.spacing.md,
-    paddingTop: theme.spacing.md,
+    paddingHorizontal: theme.spacing.lg,
+    paddingTop: theme.spacing.lg,
   },
   badge: {
     alignSelf: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.xs,
     borderRadius: theme.borderRadius.full,
     borderWidth: 1,
     borderColor: theme.colors.border,
     paddingHorizontal: theme.spacing.sm,
     paddingVertical: 4,
-    backgroundColor: theme.colors.secondary,
+    backgroundColor: theme.colors.primaryLight,
   },
   previewPressable: {
-    paddingHorizontal: theme.spacing.md,
-    paddingTop: theme.spacing.md,
+    paddingHorizontal: theme.spacing.lg,
+    paddingTop: theme.spacing.lg,
   },
-  previewStack: {
-    height: 220,
+  previewPressed: {
+    opacity: 0.8,
   },
   previewFace: {
-    position: 'absolute',
-    top: 0,
-    right: 0,
-    bottom: 0,
-    left: 0,
+    minHeight: 180,
     borderRadius: theme.borderRadius.xl,
     borderWidth: 1,
     borderColor: theme.colors.border,
     paddingHorizontal: theme.spacing.lg,
     paddingVertical: theme.spacing.lg,
-    backgroundColor: theme.colors.card,
+    backgroundColor: theme.colors.background,
     justifyContent: 'space-between',
-    backfaceVisibility: 'hidden',
-  },
-  previewFaceFront: {
-    backgroundColor: theme.colors.card,
-  },
-  previewFaceBack: {
-    backgroundColor: theme.colors.secondary,
+    gap: theme.spacing.lg,
   },
   previewContent: {
-    flex: 1,
+    flexGrow: 1,
+    minHeight: 64,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -335,23 +287,26 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   meta: {
-    gap: theme.spacing.xs,
-    paddingHorizontal: theme.spacing.md,
-    paddingTop: theme.spacing.md,
+    gap: theme.spacing.lg,
+    paddingHorizontal: theme.spacing.lg,
+    paddingTop: theme.spacing.lg,
   },
   metaBlock: {
     gap: theme.spacing.xs,
   },
+  metaLabel: {
+    fontFamily: theme.fontFamily.medium,
+  },
   editor: {
     gap: theme.spacing.md,
-    paddingHorizontal: theme.spacing.md,
-    paddingTop: theme.spacing.md,
+    paddingHorizontal: theme.spacing.lg,
+    paddingTop: theme.spacing.lg,
   },
   field: {
     gap: theme.spacing.xs,
   },
   input: {
-    minHeight: 84,
+    minHeight: 96,
     borderWidth: 1,
     borderColor: theme.colors.input,
     borderRadius: theme.borderRadius.lg,
@@ -387,10 +342,12 @@ const styles = StyleSheet.create({
   },
   actions: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: theme.spacing.sm,
-    padding: theme.spacing.md,
+    padding: theme.spacing.lg,
   },
   actionButton: {
     flex: 1,
+    minWidth: 120,
   },
 });

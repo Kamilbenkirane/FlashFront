@@ -10,7 +10,7 @@ import {
 import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 import React, { type ErrorInfo, type ReactNode, useCallback } from 'react';
-import { ActivityIndicator, Text, View } from 'react-native';
+import { ActivityIndicator, StatusBar, Text, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import {
   SafeAreaProvider,
@@ -128,6 +128,10 @@ const AppBootstrap = () => {
       <ErrorBoundary>
         <SafeAreaProvider initialMetrics={initialWindowMetrics}>
           <AppProviders>
+            <StatusBar
+              barStyle="light-content"
+              backgroundColor={theme.colors.background}
+            />
             <RootNavigator />
           </AppProviders>
         </SafeAreaProvider>

@@ -49,14 +49,16 @@ const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({
   return (
     <AuthScaffold
       title="Reset password"
-      subtitle="We’ll email you a secure link so you can choose a new password."
+      subtitle="We’ll email you a link to reset your password."
+      onBack={() => {
+        clearAuthError();
+        navigation.goBack();
+      }}
       error={authError}
       footer={
         <View style={styles.footerLinkRow}>
-          <Typography variant="small" color="muted">
-            Remembered it?
-          </Typography>
           <Pressable
+            style={styles.footerLink}
             onPress={() => {
               clearAuthError();
               navigation.navigate('Login');
@@ -65,7 +67,7 @@ const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({
             accessibilityLabel="Back to sign in"
             hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
           >
-            <Typography variant="small" color="primary">
+            <Typography variant="caption" color="primary">
               Back to sign in
             </Typography>
           </Pressable>
@@ -92,6 +94,7 @@ const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({
       <View style={styles.actions}>
         <Button
           title="Send reset link"
+          size="lg"
           onPress={() => void handleSubmit()}
           loading={isSubmitting}
           fullWidth
@@ -107,9 +110,15 @@ const styles = StyleSheet.create({
   },
   footerLinkRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     justifyContent: 'center',
     alignItems: 'center',
     gap: 4,
+  },
+  footerLink: {
+    minHeight: 44,
+    justifyContent: 'center',
+    paddingHorizontal: 4,
   },
 });
 

@@ -1,6 +1,4 @@
-import { AppIcon } from '@/components/ui/icons';
 import type { ChartDataPoint } from '@/interfaces/Analytics';
-import { theme } from '@/tokens/theme';
 import type React from 'react';
 import { View } from 'react-native';
 import { Typography } from '../Typography';
@@ -31,26 +29,12 @@ export const AnalyticsChart: React.FC<AnalyticsChartProps> = ({
       <View>
         {!hasData ? (
           <View style={styles.emptyState}>
-            <View
-              style={[
-                styles.emptyBadge,
-                { backgroundColor: theme.colors.primaryLight },
-              ]}
-            >
-              <AppIcon
-                color={theme.colors.primary}
-                name="chart"
-                size={20}
-                strokeWidth={2.15}
-              />
-              <Typography variant="body">{type.toUpperCase()} Chart</Typography>
-            </View>
             <Typography
               variant="caption"
               color="muted"
               style={styles.emptyMessage}
             >
-              No data for this range yet.
+              No data in this period.
             </Typography>
           </View>
         ) : type === 'pie' ? (

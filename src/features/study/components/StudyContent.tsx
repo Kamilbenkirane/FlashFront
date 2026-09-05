@@ -1,7 +1,10 @@
+import { ShuffleMark } from '@/components/ui/Brand/ShuffleMark';
+import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { FeedbackState } from '@/components/ui/FeedbackState/FeedbackState';
 import { LoadingState } from '@/components/ui/LoadingState';
 import { Typography } from '@/components/ui/Typography';
+import { AppIcon } from '@/components/ui/icons';
 import type {
   StudyCard,
   StudyReviewOutcome,
@@ -9,7 +12,6 @@ import type {
 import DecksMultiSelect from '@/features/library/components/DecksMultiSelect';
 import { Flashcard } from '@/features/study/components/Flashcard/Flashcard';
 import { FlashcardMetaStrip } from '@/features/study/components/FlashcardMetaStrip';
-import { ReviewActionsTrigger } from '@/features/study/components/ReviewActionsTrigger';
 import { StudyReviewDock } from '@/features/study/components/StudyReviewDock';
 import { StudySessionStatsCard } from '@/features/study/components/StudySessionStatsCard';
 import useTabScreenSpacing from '@/hooks/useTabScreenSpacing';
@@ -18,6 +20,7 @@ import { theme } from '@/tokens/theme';
 import type React from 'react';
 import { useEffect, useState } from 'react';
 import {
+  Pressable,
   ScrollView,
   StyleSheet,
   View,
@@ -28,6 +31,10 @@ export type StudyContentState = 'setup' | 'empty' | 'active';
 
 interface StudyContentProps {
   viewState: StudyContentState;
+  sessionGoal: number;
+  showSummary: boolean;
+  onContinue: () => void;
+  onViewProgress: () => void;
   decks: Deck[];
   selectedDeckIds: (string | number)[];
   currentCard: StudyCard | null;
@@ -59,6 +66,10 @@ interface StudyContentProps {
 
 export const StudyContent: React.FC<StudyContentProps> = ({
   viewState,
+  sessionGoal,
+  showSummary,
+  onContinue,
+  onViewProgress,
   decks,
   selectedDeckIds,
   currentCard,
@@ -85,68 +96,150 @@ export const StudyContent: React.FC<StudyContentProps> = ({
   reviewFeedback,
 }) => {
   const { height } = useWindowDimensions();
-  const {
-    bottomSpacing,
-    scrollContentContainerStyle,
-    scrollIndicatorInsets,
-    viewportOffsetStyle,
-  } = useTabScreenSpacing();
-  const isCompactHeight = height < 760;
-  const isVeryCompactHeight = height < 700;
-  const showStats = totalReviews > 0;
-  const [showReviewActions, setShowReviewActions] = useState(false);
-
+  const { bottomSpacing, scrollIndicatorInsets } = useTabScreenSpacing();
+  const [draftDeckIds, setDraftDeckIds] = useState<(string | number)[] | null>(
+    null,
+  );
+  const [revealedCardToken, setRevealedCardToken] = useState<number | null>(
+    null,
+  );
   useEffect(() => {
-    setShowReviewActions(false);
-  }, [currentCardToken, isReviewProcessing]);
+    setRevealedCardToken(null);
+  }, [sessionData]);
+  const isRevealed = revealedCardToken === currentCardToken;
+  const draftSelection =
+    draftDeckIds ??
+    (selectedDeckIds.length
+      ? selectedDeckIds
+      : decks[0]
+        ? [decks[0].deck_id]
+        : []);
+  const contentStyle = [
+    styles.scrollContent,
+    { paddingBottom: bottomSpacing + 24 },
+  ];
+  const stats = (
+    <StudySessionStatsCard
+      correctCount={correctCount}
+      incorrectCount={incorrectCount}
+      accuracy={accuracy}
+    />
+  );
+
+  if (showSummary) {
+    return (
+      <ScrollView
+        contentContainerStyle={contentStyle}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.summary}>
+          <View style={styles.completeIcon}>
+            <AppIcon name="check" size={28} color={theme.colors.primary} />
+          </View>
+          <Typography
+            variant="heading1"
+            style={styles.centered}
+            accessibilityRole="header"
+          >
+            Session complete
+          </Typography>
+          <Typography color="muted">{totalReviews} reviews</Typography>
+          <View style={{ width: '100%' }}>{stats}</View>
+          <Button title="Done" onPress={onChooseDecks} fullWidth size="lg" />
+          <Button
+            title="Continue studying"
+            onPress={onContinue}
+            fullWidth
+            variant="outline"
+          />
+          <Button
+            title="View progress"
+            onPress={onViewProgress}
+            fullWidth
+            variant="ghost"
+          />
+          {reviewFeedback ? (
+            <Typography
+              color={reviewFeedback.tone === 'error' ? 'error' : 'warning'}
+              variant="caption"
+              accessibilityLiveRegion="polite"
+            >
+              {reviewFeedback.message}
+            </Typography>
+          ) : null}
+        </View>
+      </ScrollView>
+    );
+  }
 
   if (viewState === 'setup') {
     return (
       <ScrollView
-        style={[styles.content, viewportOffsetStyle]}
-        contentContainerStyle={[
-          styles.scrollContent,
-          scrollContentContainerStyle,
-        ]}
+        contentContainerStyle={contentStyle}
         scrollIndicatorInsets={scrollIndicatorInsets}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
       >
-        <View style={styles.setupSection}>
-          <Card padding="lg">
-            <Typography variant="heading3" style={styles.setupTitle}>
-              Setup Study Session
-            </Typography>
-
+        <View style={styles.setup}>
+          <Card padding="lg" style={styles.sessionPanel}>
+            <View style={styles.goalRow}>
+              <View style={{ gap: 6 }}>
+                <Typography variant="caption" color="muted">
+                  Session target
+                </Typography>
+                <View style={styles.goalValue}>
+                  <Typography style={styles.goalNumber}>
+                    {sessionGoal}
+                  </Typography>
+                  <Typography color="muted">reviews</Typography>
+                </View>
+              </View>
+              <ShuffleMark size={48} />
+            </View>
+            <View style={styles.sectionHeader}>
+              <Typography variant="heading3">Decks</Typography>
+              <Pressable
+                onPress={onOpenLibrary}
+                accessibilityRole="button"
+                style={styles.textAction}
+              >
+                <Typography variant="caption" color="primary">
+                  Browse library
+                </Typography>
+              </Pressable>
+            </View>
             {isDecksLoading ? (
-              <LoadingState
-                message="Loading your subscribed decks..."
-                className="justify-center"
-              />
+              <LoadingState message="Loading decks…" />
             ) : decksError ? (
               <FeedbackState
-                title="Couldn't load subscribed decks"
+                title="Couldn’t load decks"
                 description={decksError}
                 icon="cloudOff"
-                actionLabel="Retry"
+                actionLabel="Try again"
                 onAction={() => void reloadDecks()}
               />
             ) : decks.length === 0 ? (
               <FeedbackState
-                title="No subscribed decks yet"
-                description="Subscribe to a deck from the Library tab, then come back here to study."
+                title="No decks yet"
+                description="Add a deck from the library to start studying."
                 icon="library"
-                actionLabel="Open Library"
+                actionLabel="Browse library"
                 onAction={onOpenLibrary}
               />
             ) : (
-              <View style={styles.dropdownContainer}>
-                <Typography variant="caption" style={styles.dropdownLabel}>
-                  Choose decks
-                </Typography>
+              <View style={styles.sessionForm}>
                 <DecksMultiSelect
                   decks={decks}
-                  onSelectDecks={onSelectDecks}
-                  selectedDeckIds={selectedDeckIds}
+                  onSelectDecks={setDraftDeckIds}
+                  selectedDeckIds={draftSelection}
+                />
+                <Button
+                  title="Start session"
+                  onPress={() => onSelectDecks(draftSelection)}
+                  disabled={draftSelection.length === 0}
+                  fullWidth
+                  size="lg"
+                  testID="start-study-session"
                 />
               </View>
             )}
@@ -156,249 +249,157 @@ export const StudyContent: React.FC<StudyContentProps> = ({
     );
   }
 
-  if (viewState === 'empty') {
+  if (viewState === 'empty' || !currentCard) {
     return (
-      <View
-        style={[
-          styles.content,
-          styles.emptyContent,
-          viewportOffsetStyle,
-          { paddingBottom: bottomSpacing },
-        ]}
-      >
-        {isSessionLoading ? (
-          <LoadingState
-            message="Loading study session..."
-            className="flex-1 justify-center"
-          />
-        ) : sessionError ? (
-          <FeedbackState
-            title="Couldn't load this study session"
-            description={sessionError}
-            icon="cloudOff"
-            actionLabel="Retry"
-            onAction={() => void reloadSession()}
-          />
-        ) : sessionData && sessionData.length === 0 ? (
-          <FeedbackState
-            title="No cards in this session"
-            description="Try choosing a different deck or add more cards to the selected deck."
-            icon="albums"
-            actionLabel="Choose Decks"
-            onAction={onChooseDecks}
-          />
-        ) : (
-          <FeedbackState
-            title={showStats ? 'Session complete' : 'No cards ready yet'}
-            description={
-              showStats
-                ? 'You reviewed everything currently due in this session.'
-                : 'Pick a deck to begin studying.'
-            }
-            icon={showStats ? 'checkCircle' : 'time'}
-            actionLabel="Choose Decks"
-            onAction={onChooseDecks}
-          />
-        )}
-
-        {showStats ? (
-          <StudySessionStatsCard
-            correctCount={correctCount}
-            incorrectCount={incorrectCount}
-            accuracy={accuracy}
-          />
-        ) : null}
-      </View>
+      <ScrollView contentContainerStyle={contentStyle}>
+        <View style={styles.studyWidth}>
+          {isSessionLoading ? (
+            <LoadingState message="Preparing your session…" />
+          ) : sessionError ? (
+            <FeedbackState
+              title="Couldn’t load this session"
+              description={sessionError}
+              icon="cloudOff"
+              actionLabel="Reload session"
+              onAction={() => void reloadSession()}
+            />
+          ) : (
+            <FeedbackState
+              title="No cards to review"
+              description="Choose another deck or come back later."
+              icon="checkCircle"
+              actionLabel="Choose another deck"
+              onAction={onChooseDecks}
+            />
+          )}
+          {totalReviews > 0 ? stats : null}
+        </View>
+      </ScrollView>
     );
-  }
-
-  if (!currentCard) {
-    return null;
   }
 
   return (
     <ScrollView
-      style={[styles.content, viewportOffsetStyle]}
-      contentContainerStyle={[
-        styles.scrollContent,
-        scrollContentContainerStyle,
-      ]}
+      contentContainerStyle={contentStyle}
       scrollIndicatorInsets={scrollIndicatorInsets}
       showsVerticalScrollIndicator={false}
       keyboardShouldPersistTaps="handled"
     >
-      <View style={styles.flashcardContainer}>
+      <View style={styles.studyWidth}>
         <Flashcard
           cardToken={currentCardToken}
+          revealed={isRevealed}
           disabled={isReviewProcessing}
           flashcard={currentCard}
-          style={[
-            styles.flashcard,
-            isCompactHeight && styles.flashcardCompact,
-            isVeryCompactHeight && styles.flashcardVeryCompact,
-          ]}
+          onFlip={(revealed) =>
+            setRevealedCardToken(revealed ? currentCardToken : null)
+          }
+          style={{ minHeight: Math.max(280, Math.min(height - 400, 420)) }}
           onSwipedLeft={onForgottenReview}
           onSwipedRight={onRememberedReview}
-          onSwipedUp={onKnownReview}
           testID="study-flashcard"
         />
-      </View>
-
-      <View style={styles.flashcardSupportSection}>
-        <FlashcardMetaStrip flashcard={currentCard} style={styles.metaStrip} />
-        <Typography
-          variant="small"
-          color="muted"
-          style={styles.gestureHintText}
-        >
-          Swipe left, up, or right to review.
-        </Typography>
-        <ReviewActionsTrigger
-          disabled={isReviewProcessing}
-          onPress={() => setShowReviewActions(true)}
-        />
-
+        <FlashcardMetaStrip flashcard={currentCard} />
+        <View style={styles.reviewActions}>
+          {isRevealed ? (
+            <StudyReviewDock
+              disabled={isReviewProcessing}
+              pendingOutcome={pendingReviewOutcome}
+              onForgotten={onForgottenReview}
+              onRemembered={onRememberedReview}
+              onKnown={onKnownReview}
+            />
+          ) : (
+            <Button
+              title="Reveal answer"
+              size="lg"
+              fullWidth
+              disabled={isReviewProcessing}
+              onPress={() => setRevealedCardToken(currentCardToken)}
+              testID="reveal-answer"
+            />
+          )}
+        </View>
         {isReviewProcessing ? (
           <Typography
             variant="small"
             color="muted"
-            style={[styles.reviewStatusText, styles.supportingSurface]}
+            style={styles.reviewHint}
             accessibilityLiveRegion="polite"
           >
-            Saving your review...
+            Saving review…
           </Typography>
         ) : null}
+        {reviewFeedback ? (
+          <Card style={styles.feedback}>
+            <Typography
+              variant="caption"
+              color={reviewFeedback.tone === 'error' ? 'error' : 'warning'}
+              accessibilityLiveRegion="polite"
+            >
+              {reviewFeedback.message}
+            </Typography>
+          </Card>
+        ) : null}
       </View>
-
-      <StudyReviewDock
-        visible={showReviewActions}
-        onClose={() => setShowReviewActions(false)}
-        disabled={isReviewProcessing}
-        pendingOutcome={pendingReviewOutcome}
-        onForgotten={() => {
-          setShowReviewActions(false);
-          onForgottenReview();
-        }}
-        onRemembered={() => {
-          setShowReviewActions(false);
-          onRememberedReview();
-        }}
-        onKnown={() => {
-          setShowReviewActions(false);
-          onKnownReview();
-        }}
-      />
-
-      {reviewFeedback ? (
-        <Card
-          variant="outline"
-          style={[
-            styles.reviewFeedbackCard,
-            reviewFeedback.tone === 'error'
-              ? styles.reviewFeedbackCardError
-              : styles.reviewFeedbackCardWarning,
-          ]}
-        >
-          <Typography
-            variant="small"
-            color={reviewFeedback.tone === 'error' ? 'error' : 'warning'}
-            accessibilityLiveRegion="polite"
-          >
-            {reviewFeedback.message}
-          </Typography>
-        </Card>
-      ) : null}
-
-      {showStats ? (
-        <StudySessionStatsCard
-          correctCount={correctCount}
-          incorrectCount={incorrectCount}
-          accuracy={accuracy}
-        />
-      ) : null}
     </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
-  content: {
-    flex: 1,
-    paddingHorizontal: theme.spacing.lg,
-  },
-  scrollContent: {
-    flexGrow: 1,
-  },
-  emptyContent: {
-    paddingTop: theme.spacing.lg,
-  },
-  flashcardContainer: {
-    paddingTop: theme.spacing.xl,
-    paddingBottom: theme.spacing.md,
-    alignItems: 'center',
-  },
-  flashcard: {
+  scrollContent: { flexGrow: 1, paddingHorizontal: 24, paddingTop: 16 },
+  setup: {
     width: '100%',
-    maxWidth: 400,
-  },
-  flashcardCompact: {
-    height: 320,
-    marginVertical: theme.spacing.sm,
-  },
-  flashcardVeryCompact: {
-    height: 288,
-    marginVertical: 0,
-  },
-  flashcardSupportSection: {
-    alignItems: 'center',
-    gap: theme.spacing.xs,
-    marginBottom: theme.spacing.md,
-  },
-  supportingSurface: {
-    width: '100%',
-    maxWidth: 400,
-  },
-  metaStrip: {
-    width: '100%',
-    maxWidth: 400,
-  },
-  gestureHintText: {
-    textAlign: 'center',
-    maxWidth: 300,
-    marginTop: theme.spacing.xs,
-  },
-  reviewStatusText: {
-    textAlign: 'center',
-    paddingVertical: theme.spacing.xs,
-  },
-  reviewFeedbackCard: {
-    marginBottom: theme.spacing.md,
-    borderWidth: 1,
-    width: '100%',
-    maxWidth: 400,
+    maxWidth: 560,
     alignSelf: 'center',
+    paddingTop: 12,
+    gap: 16,
   },
-  reviewFeedbackCardWarning: {
-    backgroundColor: theme.colors.warning.light,
-    borderColor: theme.colors.warning.light,
+  sessionPanel: { gap: 18, borderRadius: 24 },
+  goalRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
+    paddingBottom: 22,
   },
-  reviewFeedbackCardError: {
-    backgroundColor: theme.colors.destructive.light,
-    borderColor: theme.colors.destructive.light,
-  },
-  setupSection: {
-    paddingVertical: theme.spacing.xl,
-  },
-  setupTitle: {
-    textAlign: 'center',
-    marginBottom: theme.spacing.lg,
+  goalValue: { flexDirection: 'row', alignItems: 'baseline', gap: 10 },
+  goalNumber: {
+    fontFamily: theme.fontFamily.medium,
+    fontSize: 40,
+    lineHeight: 46,
     color: theme.colors.foreground,
   },
-  dropdownContainer: {
-    marginBottom: theme.spacing.lg,
+  completeIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: theme.colors.primaryLight,
+    marginBottom: 8,
   },
-  dropdownLabel: {
-    marginBottom: theme.spacing.sm,
-    color: theme.colors.mutedForeground,
-    fontFamily: theme.fontFamily.medium,
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
   },
+  textAction: { minHeight: 44, justifyContent: 'center' },
+  sessionForm: { gap: 20 },
+  summary: {
+    flex: 1,
+    width: '100%',
+    maxWidth: 480,
+    alignSelf: 'center',
+    alignItems: 'center',
+    paddingTop: 48,
+    gap: 16,
+  },
+  centered: { textAlign: 'center' },
+  studyWidth: { width: '100%', maxWidth: 640, alignSelf: 'center' },
+  reviewActions: { paddingTop: 24 },
+  reviewHint: { textAlign: 'center', paddingTop: 14 },
+  feedback: { marginTop: 16 },
 });

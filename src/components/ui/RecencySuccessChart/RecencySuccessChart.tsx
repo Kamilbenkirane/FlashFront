@@ -9,7 +9,7 @@ import type {
 import { theme } from '@/tokens/theme';
 import type React from 'react';
 import { useEffect, useMemo, useState } from 'react';
-import { Pressable, View } from 'react-native';
+import { Pressable, ScrollView, View } from 'react-native';
 import Svg, { Circle, Line, Path } from 'react-native-svg';
 import { createRecencySuccessChartStyles } from './RecencySuccessChart.styles';
 
@@ -173,19 +173,19 @@ export const RecencySuccessChart: React.FC<RecencySuccessChartProps> = ({
     return (
       <Card padding="lg" style={styles.panel}>
         <View style={styles.header}>
-          <Typography variant="heading3">Recall Rate By Delay</Typography>
+          <Typography variant="heading3">Recall by delay</Typography>
           <Typography variant="caption" color="muted">
-            How accuracy changes as the gap since the previous review grows.
+            Time since the previous review.
           </Typography>
         </View>
         <View style={styles.emptyState}>
           <Typography variant="body">
-            Repeat reviews unlock this curve.
+            No repeat reviews in this period.
           </Typography>
           <Typography variant="small" color="muted">
             {data.firstReviewCount > 0
-              ? `You have ${data.firstReviewCount} first reviews in this range, but a delay curve appears once cards have a prior review to compare against.`
-              : 'Review some cards more than once and the chart will appear here.'}
+              ? `${data.firstReviewCount} first reviews excluded.`
+              : 'This chart uses cards reviewed more than once.'}
           </Typography>
         </View>
       </Card>
@@ -195,13 +195,20 @@ export const RecencySuccessChart: React.FC<RecencySuccessChartProps> = ({
   return (
     <Card padding="lg" style={styles.panel}>
       <View style={styles.header}>
-        <Typography variant="heading3">Recall Rate By Delay</Typography>
+        <Typography variant="heading3">Recall by delay</Typography>
         <Typography variant="caption" color="muted">
-          How accuracy changes as the gap since the previous review grows.
+          Time since the previous review.
         </Typography>
       </View>
 
-      <View style={styles.filterRow}>
+      <Typography variant="small" color="muted">
+        Consecutive successful recalls
+      </Typography>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.filterRow}
+      >
         {data.streakBuckets.map((bucket) => (
           <View key={bucket.key} style={styles.filterButton}>
             <Button
@@ -219,13 +226,13 @@ export const RecencySuccessChart: React.FC<RecencySuccessChartProps> = ({
             />
           </View>
         ))}
-      </View>
+      </ScrollView>
 
       <View
         style={[
           styles.detailCard,
           {
-            backgroundColor: theme.colors.primaryLight,
+            backgroundColor: theme.colors.secondary,
             borderColor: theme.colors.border,
           },
         ]}
@@ -364,7 +371,11 @@ export const RecencySuccessChart: React.FC<RecencySuccessChartProps> = ({
           </View>
         </View>
 
-        <View style={styles.axisRow}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.axisRow}
+        >
           {selectedSeries.points.map((point, index) => {
             const isSelected = index === selectedPointIndex;
 
@@ -375,6 +386,8 @@ export const RecencySuccessChart: React.FC<RecencySuccessChartProps> = ({
                   selectedSeries.streakBucketLabel,
                 )}
                 accessibilityRole="button"
+                accessibilityState={{ selected: isSelected }}
+                aria-pressed={isSelected}
                 key={point.delayBinKey}
                 onPress={() => setSelectedPointIndex(index)}
                 style={[
@@ -398,22 +411,18 @@ export const RecencySuccessChart: React.FC<RecencySuccessChartProps> = ({
                   color="muted"
                   style={styles.axisCount}
                 >
-                  {`n=${point.reviewCount}`}
+                  {`${point.reviewCount} reviews`}
                 </Typography>
               </Pressable>
             );
           })}
-        </View>
+        </ScrollView>
       </View>
 
       <View style={styles.footer}>
-        <Typography variant="small" color="muted">
-          Delay bins are quantiles, so each bin starts with a similar number of
-          reviews before the streak filter is applied.
-        </Typography>
         {data.firstReviewCount > 0 ? (
           <Typography variant="small" color="muted">
-            {`Excluded ${data.firstReviewCount} first reviews that had no prior delay.`}
+            {`${data.firstReviewCount} first reviews excluded: no previous review to compare.`}
           </Typography>
         ) : null}
       </View>

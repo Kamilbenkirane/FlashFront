@@ -4,6 +4,7 @@ import type React from 'react';
 import { Text, type TextProps } from 'react-native';
 
 type TypographyVariant =
+  | 'display'
   | 'heading1'
   | 'heading2'
   | 'heading3'

@@ -1,8 +1,12 @@
 import { Typography } from '@/components/ui/Typography';
+import { AppIcon } from '@/components/ui/icons';
 import type { ChartDataPoint } from '@/interfaces/Analytics';
 import { theme } from '@/tokens/theme';
 import type React from 'react';
-import { ScrollView, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { Pressable, View } from 'react-native';
+import Svg, { Circle, Line, Path, Rect } from 'react-native-svg';
+import { getNearestSeriesIndex, getSeriesGeometry } from './seriesGeometry';
 import { analyticsChartStyles as styles } from './styles';
 
 interface SeriesChartProps {
@@ -12,84 +16,227 @@ interface SeriesChartProps {
   suffix?: string;
 }
 
+const formatPointDate = (value: string | number) => {
+  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}(?:T|$)/.test(value))
+    return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime())
+    ? null
+    : date.toLocaleDateString(undefined, {
+        day: 'numeric',
+        month: 'short',
+        timeZone: 'UTC',
+      });
+};
+
 export const SeriesChart: React.FC<SeriesChartProps> = ({
   data,
   type,
   plotHeight,
   suffix = '',
 }) => {
-  const chartColors = Object.values(theme.colors.chart);
-  const maxValue = Math.max(...data.map((point) => point.y), 1);
+  const [plotWidth, setPlotWidth] = useState(0);
+  const [selectedIndex, setSelectedIndex] = useState(data.length - 1);
+  useEffect(() => setSelectedIndex(data.length - 1), [data]);
+  const selected = Math.max(0, Math.min(selectedIndex, data.length - 1));
+  const selectedPoint = data[selected];
+  const { points, maximum, baseline } = getSeriesGeometry(
+    data.map((point) => point.y),
+    plotWidth,
+    plotHeight,
+    suffix === '%' ? 100 : undefined,
+  );
+  const line = points
+    .map((point, index) => `${index === 0 ? 'M' : 'L'}${point.x} ${point.y}`)
+    .join(' ');
+  const formatMetric = (value: number) =>
+    `${Number.isInteger(value) ? value.toLocaleString() : value.toFixed(1)}${suffix}`;
+  const barWidth = Math.max(
+    3,
+    Math.min(24, ((plotWidth - 16) / Math.max(data.length, 1)) * 0.5),
+  );
 
-  const formatMetric = (value: number) => {
-    const hasFraction = Math.abs(value % 1) > 0.01;
-    const formattedValue = hasFraction
-      ? value.toFixed(1)
-      : `${Math.round(value)}`;
-    return `${formattedValue}${suffix}`;
-  };
+  if (!selectedPoint) return null;
+  const selectedLabel =
+    formatPointDate(selectedPoint.x) ??
+    selectedPoint.label ??
+    `${selectedPoint.x}`;
 
   return (
-    <ScrollView
-      horizontal
-      showsHorizontalScrollIndicator={false}
-      contentContainerStyle={styles.seriesContent}
-    >
-      {data.map((point, index) => {
-        const barHeight = Math.max(6, (point.y / maxValue) * plotHeight);
-        const color = chartColors[index % chartColors.length];
-
-        return (
-          <View
-            key={`${point.x}-${index}`}
-            style={styles.seriesItem}
-            accessible
-            accessibilityLabel={`${point.label ?? point.x}: ${formatMetric(point.y)}`}
+    <View style={styles.series}>
+      <View style={styles.seriesHeader} accessibilityLiveRegion="polite">
+        <View style={styles.seriesSummary}>
+          <Typography variant="heading2" color="primary">
+            {formatMetric(selectedPoint.y)}
+          </Typography>
+          <Typography variant="small" color="muted">
+            {selectedLabel}
+          </Typography>
+        </View>
+        <View style={styles.seriesControls}>
+          <Pressable
+            style={styles.seriesControl}
+            onPress={() => setSelectedIndex(selected - 1)}
+            disabled={selected === 0}
+            accessibilityRole="button"
+            accessibilityLabel="Previous data point"
+            accessibilityState={{ disabled: selected === 0 }}
           >
-            <View style={styles.metricSlot}>
-              <Typography
-                variant="small"
-                color="muted"
-                style={styles.metricLabel}
-                numberOfLines={1}
-              >
-                {formatMetric(point.y)}
-              </Typography>
-            </View>
-            <View style={[styles.plotTrack, { height: plotHeight }]}>
-              <View
-                style={[
-                  styles.bar,
-                  {
-                    backgroundColor: color,
-                    height: barHeight,
-                    opacity: type === 'line' ? 0.9 : 1,
-                    width: type === 'line' ? 14 : 22,
-                  },
-                ]}
+            <View style={{ transform: [{ rotate: '180deg' }] }}>
+              <AppIcon
+                name="chevronRight"
+                size={18}
+                color={
+                  selected === 0
+                    ? theme.colors.placeholder
+                    : theme.colors.primary
+                }
               />
             </View>
-            <Typography
-              variant="small"
-              color="muted"
-              numberOfLines={1}
-              style={styles.axisLabel}
-            >
-              {`${point.x}`}
-            </Typography>
-            <View style={styles.captionSlot}>
-              <Typography
-                variant="small"
-                color="dim"
-                numberOfLines={2}
-                style={styles.captionLabel}
-              >
-                {point.label ?? `${point.x}`}
-              </Typography>
-            </View>
-          </View>
-        );
-      })}
-    </ScrollView>
+          </Pressable>
+          <Pressable
+            style={styles.seriesControl}
+            onPress={() => setSelectedIndex(selected + 1)}
+            disabled={selected === data.length - 1}
+            accessibilityRole="button"
+            accessibilityLabel="Next data point"
+            accessibilityState={{ disabled: selected === data.length - 1 }}
+          >
+            <AppIcon
+              name="chevronRight"
+              size={18}
+              color={
+                selected === data.length - 1
+                  ? theme.colors.placeholder
+                  : theme.colors.primary
+              }
+            />
+          </Pressable>
+        </View>
+      </View>
+      <View style={styles.plotRow}>
+        <View style={[styles.yAxis, { height: plotHeight }]}>
+          <Typography variant="small" color="dim">
+            {Math.round(maximum)}
+          </Typography>
+          <Typography variant="small" color="dim">
+            {Math.round(maximum / 2)}
+          </Typography>
+          <Typography variant="small" color="dim">
+            0
+          </Typography>
+        </View>
+        <Pressable
+          style={styles.plot}
+          onLayout={(event) => setPlotWidth(event.nativeEvent.layout.width)}
+          onPress={(event) =>
+            setSelectedIndex(
+              getNearestSeriesIndex(
+                event.nativeEvent.locationX,
+                plotWidth,
+                data.length,
+              ),
+            )
+          }
+          accessibilityRole="adjustable"
+          accessibilityLabel={`${selectedLabel}: ${formatMetric(selectedPoint.y)}`}
+          accessibilityHint="Tap the chart or use the previous and next buttons to inspect each value"
+          accessibilityActions={[
+            { name: 'increment', label: 'Next data point' },
+            { name: 'decrement', label: 'Previous data point' },
+          ]}
+          onAccessibilityAction={(event) =>
+            setSelectedIndex(
+              Math.max(
+                0,
+                Math.min(
+                  data.length - 1,
+                  selected +
+                    (event.nativeEvent.actionName === 'increment' ? 1 : -1),
+                ),
+              ),
+            )
+          }
+        >
+          <Svg
+            width={Math.max(1, plotWidth)}
+            height={plotHeight}
+            accessible={false}
+          >
+            {[8, plotHeight / 2, baseline].map((y) => (
+              <Line
+                key={y}
+                x1={0}
+                x2={plotWidth}
+                y1={y}
+                y2={y}
+                stroke={theme.colors.border}
+                strokeDasharray="3 5"
+                strokeWidth={0.7}
+              />
+            ))}
+            {type === 'line' && points.length > 0 ? (
+              <>
+                <Path
+                  d={`${line} L${points[points.length - 1].x} ${baseline} L${points[0].x} ${baseline} Z`}
+                  fill={theme.colors.primary}
+                  fillOpacity={0.08}
+                />
+                <Path
+                  d={line}
+                  fill="none"
+                  stroke={theme.colors.primary}
+                  strokeWidth={2.5}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+                <Line
+                  x1={points[selected].x}
+                  x2={points[selected].x}
+                  y1={8}
+                  y2={baseline}
+                  stroke={theme.colors.primary}
+                  opacity={0.25}
+                  strokeDasharray="2 4"
+                />
+                <Circle
+                  cx={points[selected].x}
+                  cy={points[selected].y}
+                  r={4.5}
+                  fill={theme.colors.primary}
+                  stroke={theme.colors.card}
+                  strokeWidth={2}
+                />
+              </>
+            ) : (
+              points.map((point, index) => (
+                <Rect
+                  key={`${data[index].x}-${index}`}
+                  x={Math.max(
+                    0,
+                    Math.min(plotWidth - barWidth, point.x - barWidth / 2),
+                  )}
+                  y={point.y}
+                  width={barWidth}
+                  height={baseline - point.y}
+                  rx={3}
+                  fill={theme.colors.primary}
+                  opacity={index === selected ? 1 : 0.42}
+                />
+              ))
+            )}
+          </Svg>
+        </Pressable>
+      </View>
+      <View style={styles.axisLabels}>
+        <Typography variant="small" color="muted" numberOfLines={1}>
+          {formatPointDate(data[0].x) ?? `${data[0].x}`}
+        </Typography>
+        <Typography variant="small" color="muted" numberOfLines={1}>
+          {formatPointDate(data[data.length - 1].x) ??
+            `${data[data.length - 1].x}`}
+        </Typography>
+      </View>
+    </View>
   );
 };

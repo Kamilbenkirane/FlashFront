@@ -16,17 +16,15 @@ import {
   deleteDeckSubscription,
 } from '@/services/subscriptions/subscriptionService';
 import { theme } from '@/tokens/theme';
+import { showAlert } from '@/utils/showAlert';
 import type React from 'react';
 import { useEffect, useMemo, useState } from 'react';
-import { Alert, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 type LibraryScreenProps = AppTabScreenProps<'Library'>;
 
-const MIN_LIBRARY_CARD_WIDTH = 168;
-
 const LibraryScreen: React.FC<LibraryScreenProps> = ({ navigation }) => {
-  const { width } = useWindowDimensions();
   const { user } = useUser();
   const {
     decks: subscribedDecks,
@@ -115,7 +113,7 @@ const LibraryScreen: React.FC<LibraryScreenProps> = ({ navigation }) => {
 
   const handleSubscriptionToggle = async (deck: Deck, subscribe: boolean) => {
     if (!user) {
-      Alert.alert('Session expired', 'Sign in again to manage subscriptions.');
+      showAlert('Session expired', 'Sign in again to manage subscriptions.');
       return false;
     }
 
@@ -141,7 +139,7 @@ const LibraryScreen: React.FC<LibraryScreenProps> = ({ navigation }) => {
         delete next[deckKey];
         return next;
       });
-      Alert.alert('Error', 'Failed to update subscription');
+      showAlert('Error', 'Failed to update subscription');
       return false;
     } finally {
       setPendingDeckId((current) =>
@@ -173,26 +171,22 @@ const LibraryScreen: React.FC<LibraryScreenProps> = ({ navigation }) => {
       return;
     }
 
-    Alert.alert(
-      'Subscribe First',
-      `You need to subscribe to "${deck.deck_name}" before studying it.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Subscribe & Study',
-          onPress: async () => {
-            const didSubscribe = await handleSubscriptionToggle(deck, true);
-            if (didSubscribe) {
-              openDeckStudy(deck);
-            }
-          },
+    showAlert('Add deck?', `Add "${deck.deck_name}" to study it.`, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Add & study',
+        onPress: async () => {
+          const didSubscribe = await handleSubscriptionToggle(deck, true);
+          if (didSubscribe) {
+            openDeckStudy(deck);
+          }
         },
-      ],
-    );
+      },
+    ]);
   };
 
   let libraryBodyState: LibraryBodyState = 'ready';
-  if (isLibraryLoading) {
+  if (isLibraryLoading || (showSubscribedOnly && isSubscribedDecksLoading)) {
     libraryBodyState = 'loading';
   } else if (libraryError) {
     libraryBodyState = 'libraryError';
@@ -204,69 +198,61 @@ const LibraryScreen: React.FC<LibraryScreenProps> = ({ navigation }) => {
     libraryBodyState = 'filteredEmpty';
   }
 
-  const gridHorizontalPadding = theme.spacing.lg;
-  const gridColumnGap = theme.spacing.sm;
-  const availableGridWidth = Math.max(width - gridHorizontalPadding * 2, 0);
-  const canFitTwoColumns =
-    availableGridWidth >= MIN_LIBRARY_CARD_WIDTH * 2 + gridColumnGap;
-  const numColumns = canFitTwoColumns ? 2 : 1;
-  const cardWidth =
-    numColumns === 2
-      ? (availableGridWidth - gridColumnGap) / 2
-      : availableGridWidth;
-
-  return (
-    <SafeAreaView edges={['top', 'left', 'right']} style={styles.container}>
-      <LibraryHeader
-        accountLabel={user?.user_name || user?.email || 'Your account'}
-      />
-
+  const header = (
+    <>
+      <LibraryHeader />
       <View style={styles.searchContainer}>
         <SearchBar
           value={searchQuery}
           onChangeText={setSearchQuery}
           onClear={() => setSearchQuery('')}
-          placeholder="Search decks..."
+          placeholder="Search decks or subjects"
           accessibilityLabel="Search decks"
           testID="library-search"
         />
       </View>
-
       <FilterBar
         subjects={subjects}
         selectedSubject={selectedSubject}
         onSubjectSelect={setSelectedSubject}
         showSubscribedOnly={showSubscribedOnly}
         onToggleSubscribed={() => setShowSubscribedOnly(!showSubscribedOnly)}
+        subscribedCount={subscribedDecks.length}
         testID="library-filters"
       />
-
-      <View style={styles.statsContainer}>
-        <Typography variant="caption" style={styles.statsText}>
-          {filteredDecks.length} of {library.length} decks •{' '}
-          {isSubscribedDecksLoading
-            ? 'Loading subscriptions...'
-            : `${subscribedDecks.length} subscribed`}
+      <View style={styles.listHeading}>
+        <Typography variant="caption" color="muted">
+          {isLibraryLoading || (showSubscribedOnly && isSubscribedDecksLoading)
+            ? 'Loading…'
+            : `${filteredDecks.length} decks`}
         </Typography>
       </View>
+    </>
+  );
 
-      <LibraryContent
-        bodyState={libraryBodyState}
-        filteredDecks={filteredDecks}
-        libraryError={libraryError}
-        subscribedDecksError={subscribedDecksError}
-        showSubscribedOnly={showSubscribedOnly}
-        pendingDeckId={pendingDeckId}
-        cardWidth={cardWidth}
-        numColumns={numColumns}
-        gridHorizontalPadding={gridHorizontalPadding}
-        gridColumnGap={gridColumnGap}
-        reloadLibrary={reloadLibrary}
-        reloadSubscribedDecks={reloadSubscribedDecks}
-        isSubscribed={isSubscribed}
-        onSubscriptionToggle={handleSubscriptionToggle}
-        onDeckPress={handleDeckPress}
-      />
+  return (
+    <SafeAreaView edges={['top', 'left', 'right']} style={styles.container}>
+      <View style={styles.content}>
+        <LibraryContent
+          header={header}
+          bodyState={libraryBodyState}
+          filteredDecks={filteredDecks}
+          libraryError={libraryError}
+          subscribedDecksError={subscribedDecksError}
+          showSubscribedOnly={showSubscribedOnly}
+          pendingDeckId={pendingDeckId}
+          reloadLibrary={reloadLibrary}
+          reloadSubscribedDecks={reloadSubscribedDecks}
+          isSubscribed={isSubscribed}
+          onSubscriptionToggle={handleSubscriptionToggle}
+          onDeckPress={handleDeckPress}
+          onClearFilters={() => {
+            setSearchQuery('');
+            setSelectedSubject(null);
+            setShowSubscribedOnly(false);
+          }}
+        />
+      </View>
     </SafeAreaView>
   );
 };
@@ -277,16 +263,16 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.background,
   },
   searchContainer: {
-    paddingHorizontal: theme.spacing.lg,
+    marginBottom: theme.spacing.md,
+  },
+  content: {
+    flex: 1,
+    width: '100%',
+    maxWidth: 840,
+    alignSelf: 'center',
+  },
+  listHeading: {
     paddingVertical: theme.spacing.md,
-  },
-  statsContainer: {
-    paddingHorizontal: theme.spacing.lg,
-    paddingBottom: theme.spacing.sm,
-  },
-  statsText: {
-    color: theme.colors.mutedForeground,
-    textAlign: 'left',
   },
 });
 

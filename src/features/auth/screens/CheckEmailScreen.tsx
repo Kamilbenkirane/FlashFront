@@ -7,7 +7,7 @@ import { Typography } from '@/components/ui/Typography';
 import { AuthScaffold } from '@/features/auth/components/AuthScaffold';
 import { useAuth } from '@/providers/AuthProvider';
 import type React from 'react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 type CheckEmailScreenProps = AuthStackScreenProps<'CheckEmail'>;
@@ -28,6 +28,10 @@ const CheckEmailScreen: React.FC<CheckEmailScreenProps> = ({
     [route.params?.mode],
   );
 
+  useEffect(() => {
+    setNotice(route.params?.message || null);
+  }, [mode, route.params?.message]);
+
   const handleResend = async () => {
     setIsSubmitting(true);
     const result = await resendVerificationEmail();
@@ -40,7 +44,7 @@ const CheckEmailScreen: React.FC<CheckEmailScreenProps> = ({
 
   return (
     <AuthScaffold
-      title={mode === 'reset' ? 'Check your inbox' : 'Verify your email'}
+      title="Check your email"
       subtitle={
         mode === 'reset'
           ? `We sent a reset link to ${pendingEmail || 'your inbox'}.`
@@ -52,7 +56,8 @@ const CheckEmailScreen: React.FC<CheckEmailScreenProps> = ({
       <View style={styles.actions}>
         {mode === 'verify' ? (
           <Button
-            title="Resend verification email"
+            title="Resend email"
+            size="lg"
             variant="outline"
             onPress={() => void handleResend()}
             loading={isSubmitting}
@@ -61,6 +66,7 @@ const CheckEmailScreen: React.FC<CheckEmailScreenProps> = ({
         ) : null}
         <Button
           title="Back to sign in"
+          size="lg"
           onPress={() => {
             clearAuthError();
             navigation.navigate('Login');
@@ -68,11 +74,11 @@ const CheckEmailScreen: React.FC<CheckEmailScreenProps> = ({
           fullWidth
         />
         {mode === 'verify' ? (
-          <Typography variant="small" color="muted" style={styles.helperText}>
+          <Typography variant="caption" color="muted" style={styles.helperText}>
             After confirming your email, return here and sign in.
           </Typography>
         ) : (
-          <Typography variant="small" color="muted" style={styles.helperText}>
+          <Typography variant="caption" color="muted" style={styles.helperText}>
             Open the link on this device to finish resetting your password.
           </Typography>
         )}

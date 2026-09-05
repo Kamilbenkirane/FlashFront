@@ -1,6 +1,6 @@
 # Authentication emails
 
-FlashFront exchanges Supabase email token hashes through its backend. Email
+Shuffle exchanges Supabase email token hashes through its backend. Email
 links must contain `token_hash` and `type`; the default Supabase confirmation
 link consumes the token first and returns a Supabase session the app does not use.
 

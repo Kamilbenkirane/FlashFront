@@ -53,7 +53,10 @@ type FlashcardScreenProps = AppTabScreenProps<'Flashcard'>;
 
 const FlashcardScreen = ({ navigation, route }: FlashcardScreenProps) => {
   const { authUser } = useAuth();
-  const { user, userLoading } = useUser();
+  const { user, userLoading, onboardingPreferences } = useUser();
+  const sessionGoal = onboardingPreferences?.dailyGoal || 20;
+  const [sessionPaused, setSessionPaused] = useState(false);
+  const [continuePastGoal, setContinuePastGoal] = useState(false);
   const {
     decks,
     isLoading: isDecksLoading,
@@ -76,7 +79,6 @@ const FlashcardScreen = ({ navigation, route }: FlashcardScreenProps) => {
   const {
     currentCard,
     currentCardToken,
-    progress,
     reviewCount,
     stats: sessionStats,
     submitReview,
@@ -139,18 +141,25 @@ const FlashcardScreen = ({ navigation, route }: FlashcardScreenProps) => {
       : null;
   const headerTitle =
     activeDecksIds.length === 0
-      ? 'Study Session'
+      ? 'Your practice'
       : activeDecksIds.length === 1
-        ? `Studying: ${activeDeckLabel}`
-        : `Studying: ${activeDecksIds.length} decks`;
+        ? `${activeDeckLabel}`
+        : `${activeDecksIds.length} decks`;
 
   useSyncLocalReviews(reviewCount);
+
+  useEffect(() => {
+    setSessionPaused(false);
+    setContinuePastGoal(false);
+  }, [sessionData]);
 
   useEffect(() => {
     hasInteractedWithDeckSelectionRef.current = false;
     hasObservedSubscribedDeckLoadRef.current = false;
     setResolvedInitialDeckSelectionIdentityId(null);
     setActiveDecksIds([]);
+    setSessionPaused(false);
+    setContinuePastGoal(false);
   }, [identityId]);
 
   useEffect(() => {
@@ -165,6 +174,8 @@ const FlashcardScreen = ({ navigation, route }: FlashcardScreenProps) => {
     }
 
     const nextDeckIds = normalizeStudyDeckIds([selectedDeckId]);
+    setSessionPaused(false);
+    setContinuePastGoal(true);
     hasInteractedWithDeckSelectionRef.current = false;
     setResolvedInitialDeckSelectionIdentityId(identityId);
     setActiveDecksIds((currentDeckIds) =>
@@ -418,6 +429,8 @@ const FlashcardScreen = ({ navigation, route }: FlashcardScreenProps) => {
       setResolvedInitialDeckSelectionIdentityId(identityId);
     }
     setActiveDecksIds([]);
+    setSessionPaused(false);
+    setContinuePastGoal(false);
   }, [identityId]);
 
   const submitSessionReview = useCallback(
@@ -513,6 +526,10 @@ const FlashcardScreen = ({ navigation, route }: FlashcardScreenProps) => {
       ? (sessionStats.correct + sessionStats.known) / totalReviews
       : 0;
   const isProcessing = pendingReviewOutcome !== null;
+  const showSummary =
+    activeDecksIds.length > 0 &&
+    !isProcessing &&
+    (sessionPaused || (totalReviews >= sessionGoal && !continuePastGoal));
   const hasStudyChatModel =
     studyChatModels.length > 0 && sessionSettings.studyChatModelId.length > 0;
   const isStudyChatAvailable = currentCard !== null;
@@ -539,13 +556,21 @@ const FlashcardScreen = ({ navigation, route }: FlashcardScreenProps) => {
     <SafeAreaView edges={['top', 'left', 'right']} style={styles.container}>
       <StudyHeader
         title={headerTitle}
-        completedCards={progress.completedCards}
-        totalCards={progress.totalCards}
+        completedCards={totalReviews}
+        totalCards={sessionGoal}
+        isActive={activeDecksIds.length > 0 && !showSummary}
+        onFinish={
+          currentCard && !showSummary && !isProcessing
+            ? () => setSessionPaused(true)
+            : undefined
+        }
         onOpenChat={
-          isStudyChatAvailable ? () => setShowStudyChat(true) : undefined
+          isStudyChatAvailable && !showSummary
+            ? () => setShowStudyChat(true)
+            : undefined
         }
         onOpenSettings={
-          activeDecksIds.length > 0
+          activeDecksIds.length > 0 && !showSummary
             ? () => setShowQuickSettings(true)
             : undefined
         }
@@ -553,6 +578,13 @@ const FlashcardScreen = ({ navigation, route }: FlashcardScreenProps) => {
 
       <StudyContent
         viewState={studyContentState}
+        sessionGoal={sessionGoal}
+        showSummary={showSummary}
+        onContinue={() => {
+          setSessionPaused(false);
+          setContinuePastGoal(true);
+        }}
+        onViewProgress={() => navigation.navigate('Profile')}
         decks={decks}
         selectedDeckIds={activeDecksIds}
         currentCard={currentCard}
@@ -600,6 +632,7 @@ const FlashcardScreen = ({ navigation, route }: FlashcardScreenProps) => {
         visible={showStudyChat}
         onClose={() => setShowStudyChat(false)}
         deckLabel={studyChatDeckLabel}
+        cardQuestion={currentCard?.recto}
         isComposerAvailable={hasStudyChatModel}
         unavailableMessage={studyChatUnavailableMessage}
         messages={studyChat.messages}

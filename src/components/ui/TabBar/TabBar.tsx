@@ -1,9 +1,9 @@
+import { GlassSurface } from '@/components/ui/Brand/GlassSurface';
 import { AppIcon } from '@/components/ui/icons';
 import useReducedMotion from '@/hooks/useReducedMotion';
 import { theme } from '@/tokens/theme';
+import { triggerHaptic } from '@/utils/haptics';
 import { BottomTabBarHeightCallbackContext } from '@react-navigation/bottom-tabs';
-import { BlurView } from 'expo-blur';
-import * as Haptics from 'expo-haptics';
 import { MotiView } from 'moti';
 import { MotiPressable } from 'moti/interactions';
 import type React from 'react';
@@ -12,28 +12,13 @@ import {
   Keyboard,
   type LayoutChangeEvent,
   Platform,
-  StyleSheet,
   Text,
   View,
 } from 'react-native';
 import { getTabIcon, tabBarStyles as styles } from './TabBar.styles';
 import type { TabBarProps, TabItemProps } from './TabBar.types';
 
-const getBlurTint = (color: string): 'light' | 'dark' => {
-  const normalizedColor = color.replace('#', '');
-  if (normalizedColor.length !== 6) {
-    return 'light';
-  }
-
-  const red = Number.parseInt(normalizedColor.slice(0, 2), 16);
-  const green = Number.parseInt(normalizedColor.slice(2, 4), 16);
-  const blue = Number.parseInt(normalizedColor.slice(4, 6), 16);
-  const luminance = (0.2126 * red + 0.7152 * green + 0.0722 * blue) / 255;
-
-  return luminance < 0.45 ? 'dark' : 'light';
-};
-
-const TAB_ICON_SIZE = 18;
+const TAB_ICON_SIZE = 21;
 const TAB_ICON_STROKE_WIDTH = 2.1;
 
 // Individual Tab Item Component
@@ -49,10 +34,7 @@ const TabItem: React.FC<TabItemProps> = ({
   const prefersReducedMotion = useReducedMotion();
 
   const handlePress = () => {
-    // Add haptic feedback on iOS
-    if (Haptics?.impactAsync) {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
+    if (!isFocused) triggerHaptic('selection');
     onPress();
   };
 
@@ -118,17 +100,6 @@ const TabItem: React.FC<TabItemProps> = ({
         >
           {label}
         </Text>
-        <MotiView
-          style={styles.activeIndicator}
-          animate={{
-            opacity: isFocused ? 1 : 0,
-            scaleX: prefersReducedMotion ? 1 : isFocused ? 1 : 0.6,
-          }}
-          transition={{
-            type: 'timing',
-            duration: prefersReducedMotion ? 0 : 180,
-          }}
-        />
       </MotiView>
     </MotiPressable>
   );
@@ -151,10 +122,9 @@ export const TabBar: React.FC<TabBarProps> = ({
   const shouldHideOnKeyboard = focusedOptions.tabBarHideOnKeyboard ?? false;
   const shouldShowTabBar = !(shouldHideOnKeyboard && isKeyboardVisible);
   const bottomDockSpacing = Math.max(
-    insets.bottom - theme.spacing.lg,
+    insets.bottom - theme.spacing.sm,
     theme.spacing.xs,
   );
-  const blurTint = getBlurTint(theme.colors.background);
 
   useEffect(() => {
     const keyboardShowEvent =
@@ -195,13 +165,7 @@ export const TabBar: React.FC<TabBarProps> = ({
       }}
     >
       <View style={[styles.dock, { paddingBottom: bottomDockSpacing }]}>
-        <View style={styles.shell}>
-          <BlurView
-            tint={blurTint}
-            intensity={Platform.OS === 'ios' ? 85 : 55}
-            style={StyleSheet.absoluteFill}
-          />
-          <View style={styles.shellTint} />
+        <GlassSurface style={styles.shell}>
           {state.routes.map((route, index: number) => {
             const descriptor = descriptors[route.key];
             const isFocused = state.index === index;
@@ -238,7 +202,7 @@ export const TabBar: React.FC<TabBarProps> = ({
               />
             );
           })}
-        </View>
+        </GlassSurface>
       </View>
     </MotiView>
   );

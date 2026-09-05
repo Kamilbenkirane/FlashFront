@@ -2,115 +2,118 @@ import { ProgressBar } from '@/components/ui/ProgressBar';
 import { Typography } from '@/components/ui/Typography';
 import { AppIcon } from '@/components/ui/icons';
 import { theme } from '@/tokens/theme';
-import type React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 interface StudyHeaderProps {
   title: string;
   completedCards: number;
   totalCards: number;
+  isActive?: boolean;
   onOpenChat?: () => void;
   onOpenSettings?: () => void;
+  onFinish?: () => void;
 }
 
-export const StudyHeader: React.FC<StudyHeaderProps> = ({
+export const StudyHeader = ({
   title,
   completedCards,
   totalCards,
+  isActive,
   onOpenChat,
   onOpenSettings,
-}) => {
-  return (
-    <View style={styles.header}>
-      <View style={styles.headerTop}>
-        <Typography variant="heading2" style={styles.headerTitle}>
-          {title}
+  onFinish,
+}: StudyHeaderProps) => (
+  <View style={[styles.header, isActive && styles.activeHeader]}>
+    <View style={styles.row}>
+      <View style={styles.title}>
+        <Typography
+          variant={isActive ? 'heading3' : 'heading1'}
+          accessibilityRole="header"
+          numberOfLines={1}
+        >
+          {isActive ? title : 'Study'}
         </Typography>
-        <View style={styles.actions}>
-          {onOpenChat ? (
-            <Pressable
-              onPress={onOpenChat}
-              style={styles.actionButton}
-              accessibilityRole="button"
-              accessibilityLabel="Open study chat"
-              hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
-            >
-              <AppIcon
-                color={theme.colors.mutedForeground}
-                name="sparkles"
-                size={18}
-                strokeWidth={1.75}
-              />
-            </Pressable>
-          ) : null}
-          {onOpenSettings ? (
-            <Pressable
-              onPress={onOpenSettings}
-              style={styles.actionButton}
-              accessibilityRole="button"
-              accessibilityLabel="Open study settings"
-              hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
-            >
-              <AppIcon
-                color={theme.colors.mutedForeground}
-                name="settings"
-                size={18}
-                strokeWidth={1.75}
-              />
-            </Pressable>
-          ) : null}
-        </View>
+        {isActive ? (
+          <Typography variant="small" color="muted">
+            {completedCards} / {totalCards} reviews
+          </Typography>
+        ) : null}
       </View>
-
-      {totalCards > 0 ? (
-        <ProgressBar
-          progress={completedCards}
-          total={totalCards}
-          showLabel={true}
-          showPercentage={true}
-          color="primary"
-          size="lg"
-          className="mt-2"
-        />
+      {onFinish ? (
+        <Pressable
+          onPress={onFinish}
+          accessibilityRole="button"
+          accessibilityLabel="Finish this session"
+          style={styles.finish}
+        >
+          <Typography variant="caption" color="muted">
+            Finish
+          </Typography>
+        </Pressable>
+      ) : null}
+      {onOpenChat ? (
+        <Pressable
+          onPress={onOpenChat}
+          accessibilityRole="button"
+          accessibilityLabel="Open study assistant"
+          style={styles.iconButton}
+        >
+          <AppIcon
+            name="messageCircle"
+            size={20}
+            color={theme.colors.mutedForeground}
+          />
+        </Pressable>
+      ) : null}
+      {onOpenSettings ? (
+        <Pressable
+          onPress={onOpenSettings}
+          accessibilityRole="button"
+          accessibilityLabel="Open session settings"
+          style={styles.iconButton}
+        >
+          <AppIcon
+            name="settings"
+            size={20}
+            color={theme.colors.mutedForeground}
+          />
+        </Pressable>
       ) : null}
     </View>
-  );
-};
+    {isActive ? (
+      <ProgressBar
+        progress={completedCards}
+        total={totalCards}
+        showLabel={false}
+        size="sm"
+      />
+    ) : null}
+  </View>
+);
 
 const styles = StyleSheet.create({
   header: {
-    paddingHorizontal: theme.spacing.lg,
-    paddingVertical: theme.spacing.lg,
-    backgroundColor: 'transparent',
+    width: '100%',
+    maxWidth: 1120,
+    alignSelf: 'center',
+    paddingHorizontal: 24,
+    paddingTop: 20,
+    paddingBottom: 12,
+    gap: 16,
   },
-  headerTop: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: theme.spacing.md,
-  },
-  headerTitle: {
-    textAlign: 'left',
-    color: theme.colors.foreground,
-    flex: 1,
-  },
-  actions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: theme.spacing.sm,
-    marginLeft: theme.spacing.md,
-  },
-  actionButton: {
-    minWidth: 40,
-    minHeight: 40,
-    padding: theme.spacing.sm,
-    borderRadius: theme.borderRadius.lg,
+  activeHeader: { maxWidth: 688 },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  title: { flex: 1, minWidth: 0, gap: 4 },
+  iconButton: {
+    width: 44,
+    height: 44,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: theme.colors.background,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    shadowOpacity: 0,
-    elevation: 0,
+  },
+  finish: {
+    minWidth: 48,
+    minHeight: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

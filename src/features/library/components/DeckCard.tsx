@@ -5,8 +5,9 @@ import { AppIcon } from '@/components/ui/icons';
 import type { Deck } from '@/interfaces';
 import { theme } from '@/tokens/theme';
 import { triggerHaptic } from '@/utils/haptics';
+import { showAlert } from '@/utils/showAlert';
 import type React from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 
 export interface DeckCardProps {
   deck: Deck;
@@ -26,166 +27,142 @@ export const DeckCard: React.FC<DeckCardProps> = ({
   onPress,
   className = '',
   testID,
-}) => {
-  const handleSubscriptionToggle = () => {
-    triggerHaptic('impact');
-    onSubscriptionToggle(deck, !isSubscribed);
-  };
-
-  const handlePress = () => {
-    triggerHaptic('impact');
-    onPress(deck);
-  };
-
-  const metaItems = [
-    deck.author,
-    deck.card_count ? `${deck.card_count} cards` : null,
-  ]
-    .filter(Boolean)
-    .join(' • ');
-
-  return (
+}) => (
+  <Card className={className} style={styles.card}>
     <Pressable
-      onPress={handlePress}
-      className={className}
-      style={styles.container}
+      onPress={() => {
+        triggerHaptic('selection');
+        onPress(deck);
+      }}
+      disabled={isSubscriptionPending}
+      style={styles.content}
       testID={testID}
       accessibilityRole="button"
-      accessibilityLabel={`${deck.deck_name} deck`}
+      accessibilityLabel={`${deck.deck_name}, ${deck.subject}`}
+      accessibilityState={{ disabled: isSubscriptionPending }}
       accessibilityHint={
-        isSubscribed
-          ? 'Opens this deck and starts studying'
-          : 'Opens deck details. Subscribe first to study it.'
+        isSubscribed ? 'Study this deck' : 'Add this deck and study'
       }
     >
-      <Card variant="default" style={styles.card}>
-        <View style={styles.header}>
-          <View style={styles.headerLeading}>
-            <View style={styles.subjectChip}>
-              <Typography
-                variant="caption"
-                color="primary"
-                numberOfLines={1}
-                ellipsizeMode="tail"
-                style={styles.subjectChipLabel}
-              >
-                {deck.subject}
-              </Typography>
-            </View>
-          </View>
-          <View style={styles.statusSlot}>
-            <View
-              style={[
-                styles.statusIcon,
-                isSubscribed ? styles.statusIconActive : styles.statusIconIdle,
-              ]}
-              accessible={false}
-              importantForAccessibility="no"
-            >
-              <AppIcon
-                color={
-                  isSubscribed
-                    ? theme.colors.success.DEFAULT
-                    : theme.colors.primary
-                }
-                name={isSubscribed ? 'check' : 'plus'}
-                size={16}
-                strokeWidth={2.35}
-              />
-            </View>
-          </View>
-        </View>
-
-        <View style={styles.content}>
-          <Typography variant="heading3" style={styles.title} numberOfLines={2}>
-            {deck.deck_name}
-          </Typography>
-
-          <View style={styles.meta}>
-            <Typography variant="caption" color="muted" numberOfLines={1}>
-              {metaItems || 'Ready to study'}
-            </Typography>
-          </View>
-        </View>
-
-        <View style={styles.footer}>
-          <Button
-            title={isSubscribed ? 'Unsubscribe' : 'Subscribe'}
-            variant={isSubscribed ? 'outline' : 'primary'}
-            size="sm"
-            onPress={handleSubscriptionToggle}
-            loading={isSubscriptionPending}
-            disabled={isSubscriptionPending}
-            fullWidth
-          />
-        </View>
-      </Card>
+      <Typography variant="body" style={styles.title}>
+        {deck.deck_name}
+      </Typography>
+      <Typography variant="caption" color="muted">
+        {deck.subject}
+        {deck.card_count === undefined ? '' : ` · ${deck.card_count} cards`}
+      </Typography>
     </Pressable>
-  );
-};
+    <View style={styles.actions}>
+      {isSubscribed ? (
+        <Pressable
+          style={styles.study}
+          accessibilityRole="button"
+          accessibilityLabel={`Study ${deck.deck_name}`}
+          accessibilityState={{
+            disabled: isSubscriptionPending,
+            busy: isSubscriptionPending,
+          }}
+          disabled={isSubscriptionPending}
+          onPress={() => {
+            triggerHaptic('selection');
+            onPress(deck);
+          }}
+        >
+          {isSubscriptionPending ? (
+            <ActivityIndicator size="small" color={theme.colors.primary} />
+          ) : (
+            <Typography
+              variant="caption"
+              color="primary"
+              style={styles.studyLabel}
+            >
+              Study
+            </Typography>
+          )}
+        </Pressable>
+      ) : (
+        <Button
+          title="Add"
+          variant="outline"
+          size="sm"
+          onPress={() => {
+            triggerHaptic('selection');
+            onSubscriptionToggle(deck, true);
+          }}
+          accessibilityLabel={`Add ${deck.deck_name}`}
+          loading={isSubscriptionPending}
+          disabled={isSubscriptionPending}
+        />
+      )}
+      {isSubscribed ? (
+        <Pressable
+          style={styles.remove}
+          accessibilityRole="button"
+          accessibilityLabel={`Remove ${deck.deck_name}`}
+          accessibilityState={{ disabled: isSubscriptionPending }}
+          disabled={isSubscriptionPending}
+          onPress={() =>
+            showAlert(
+              'Remove deck?',
+              `Remove "${deck.deck_name}" from added decks?`,
+              [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                  text: 'Remove',
+                  style: 'destructive',
+                  onPress: () => onSubscriptionToggle(deck, false),
+                },
+              ],
+            )
+          }
+        >
+          <AppIcon
+            name="close"
+            size={18}
+            color={theme.colors.mutedForeground}
+          />
+        </Pressable>
+      ) : null}
+    </View>
+  </Card>
+);
 
 const styles = StyleSheet.create({
-  container: {
-    width: '100%',
-  },
   card: {
-    minHeight: 188,
-  },
-  header: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     alignItems: 'center',
-    gap: theme.spacing.sm,
-    marginBottom: theme.spacing.md,
-  },
-  headerLeading: {
-    flex: 1,
-    minWidth: 0,
-  },
-  subjectChip: {
-    maxWidth: '100%',
-    alignSelf: 'flex-start',
-    paddingHorizontal: theme.spacing.sm,
-    paddingVertical: 6,
-    borderRadius: theme.borderRadius.full,
-    backgroundColor: theme.colors.primaryLight,
-  },
-  subjectChipLabel: {
-    flexShrink: 1,
-  },
-  statusSlot: {
-    width: 44,
-    minWidth: 44,
-    alignItems: 'flex-end',
-    justifyContent: 'center',
-    flexShrink: 0,
-  },
-  statusIcon: {
-    width: 30,
-    height: 30,
-    borderRadius: theme.borderRadius.full,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-  },
-  statusIconActive: {
-    backgroundColor: theme.colors.success.light,
-    borderColor: theme.colors.success.light,
-  },
-  statusIconIdle: {
-    backgroundColor: theme.colors.secondary,
-    borderColor: theme.colors.border,
+    gap: theme.spacing.md,
+    padding: theme.spacing.md,
+    borderRadius: 18,
   },
   content: {
     flex: 1,
-    marginBottom: theme.spacing.lg,
+    minWidth: 132,
+    minHeight: 44,
+    justifyContent: 'center',
+    gap: theme.spacing.xs,
   },
-  title: {
-    marginBottom: theme.spacing.sm,
+  title: { fontFamily: theme.fontFamily.medium, fontSize: 16, lineHeight: 23 },
+  actions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.xs,
+    marginLeft: 'auto',
   },
-  meta: {
-    marginBottom: theme.spacing.md,
+  study: {
+    minWidth: 64,
+    minHeight: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: theme.borderRadius.md,
+    backgroundColor: theme.colors.secondary,
   },
-  footer: {
-    marginTop: theme.spacing.sm,
+  studyLabel: { fontFamily: theme.fontFamily.semibold },
+  remove: {
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

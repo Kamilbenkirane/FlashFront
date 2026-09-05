@@ -7,9 +7,9 @@ export const searchBarStyles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-    minHeight: 48,
+    minHeight: 52,
     backgroundColor: colors.card,
-    borderRadius: theme.borderRadius.lg,
+    borderRadius: theme.borderRadius.full,
     paddingHorizontal: theme.spacing.lg,
     paddingVertical: theme.spacing.sm,
     borderWidth: 1,
@@ -29,8 +29,8 @@ export const searchBarStyles = StyleSheet.create({
   },
   clearButton: {
     marginLeft: theme.spacing.sm,
-    width: 32,
-    height: 32,
+    width: 44,
+    height: 44,
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: theme.borderRadius.full,

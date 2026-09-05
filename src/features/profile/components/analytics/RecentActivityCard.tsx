@@ -31,7 +31,10 @@ export const RecentActivityCard: React.FC<RecentActivityCardProps> = ({
           numberOfLines={1}
           style={styles.dateText}
         >
-          {new Date(activity.activityDate).toLocaleDateString()}
+          {new Date(activity.activityDate).toLocaleDateString(undefined, {
+            month: 'short',
+            day: 'numeric',
+          })}
         </Typography>
       </View>
 
@@ -65,7 +68,7 @@ export const RecentActivityCard: React.FC<RecentActivityCardProps> = ({
 
 const styles = StyleSheet.create({
   card: {
-    marginBottom: theme.spacing.md,
+    marginBottom: theme.spacing.xs,
     gap: theme.spacing.md,
   },
   headerRow: {
@@ -79,7 +82,7 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   deckName: {
-    fontFamily: theme.fontFamily.medium,
+    fontFamily: theme.fontFamily.semibold,
   },
   dateText: {
     maxWidth: 96,
@@ -88,10 +91,13 @@ const styles = StyleSheet.create({
   metricsRow: {
     flexDirection: 'row',
     gap: theme.spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.border,
+    paddingTop: theme.spacing.md,
   },
   metricItem: {
     flex: 1,
-    alignItems: 'center',
+    alignItems: 'flex-start',
     gap: 2,
   },
 });

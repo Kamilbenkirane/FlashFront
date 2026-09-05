@@ -1,7 +1,9 @@
-# FlashFront
+# Shuffle
 
 Expo app for studying flashcards, managing deck subscriptions, viewing review
 analytics, and discussing cards with the study assistant.
+
+See the [design rationale and visual checks](docs/redesign.md).
 
 ## Development
 

@@ -39,3 +39,6 @@ yarn-error.*
 
 # Native builds (generated)
 ios/
+
+# Generated visual QA screenshots
+artifacts/

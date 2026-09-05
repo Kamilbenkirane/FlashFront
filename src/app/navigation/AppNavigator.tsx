@@ -35,7 +35,7 @@ const AppNavigator = () => {
         name="Profile"
         component={ProfileScreen}
         options={{
-          tabBarLabel: 'Profile',
+          tabBarLabel: 'Progress',
         }}
       />
     </Tab.Navigator>

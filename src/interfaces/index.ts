@@ -25,5 +25,5 @@ export interface SessionData {
 export interface DecksMultiSelectProps {
   decks: Deck[];
   onSelectDecks: (deckIds: (string | number)[]) => void;
-  selectedDeckIds?: (string | number)[];
+  selectedDeckIds: (string | number)[];
 }
