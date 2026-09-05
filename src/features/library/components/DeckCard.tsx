@@ -16,7 +16,6 @@ export interface DeckCardProps {
   onSubscriptionToggle: (deck: Deck, subscribe: boolean) => void;
   onPress: (deck: Deck) => void;
   testID?: string;
-  className?: string;
 }
 
 export const DeckCard: React.FC<DeckCardProps> = ({
@@ -25,10 +24,9 @@ export const DeckCard: React.FC<DeckCardProps> = ({
   isSubscriptionPending = false,
   onSubscriptionToggle,
   onPress,
-  className = '',
   testID,
 }) => (
-  <Card className={className} style={styles.card}>
+  <Card style={styles.card}>
     <Pressable
       onPress={() => {
         triggerHaptic('selection');

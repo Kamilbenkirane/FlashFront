@@ -28,7 +28,6 @@ export interface TypographyProps extends TextProps {
   variant?: TypographyVariant;
   color?: TypographyColor;
   children: React.ReactNode;
-  className?: string;
 }
 
 function resolveTypographyColor(theme: Theme, color: TypographyColor): string {
@@ -61,13 +60,11 @@ export const Typography: React.FC<TypographyProps> = ({
   variant = 'body',
   color = 'default',
   children,
-  className = '',
   style,
   ...props
 }) => {
   return (
     <Text
-      className={className}
       style={[
         theme.typography[variant],
         { color: resolveTypographyColor(theme, color) },

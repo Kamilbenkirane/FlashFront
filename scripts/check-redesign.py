@@ -25,12 +25,16 @@ OVERVIEW=dict(total_reviews=128,correct_reviews=108,incorrect_reviews=20,known_r
 TREND=[dict(x=f'2026-09-0{i+1}',y=v,label=day) for i,(v,day) in enumerate(zip([12,24,18,0,36,20,18],['M','T','W','T','F','S','S']))]
 ANALYTICS=dict(range='week',overview=OVERVIEW,review_count_trend=TREND,accuracy_trend=[dict(p,y=v) for p,v in zip(TREND,[65,80,78,0,85,90,94])],cards_reviewed_trend=TREND,deck_breakdown=[],recent_activity=[])
 ATTACHMENT=dict(artifact_id='preview',title='Recall over time',summary='An illustrative review pattern.',caption='Example, not personal data.',alt_text='A curve rises after each review.',image_path='',image_data_url='data:image/svg+xml,'+quote('<svg xmlns="http://www.w3.org/2000/svg" width="600" height="330"><rect width="600" height="330" fill="#0A2A3B"/><path d="M40 40V290H560M50 70Q130 240 220 220L240 70Q350 240 450 180L470 70" fill="none" stroke="#D8B878" stroke-width="5"/></svg>'))
+# Matching IDs verify that edit/create drafts keep separate state.
+NEW_PROPOSAL=dict(proposal_id='preview',deck_id=1,deck_name=DECKS[0]['deck_name'],proposed_recto='What is retrieval practice?',proposed_verso='Recalling before checking.',proposed_difficulty=1,change_goal='Keep one idea per card.',rationale='A focused prompt.',user_feedback_summary='')
+EDIT_PROPOSAL=dict(NEW_PROPOSAL,card_id=1,original_recto=SESSION[0]['recto'],original_verso=SESSION[0]['verso'],original_difficulty=1,proposed_recto='Why does recall help?',proposed_verso='It strengthens access to the memory.')
 
 with sync_playwright() as p:
  browser=p.chromium.launch(headless=True)
  context=browser.new_context(viewport={'width':390,'height':844},device_scale_factor=2,is_mobile=True,has_touch=True)
  page=context.new_page()
  errors=[]
+ proposal_writes=[]
  page.on('pageerror',lambda e: errors.append(str(e)))
  def api(route):
   path=urlparse(route.request.url).path
@@ -41,12 +45,19 @@ with sync_playwright() as p:
   elif path=='/me/decks': data=DECKS[:3]
   elif path=='/me/study-cards': data=SESSION
   elif path=='/me/analytics': data=ANALYTICS
-  elif path in ['/me/study-chat/models','/me/study-chat/image-models']: data={'models':[{'id':'test-model','label':'Learning assistant'}],'default_model':'test-model'}
+  elif path in ['/me/study-chat/models','/me/study-chat/image-models']: data={'models':[{'id':'test-model','label':'Learning assistant'},{'id':'other-model','label':'Detailed explanations'}],'default_model':'test-model'}
   elif path=='/me/study-chat/history': data={'thread_id':None,'messages':[]}
   elif path=='/me/study-chat' and route.request.method=='POST':
-   events=[dict(type='chart_ready',chart=dict(ATTACHMENT,chart_type='Line chart',data_mode='illustrative')),dict(type='image_ready',image=dict(ATTACHMENT,artifact_id='illustration')),dict(type='done')]
+   events=[dict(type='chart_ready',chart=dict(ATTACHMENT,chart_type='Line chart',data_mode='illustrative')),dict(type='image_ready',image=dict(ATTACHMENT,artifact_id='illustration')),dict(type='flashcard_proposal_ready',proposal=EDIT_PROPOSAL),dict(type='new_flashcard_proposal_ready',new_flashcard_proposal=NEW_PROPOSAL),dict(type='done')]
    route.fulfill(status=200,content_type='application/x-ndjson',body='\n'.join(json.dumps(event) for event in events)+'\n',headers={'Access-Control-Allow-Origin':'*'})
    return
+  elif path in ['/me/study-chat/apply-card-proposal','/me/study-chat/create-card-from-proposal']:
+   draft=route.request.post_data_json['proposal']
+   proposal_writes.append((path,draft))
+   if len(proposal_writes)==1:
+    route.fulfill(status=503,content_type='application/json',body=json.dumps({'detail':'Please retry this draft.'}),headers={'Access-Control-Allow-Origin':'*'})
+    return
+   data=dict(card_id=draft.get('card_id',2),deck_id=draft['deck_id'],recto=draft['proposed_recto'],verso=draft['proposed_verso'],difficulty=draft['proposed_difficulty'],creation_date='2026-01-05')
   elif path=='/me/reviews': data={}
   else: data={}
   route.fulfill(status=200,content_type='application/json',body=json.dumps(data),headers={'Access-Control-Allow-Origin':'*'})
@@ -109,10 +120,47 @@ with sync_playwright() as p:
   attachment.click()
   close=page.get_by_role('button',name=f'Close fullscreen {kind}',exact=True)
   expect(close).to_be_visible()
+  page.wait_for_timeout(450)
   page.screenshot(path=str(ARTIFACTS/f'{kind}-fullscreen-mobile.png'))
   close.click()
   expect(close).not_to_be_visible()
+ # Both proposal kinds share validation, while edits and saved status stay independent.
+ page.get_by_role('button',name='Edit draft',exact=True).first.click()
+ front=page.get_by_role('textbox',name='Draft front',exact=True)
+ front.fill('  ')
+ save=page.get_by_role('button',name='Save changes',exact=True)
+ save.click()
+ expect(page.get_by_role('alert')).to_contain_text('Front, back, and a non-negative difficulty are required.')
+ assert not proposal_writes, 'Invalid draft reached the API'
+ front.fill('  Why is retrieval practice useful?  ')
+ difficulty=page.get_by_role('textbox',name='Draft difficulty',exact=True)
+ difficulty.fill('-1')
+ save.click()
+ expect(page.get_by_role('alert')).to_be_visible()
+ assert not proposal_writes, 'Negative difficulty reached the API'
+ difficulty.fill('2.5')
+ save.click()
+ expect(page.get_by_role('alert')).to_contain_text('Please retry this draft.')
+ expect(front).to_have_value('  Why is retrieval practice useful?  ')
+ save.click()
+ expect(page.get_by_role('button',name='Changes saved',exact=True)).to_be_disabled()
+ page.get_by_role('button',name='Edit draft',exact=True).last.click()
+ front=page.get_by_role('textbox',name='Draft front',exact=True)
+ expect(front).to_have_value(NEW_PROPOSAL['proposed_recto'])
+ front.fill('  What does retrieval mean?  ')
+ page.get_by_role('textbox',name='Draft back',exact=True).fill('  Recalling an idea.  ')
+ page.get_by_role('textbox',name='Draft difficulty',exact=True).fill('0')
+ page.get_by_role('button',name='Add to deck',exact=True).click()
+ expect(page.get_by_role('button',name='Added to deck',exact=True)).to_be_disabled()
+ assert len(proposal_writes)==3
+ assert proposal_writes[0]==proposal_writes[1], 'Retry changed the draft payload'
+ assert proposal_writes[1][1]['card_id']==1 and proposal_writes[1][1]['proposed_recto']=='Why is retrieval practice useful?'
+ assert proposal_writes[1][1]['proposed_difficulty']==2.5
+ assert proposal_writes[2][0].endswith('/create-card-from-proposal') and 'card_id' not in proposal_writes[2][1]
+ assert proposal_writes[2][1]['proposed_recto']=='What does retrieval mean?' and proposal_writes[2][1]['proposed_verso']=='Recalling an idea.'
+ assert proposal_writes[2][1]['proposed_difficulty']==0
  page.get_by_role('button',name='Close study chat',exact=True).click()
+ expect(page.get_by_test_id('study-flashcard')).to_contain_text('Why is retrieval practice useful?')
  page.get_by_test_id('tab-library').click()
  page.get_by_test_id('library-search-input').wait_for()
  page.wait_for_timeout(500)
@@ -137,6 +185,10 @@ with sync_playwright() as p:
  page.wait_for_timeout(400)
  page.screenshot(path=str(ARTIFACTS/'settings-mobile.png'))
  print('SETTINGS',page.locator('body').inner_text()[-1800:])
+ for label in ['Change study chat model','Change study chat image model']:
+  page.get_by_role('button',name=label,exact=True).click()
+  page.get_by_role('button',name='Detailed explanations',exact=True).click()
+  expect(page.get_by_role('button',name=label,exact=True)).to_contain_text('Detailed explanations')
  page.get_by_role('button',name='Selected decks:',exact=False).click()
  deck=page.get_by_role('checkbox',name='Everyday French, Languages',exact=True)
  deck.click()
@@ -199,5 +251,5 @@ with sync_playwright() as p:
   cdp.send('Emulation.setEmulatedMedia',{'features':[{'name':'prefers-reduced-transparency','value':transparency},{'name':'forced-colors','value':contrast},{'name':'prefers-reduced-motion','value':'reduce'}]})
   expect(blur).to_have_count(1 if transparency=='no-preference' and contrast=='none' else 0)
  assert not errors, errors
- print('PASS: recall/reveal/ratings, goal summary, new and same-deck sessions, controlled deck selection, assistant prompts and attachment viewers, settings, long math, filters, charts, keyboard, reduced-motion layouts and opaque accessibility controls. No browser errors.')
+ print('PASS: recall/reveal/ratings, goal summary, new and same-deck sessions, controlled deck selection, assistant prompts and attachment viewers, independent edit/create proposals with validation and save retry, both model pickers, long math, filters, charts, keyboard, reduced-motion layouts and opaque accessibility controls. No browser errors.')
  browser.close()

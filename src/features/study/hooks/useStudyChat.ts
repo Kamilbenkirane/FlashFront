@@ -8,9 +8,8 @@ import {
 import { streamStudyChatReply } from '@/services/studyChat/studyChatService';
 import type {
   StudyChatCommittedFlashcard,
-  StudyChatFlashcardProposal,
   StudyChatHistoryMessage,
-  StudyChatNewFlashcardProposal,
+  StudyChatProposal,
   StudyChatProposalActionState,
   StudyChatUiMessage,
 } from '@/services/studyChat/types';
@@ -30,14 +29,14 @@ const isAbortError = (error: unknown) =>
 const createMessageId = (prefix: string) =>
   `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
-const buildProposalKey = (kind: 'edit' | 'new', proposalId: string) =>
-  `${kind}:${proposalId}`;
+const buildProposalKey = (proposal: StudyChatProposal) =>
+  `${'cardId' in proposal ? 'edit' : 'new'}:${proposal.proposalId}`;
 
-const createProposalActionState = (
-  proposedRecto: string,
-  proposedVerso: string,
-  proposedDifficulty: number,
-): StudyChatProposalActionState => ({
+const createProposalActionState = ({
+  proposedRecto,
+  proposedVerso,
+  proposedDifficulty,
+}: StudyChatProposal): StudyChatProposalActionState => ({
   isEditing: false,
   status: 'idle',
   errorMessage: null,
@@ -451,154 +450,63 @@ const useStudyChat = ({
     reconcileLatestPersistedAssistantMessage,
   ]);
 
-  const getFlashcardProposalActionState = useCallback(
-    (proposal: StudyChatFlashcardProposal): StudyChatProposalActionState =>
-      proposalActions[buildProposalKey('edit', proposal.proposalId)] ??
-      createProposalActionState(
-        proposal.proposedRecto,
-        proposal.proposedVerso,
-        proposal.proposedDifficulty,
-      ),
+  const getProposalActionState = useCallback(
+    (proposal: StudyChatProposal): StudyChatProposalActionState =>
+      proposalActions[buildProposalKey(proposal)] ??
+      createProposalActionState(proposal),
     [proposalActions],
   );
 
-  const getNewFlashcardProposalActionState = useCallback(
-    (proposal: StudyChatNewFlashcardProposal): StudyChatProposalActionState =>
-      proposalActions[buildProposalKey('new', proposal.proposalId)] ??
-      createProposalActionState(
-        proposal.proposedRecto,
-        proposal.proposedVerso,
-        proposal.proposedDifficulty,
-      ),
-    [proposalActions],
-  );
-
-  const toggleFlashcardProposalEditing = useCallback(
-    (proposal: StudyChatFlashcardProposal) => {
-      const proposalKey = buildProposalKey('edit', proposal.proposalId);
-      setProposalActions((currentActions) => {
-        const currentAction =
-          currentActions[proposalKey] ??
-          createProposalActionState(
-            proposal.proposedRecto,
-            proposal.proposedVerso,
-            proposal.proposedDifficulty,
-          );
-        return {
-          ...currentActions,
-          [proposalKey]: {
-            ...currentAction,
-            isEditing: !currentAction.isEditing,
-            errorMessage: null,
-            status: currentAction.status === 'success' ? 'success' : 'idle',
-          },
-        };
-      });
-    },
-    [],
-  );
-
-  const toggleNewFlashcardProposalEditing = useCallback(
-    (proposal: StudyChatNewFlashcardProposal) => {
-      const proposalKey = buildProposalKey('new', proposal.proposalId);
-      setProposalActions((currentActions) => {
-        const currentAction =
-          currentActions[proposalKey] ??
-          createProposalActionState(
-            proposal.proposedRecto,
-            proposal.proposedVerso,
-            proposal.proposedDifficulty,
-          );
-        return {
-          ...currentActions,
-          [proposalKey]: {
-            ...currentAction,
-            isEditing: !currentAction.isEditing,
-            errorMessage: null,
-            status: currentAction.status === 'success' ? 'success' : 'idle',
-          },
-        };
-      });
-    },
-    [],
-  );
-
-  const updateFlashcardProposalDraft = useCallback(
-    (
-      proposal: StudyChatFlashcardProposal,
-      patch: Partial<
-        Pick<
-          StudyChatProposalActionState,
-          'proposedRecto' | 'proposedVerso' | 'proposedDifficulty'
-        >
-      >,
-    ) => {
-      const proposalKey = buildProposalKey('edit', proposal.proposalId);
-      setProposalActions((currentActions) => {
-        const currentAction =
-          currentActions[proposalKey] ??
-          createProposalActionState(
-            proposal.proposedRecto,
-            proposal.proposedVerso,
-            proposal.proposedDifficulty,
-          );
-        return {
-          ...currentActions,
-          [proposalKey]: {
-            ...currentAction,
-            ...patch,
-            errorMessage: null,
-            status: currentAction.status === 'success' ? 'success' : 'idle',
-          },
-        };
-      });
-    },
-    [],
-  );
-
-  const updateNewFlashcardProposalDraft = useCallback(
-    (
-      proposal: StudyChatNewFlashcardProposal,
-      patch: Partial<
-        Pick<
-          StudyChatProposalActionState,
-          'proposedRecto' | 'proposedVerso' | 'proposedDifficulty'
-        >
-      >,
-    ) => {
-      const proposalKey = buildProposalKey('new', proposal.proposalId);
-      setProposalActions((currentActions) => {
-        const currentAction =
-          currentActions[proposalKey] ??
-          createProposalActionState(
-            proposal.proposedRecto,
-            proposal.proposedVerso,
-            proposal.proposedDifficulty,
-          );
-        return {
-          ...currentActions,
-          [proposalKey]: {
-            ...currentAction,
-            ...patch,
-            errorMessage: null,
-            status: currentAction.status === 'success' ? 'success' : 'idle',
-          },
-        };
-      });
-    },
-    [],
-  );
-
-  const validateFlashcardProposal = useCallback(
-    async (proposal: StudyChatFlashcardProposal) => {
-      const proposalKey = buildProposalKey('edit', proposal.proposalId);
+  const toggleProposalEditing = useCallback((proposal: StudyChatProposal) => {
+    const proposalKey = buildProposalKey(proposal);
+    setProposalActions((currentActions) => {
       const currentAction =
-        proposalActions[proposalKey] ??
-        createProposalActionState(
-          proposal.proposedRecto,
-          proposal.proposedVerso,
-          proposal.proposedDifficulty,
-        );
+        currentActions[proposalKey] ?? createProposalActionState(proposal);
+      return {
+        ...currentActions,
+        [proposalKey]: {
+          ...currentAction,
+          isEditing: !currentAction.isEditing,
+          errorMessage: null,
+          status: currentAction.status === 'success' ? 'success' : 'idle',
+        },
+      };
+    });
+  }, []);
+
+  const updateProposalDraft = useCallback(
+    (
+      proposal: StudyChatProposal,
+      patch: Partial<
+        Pick<
+          StudyChatProposalActionState,
+          'proposedRecto' | 'proposedVerso' | 'proposedDifficulty'
+        >
+      >,
+    ) => {
+      const proposalKey = buildProposalKey(proposal);
+      setProposalActions((currentActions) => {
+        const currentAction =
+          currentActions[proposalKey] ?? createProposalActionState(proposal);
+        return {
+          ...currentActions,
+          [proposalKey]: {
+            ...currentAction,
+            ...patch,
+            errorMessage: null,
+            status: currentAction.status === 'success' ? 'success' : 'idle',
+          },
+        };
+      });
+    },
+    [],
+  );
+
+  const validateProposal = useCallback(
+    async (proposal: StudyChatProposal) => {
+      const proposalKey = buildProposalKey(proposal);
+      const currentAction =
+        proposalActions[proposalKey] ?? createProposalActionState(proposal);
       const proposedRecto = currentAction.proposedRecto.trim();
       const proposedVerso = currentAction.proposedVerso.trim();
       const proposedDifficulty = parseProposalDifficulty(
@@ -628,12 +536,16 @@ const useStudyChat = ({
       }));
 
       try {
-        const flashcard = await applyStudyChatCardProposalRequest({
+        const proposalDraft = {
           ...proposal,
           proposedRecto,
           proposedVerso,
           proposedDifficulty,
-        });
+        };
+        const flashcard =
+          'cardId' in proposalDraft
+            ? await applyStudyChatCardProposalRequest(proposalDraft)
+            : await createStudyChatCardFromProposalRequest(proposalDraft);
         setProposalActions((currentActions) => ({
           ...currentActions,
           [proposalKey]: {
@@ -646,7 +558,8 @@ const useStudyChat = ({
             errorMessage: null,
           },
         }));
-        onCurrentCardPatched?.(flashcard);
+        if ('cardId' in proposal) onCurrentCardPatched?.(flashcard);
+        else onNewCardCreated?.(flashcard);
       } catch (proposalError) {
         setProposalActions((currentActions) => ({
           ...currentActions,
@@ -656,87 +569,14 @@ const useStudyChat = ({
             errorMessage:
               proposalError instanceof Error
                 ? proposalError.message
-                : 'Could not validate this card draft.',
+                : 'cardId' in proposal
+                  ? 'Could not validate this card draft.'
+                  : 'Could not create this card draft.',
           },
         }));
       }
     },
-    [onCurrentCardPatched, proposalActions],
-  );
-
-  const validateNewFlashcardProposal = useCallback(
-    async (proposal: StudyChatNewFlashcardProposal) => {
-      const proposalKey = buildProposalKey('new', proposal.proposalId);
-      const currentAction =
-        proposalActions[proposalKey] ??
-        createProposalActionState(
-          proposal.proposedRecto,
-          proposal.proposedVerso,
-          proposal.proposedDifficulty,
-        );
-      const proposedRecto = currentAction.proposedRecto.trim();
-      const proposedVerso = currentAction.proposedVerso.trim();
-      const proposedDifficulty = parseProposalDifficulty(
-        currentAction.proposedDifficulty,
-      );
-
-      if (!proposedRecto || !proposedVerso || proposedDifficulty === null) {
-        setProposalActions((currentActions) => ({
-          ...currentActions,
-          [proposalKey]: {
-            ...currentAction,
-            status: 'error',
-            errorMessage:
-              'Front, back, and a non-negative difficulty are required.',
-          },
-        }));
-        return;
-      }
-
-      setProposalActions((currentActions) => ({
-        ...currentActions,
-        [proposalKey]: {
-          ...currentAction,
-          status: 'submitting',
-          errorMessage: null,
-        },
-      }));
-
-      try {
-        const flashcard = await createStudyChatCardFromProposalRequest({
-          ...proposal,
-          proposedRecto,
-          proposedVerso,
-          proposedDifficulty,
-        });
-        setProposalActions((currentActions) => ({
-          ...currentActions,
-          [proposalKey]: {
-            ...currentAction,
-            proposedRecto,
-            proposedVerso,
-            proposedDifficulty: `${proposedDifficulty}`,
-            isEditing: false,
-            status: 'success',
-            errorMessage: null,
-          },
-        }));
-        onNewCardCreated?.(flashcard);
-      } catch (proposalError) {
-        setProposalActions((currentActions) => ({
-          ...currentActions,
-          [proposalKey]: {
-            ...currentAction,
-            status: 'error',
-            errorMessage:
-              proposalError instanceof Error
-                ? proposalError.message
-                : 'Could not create this card draft.',
-          },
-        }));
-      }
-    },
-    [onNewCardCreated, proposalActions],
+    [onCurrentCardPatched, onNewCardCreated, proposalActions],
   );
 
   return {
@@ -748,14 +588,10 @@ const useStudyChat = ({
     setDraft,
     sendMessage,
     stopStreaming,
-    getFlashcardProposalActionState,
-    getNewFlashcardProposalActionState,
-    toggleFlashcardProposalEditing,
-    toggleNewFlashcardProposalEditing,
-    updateFlashcardProposalDraft,
-    updateNewFlashcardProposalDraft,
-    validateFlashcardProposal,
-    validateNewFlashcardProposal,
+    getProposalActionState,
+    toggleProposalEditing,
+    updateProposalDraft,
+    validateProposal,
   };
 };
 

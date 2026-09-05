@@ -5,8 +5,7 @@ import { normalizePlainTextContent } from '@/components/ui/MathText/mathHtml';
 import { Typography } from '@/components/ui/Typography';
 import { AppIcon } from '@/components/ui/icons';
 import type {
-  StudyChatFlashcardProposal,
-  StudyChatNewFlashcardProposal,
+  StudyChatProposal,
   StudyChatProposalActionState,
 } from '@/services/studyChat/types';
 import { theme } from '@/tokens/theme';
@@ -16,11 +15,8 @@ import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 
 import { StudyChatMessageContent } from './StudyChatMessageContent';
 
-type ProposalKind = 'edit' | 'new';
-
 interface StudyChatProposalCardProps {
-  kind: ProposalKind;
-  proposal: StudyChatFlashcardProposal | StudyChatNewFlashcardProposal;
+  proposal: StudyChatProposal;
   state: StudyChatProposalActionState;
   onToggleEditing: () => void;
   onValidate: () => void;
@@ -35,13 +31,13 @@ interface StudyChatProposalCardProps {
 }
 
 export const StudyChatProposalCard: React.FC<StudyChatProposalCardProps> = ({
-  kind,
   proposal,
   state,
   onToggleEditing,
   onValidate,
   onChangeDraft,
 }) => {
+  const kind = 'cardId' in proposal ? 'edit' : 'new';
   const [isFlipped, setIsFlipped] = useState(false);
   const isSubmitting = state.status === 'submitting';
   const isSuccess = state.status === 'success';

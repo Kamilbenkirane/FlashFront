@@ -642,24 +642,10 @@ const FlashcardScreen = ({ navigation, route }: FlashcardScreenProps) => {
         onSend={() => {
           void studyChat.sendMessage();
         }}
-        getFlashcardProposalActionState={
-          studyChat.getFlashcardProposalActionState
-        }
-        getNewFlashcardProposalActionState={
-          studyChat.getNewFlashcardProposalActionState
-        }
-        onToggleFlashcardProposalEditing={
-          studyChat.toggleFlashcardProposalEditing
-        }
-        onToggleNewFlashcardProposalEditing={
-          studyChat.toggleNewFlashcardProposalEditing
-        }
-        onChangeFlashcardProposalDraft={studyChat.updateFlashcardProposalDraft}
-        onChangeNewFlashcardProposalDraft={
-          studyChat.updateNewFlashcardProposalDraft
-        }
-        onValidateFlashcardProposal={studyChat.validateFlashcardProposal}
-        onValidateNewFlashcardProposal={studyChat.validateNewFlashcardProposal}
+        getProposalActionState={studyChat.getProposalActionState}
+        onToggleProposalEditing={studyChat.toggleProposalEditing}
+        onChangeProposalDraft={studyChat.updateProposalDraft}
+        onValidateProposal={studyChat.validateProposal}
         isStreaming={studyChat.isStreaming}
         error={studyChat.error}
       />

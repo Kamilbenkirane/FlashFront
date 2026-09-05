@@ -3,6 +3,7 @@ import type {
   AppSession,
   AuthOtpType,
 } from '@/services/auth/types';
+import { parseErrorMessage } from '@/services/backendClient';
 import { buildApiUrl } from '@/services/runtimeConfig';
 import { Platform } from 'react-native';
 
@@ -38,27 +39,6 @@ export interface AuthExchangeResult {
 }
 
 const getDeviceLabel = () => `flashfront-${Platform.OS}`;
-
-const parseErrorMessage = async (response: Response) => {
-  const contentType = response.headers.get('content-type') || '';
-  const errorPayload = contentType.includes('application/json')
-    ? await response.json()
-    : null;
-
-  if (typeof errorPayload?.detail === 'string') {
-    return errorPayload.detail;
-  }
-
-  if (typeof errorPayload?.message === 'string') {
-    return errorPayload.message;
-  }
-
-  if (response.status === 401) {
-    return 'Your session has expired. Please sign in again.';
-  }
-
-  return `Request failed with status ${response.status}`;
-};
 
 const requestJson = async <T>(path: string, init?: RequestInit): Promise<T> => {
   const response = await fetch(buildApiUrl(path), {

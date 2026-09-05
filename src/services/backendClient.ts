@@ -408,7 +408,9 @@ const mapStudyChatModelsRow = (
   defaultModel: row.default_model,
 });
 
-const mapStudyChatChartAttachmentRow = (row: StudyChatChartAttachmentRow) => ({
+export const mapStudyChatChartAttachmentRow = (
+  row: StudyChatChartAttachmentRow,
+) => ({
   artifactId: row.artifact_id,
   title: row.title,
   summary: row.summary,
@@ -420,7 +422,9 @@ const mapStudyChatChartAttachmentRow = (row: StudyChatChartAttachmentRow) => ({
   imageDataUrl: row.image_data_url || undefined,
 });
 
-const mapStudyChatImageAttachmentRow = (row: StudyChatImageAttachmentRow) => ({
+export const mapStudyChatImageAttachmentRow = (
+  row: StudyChatImageAttachmentRow,
+) => ({
   artifactId: row.artifact_id,
   title: row.title,
   summary: row.summary,

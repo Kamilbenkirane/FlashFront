@@ -1,5 +1,4 @@
 import type { SessionData } from '@/interfaces';
-import moment from 'moment';
 import {
   type StudyCard,
   type StudyReviewDraft,
@@ -15,12 +14,6 @@ export interface StudySessionState {
   activeCards: StudyCard[];
   currentCard: StudyCard | null;
   currentCardToken: number;
-}
-
-export interface StudySessionProgress {
-  remainingCards: number;
-  totalCards: number;
-  completedCards: number;
 }
 
 export interface StudySessionTransitionResult {
@@ -98,7 +91,7 @@ const syncActiveCardsFromPile = (
 
 const computeCardProbabilities = (
   cards: StudyCard[],
-  now: moment.Moment = moment(),
+  now: Date = new Date(),
 ): StudyCard[] => {
   const rescoredCards = cards.map((card) => rehydrateStudyCard(card, now));
   const totalScore = getTotalScore(rescoredCards);
@@ -145,7 +138,7 @@ const chooseCardBasedOnProbability = (
 const selectNextCard = (
   session: StudySessionState,
   random: () => number = Math.random,
-  now: moment.Moment = moment(),
+  now: Date = new Date(),
 ): StudySessionState => {
   const { pile, activeCards } = syncActiveCardsFromPile(session);
   const nextActiveCards = computeCardProbabilities(activeCards, now);
@@ -162,7 +155,7 @@ export const createStudySessionState = (
   sessionData: SessionData[],
   options?: {
     random?: () => number;
-    now?: moment.Moment;
+    now?: Date;
   },
 ): StudySessionState =>
   selectNextCard(
@@ -181,7 +174,7 @@ export const submitStudyReview = (
   outcome: StudyReviewOutcome,
   options?: {
     random?: () => number;
-    now?: moment.Moment;
+    now?: Date;
   },
 ): StudySessionTransitionResult => {
   if (!session.currentCard) {
@@ -219,7 +212,7 @@ export const patchStudySessionCard = (
   session: StudySessionState,
   patch: StudySessionCardPatch,
   options?: {
-    now?: moment.Moment;
+    now?: Date;
   },
 ): StudySessionState => {
   const patchCard = (card: StudyCard): StudyCard =>
@@ -260,33 +253,9 @@ export const insertStudySessionCard = (
   session: StudySessionState,
   sessionData: SessionData,
   options?: {
-    now?: moment.Moment;
+    now?: Date;
   },
 ): StudySessionState => ({
   ...session,
   pile: [...session.pile, createStudyCard(sessionData, options?.now)],
 });
-
-export const getStudySessionProgress = (
-  session: StudySessionState | null,
-): StudySessionProgress => {
-  if (!session) {
-    return {
-      remainingCards: 0,
-      totalCards: 0,
-      completedCards: 0,
-    };
-  }
-
-  const totalCards = session.activeCards.length + session.pile.length;
-  const remainingCards =
-    session.activeCards.filter(
-      (card) => card.lastReviewTimestamp === null || card.streak < 3,
-    ).length + session.pile.length;
-
-  return {
-    remainingCards,
-    totalCards,
-    completedCards: totalCards - remainingCards,
-  };
-};
