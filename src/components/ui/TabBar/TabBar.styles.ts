@@ -58,8 +58,8 @@ export const tabBarStyles = StyleSheet.create({
   },
 
   activeTabItem: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
+    backgroundColor: colors.primaryLight,
+    borderColor: 'transparent',
     ...shadows.sm,
     shadowColor: '#0F172A',
     shadowOpacity: 0.05,
@@ -86,7 +86,7 @@ export const tabBarStyles = StyleSheet.create({
   },
 
   activeTabLabel: {
-    color: colors.primaryForeground,
+    color: colors.primary,
     fontWeight: '600',
   },
 

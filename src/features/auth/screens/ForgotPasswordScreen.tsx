@@ -48,8 +48,8 @@ const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({
 
   return (
     <AuthScaffold
-      title="Reset your password."
-      subtitle="We’ll email you a secure link so you can choose a new password."
+      title="Reset password"
+      subtitle="We’ll email you a link to reset your password."
       onBack={() => {
         clearAuthError();
         navigation.goBack();
@@ -57,9 +57,6 @@ const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({
       error={authError}
       footer={
         <View style={styles.footerLinkRow}>
-          <Typography variant="caption" color="muted">
-            Remembered it?
-          </Typography>
           <Pressable
             style={styles.footerLink}
             onPress={() => {

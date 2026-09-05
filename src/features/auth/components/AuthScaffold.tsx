@@ -16,7 +16,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 interface AuthScaffoldProps {
   title: string;
-  subtitle: string;
+  subtitle?: string;
   children: ReactNode;
   footer?: ReactNode;
   error?: string | null;
@@ -74,41 +74,28 @@ export const AuthScaffold: React.FC<AuthScaffoldProps> = ({
               </View>
             </View>
 
-            <View style={styles.header}>
-              <Typography
-                variant="caption"
-                color="primary"
-                style={styles.eyebrow}
-              >
-                A LITTLE CURIOSITY. EVERY DAY.
-              </Typography>
-              <Typography accessibilityRole="header" style={styles.title}>
-                {title}
-              </Typography>
-              <Typography variant="body" color="muted" style={styles.subtitle}>
-                {subtitle}
-              </Typography>
-            </View>
-
-            <View style={styles.card}>
-              {error ? (
-                <View
-                  style={[styles.messageBox, styles.errorBox]}
-                  accessibilityLiveRegion="polite"
-                >
-                  <Typography variant="body" color="error">
-                    {error}
+            <View style={styles.panel}>
+              <View style={styles.header}>
+                <Typography accessibilityRole="header" style={styles.title}>
+                  {title}
+                </Typography>
+                {subtitle ? (
+                  <Typography variant="body" color="muted">
+                    {subtitle}
                   </Typography>
-                </View>
+                ) : null}
+              </View>
+
+              {error ? (
+                <Typography color="error" accessibilityLiveRegion="polite">
+                  {error}
+                </Typography>
               ) : null}
 
               {notice ? (
-                <View
-                  style={[styles.messageBox, styles.noticeBox]}
-                  accessibilityLiveRegion="polite"
-                >
-                  <Typography variant="body">{notice}</Typography>
-                </View>
+                <Typography accessibilityLiveRegion="polite">
+                  {notice}
+                </Typography>
               ) : null}
 
               <View style={styles.body}>{children}</View>
@@ -138,7 +125,7 @@ const styles = StyleSheet.create({
   },
   shell: {
     width: '100%',
-    maxWidth: 480,
+    maxWidth: 440,
     alignSelf: 'center',
     gap: theme.spacing.xxl,
   },
@@ -154,8 +141,8 @@ const styles = StyleSheet.create({
     gap: theme.spacing.sm,
   },
   brandName: {
-    fontSize: 24,
-    lineHeight: 32,
+    fontSize: 22,
+    lineHeight: 30,
     letterSpacing: -0.8,
     fontFamily: theme.fontFamily.medium,
   },
@@ -174,50 +161,27 @@ const styles = StyleSheet.create({
   backIcon: {
     transform: [{ rotate: '180deg' }],
   },
-  card: {
-    padding: theme.spacing.xl,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    borderRadius: theme.borderRadius.xxl,
-    backgroundColor: theme.colors.card,
-    gap: theme.spacing.md,
-  },
   header: {
     gap: theme.spacing.md,
   },
-  eyebrow: {
-    fontSize: 10,
-    lineHeight: 16,
-    fontFamily: theme.fontFamily.medium,
-    letterSpacing: 1.5,
+  panel: {
+    gap: theme.spacing.xxl,
+    padding: theme.spacing.xl,
+    backgroundColor: theme.colors.card,
+    borderRadius: theme.borderRadius.xxl,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
   },
   title: {
-    fontSize: 36,
-    lineHeight: 41,
-    letterSpacing: -1.5,
+    fontSize: 30,
+    lineHeight: 36,
+    letterSpacing: -0.9,
     fontFamily: theme.fontFamily.medium,
-  },
-  subtitle: {
-    fontSize: 15,
-    lineHeight: 23,
   },
   body: {
     gap: theme.spacing.xl,
   },
   footer: {
     gap: theme.spacing.sm,
-  },
-  messageBox: {
-    borderRadius: theme.borderRadius.lg,
-    padding: theme.spacing.md,
-    borderWidth: 1,
-  },
-  errorBox: {
-    backgroundColor: theme.colors.destructive.light,
-    borderColor: theme.colors.destructive.light,
-  },
-  noticeBox: {
-    backgroundColor: theme.colors.primaryLight,
-    borderColor: theme.colors.border,
   },
 });

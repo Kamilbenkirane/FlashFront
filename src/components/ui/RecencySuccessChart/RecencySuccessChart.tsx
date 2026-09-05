@@ -173,19 +173,19 @@ export const RecencySuccessChart: React.FC<RecencySuccessChartProps> = ({
     return (
       <Card padding="lg" style={styles.panel}>
         <View style={styles.header}>
-          <Typography variant="heading3">Memory over time</Typography>
+          <Typography variant="heading3">Recall by delay</Typography>
           <Typography variant="caption" color="muted">
-            How well you recall a card after time away.
+            Time since the previous review.
           </Typography>
         </View>
         <View style={styles.emptyState}>
           <Typography variant="body">
-            Repeat reviews unlock this curve.
+            No repeat reviews in this period.
           </Typography>
           <Typography variant="small" color="muted">
             {data.firstReviewCount > 0
-              ? `You have ${data.firstReviewCount} first reviews in this range, but a delay curve appears once cards have a prior review to compare against.`
-              : 'Review some cards more than once and the chart will appear here.'}
+              ? `${data.firstReviewCount} first reviews excluded.`
+              : 'This chart uses cards reviewed more than once.'}
           </Typography>
         </View>
       </Card>
@@ -195,9 +195,9 @@ export const RecencySuccessChart: React.FC<RecencySuccessChartProps> = ({
   return (
     <Card padding="lg" style={styles.panel}>
       <View style={styles.header}>
-        <Typography variant="heading3">Memory over time</Typography>
+        <Typography variant="heading3">Recall by delay</Typography>
         <Typography variant="caption" color="muted">
-          How well you recall a card after time away.
+          Time since the previous review.
         </Typography>
       </View>
 
@@ -232,7 +232,7 @@ export const RecencySuccessChart: React.FC<RecencySuccessChartProps> = ({
         style={[
           styles.detailCard,
           {
-            backgroundColor: theme.colors.primaryLight,
+            backgroundColor: theme.colors.secondary,
             borderColor: theme.colors.border,
           },
         ]}
@@ -387,6 +387,7 @@ export const RecencySuccessChart: React.FC<RecencySuccessChartProps> = ({
                 )}
                 accessibilityRole="button"
                 accessibilityState={{ selected: isSelected }}
+                aria-pressed={isSelected}
                 key={point.delayBinKey}
                 onPress={() => setSelectedPointIndex(index)}
                 style={[
@@ -419,13 +420,9 @@ export const RecencySuccessChart: React.FC<RecencySuccessChartProps> = ({
       </View>
 
       <View style={styles.footer}>
-        <Typography variant="small" color="muted">
-          Each time group starts with a similar number of reviews. Select a
-          group to see how much you recalled.
-        </Typography>
         {data.firstReviewCount > 0 ? (
           <Typography variant="small" color="muted">
-            {`${data.firstReviewCount} first reviews are excluded because they have no previous review to compare.`}
+            {`${data.firstReviewCount} first reviews excluded: no previous review to compare.`}
           </Typography>
         ) : null}
       </View>

@@ -23,10 +23,6 @@ interface LibraryContentProps {
   subscribedDecksError: string | null;
   showSubscribedOnly: boolean;
   pendingDeckId: string | number | null;
-  cardWidth: number;
-  numColumns: number;
-  gridHorizontalPadding: number;
-  gridColumnGap: number;
   reloadLibrary: () => Promise<void>;
   reloadSubscribedDecks: () => Promise<void>;
   isSubscribed: (deck: Deck) => boolean;
@@ -43,10 +39,6 @@ export const LibraryContent: React.FC<LibraryContentProps> = ({
   subscribedDecksError,
   showSubscribedOnly,
   pendingDeckId,
-  cardWidth,
-  numColumns,
-  gridHorizontalPadding,
-  gridColumnGap,
   reloadLibrary,
   reloadSubscribedDecks,
   isSubscribed,
@@ -60,12 +52,12 @@ export const LibraryContent: React.FC<LibraryContentProps> = ({
 
   switch (bodyState) {
     case 'loading':
-      emptyState = <LoadingState message="Gathering your next discoveries…" />;
+      emptyState = <LoadingState message="Loading decks…" />;
       break;
     case 'libraryError':
       emptyState = (
         <FeedbackState
-          title="Couldn't load the collection"
+          title="Couldn't load decks"
           description={libraryError ?? undefined}
           icon="cloudOff"
           actionLabel="Try again"
@@ -76,7 +68,7 @@ export const LibraryContent: React.FC<LibraryContentProps> = ({
     case 'subscriptionError':
       emptyState = (
         <FeedbackState
-          title="Couldn't load your decks"
+          title="Couldn't load added decks"
           description={subscribedDecksError ?? undefined}
           icon="cloudOff"
           actionLabel="Try again"
@@ -87,8 +79,8 @@ export const LibraryContent: React.FC<LibraryContentProps> = ({
     case 'empty':
       emptyState = (
         <FeedbackState
-          title="The collection is on its way"
-          description="There are no shared decks available just yet."
+          title="No decks available"
+          description="Shared decks will appear here."
           icon="library"
         />
       );
@@ -96,16 +88,14 @@ export const LibraryContent: React.FC<LibraryContentProps> = ({
     case 'filteredEmpty':
       emptyState = (
         <FeedbackState
-          title={
-            showSubscribedOnly ? 'Make this space yours' : 'No decks found'
-          }
+          title="No decks found"
           description={
             showSubscribedOnly
-              ? 'Explore the collection or clear your filters to find a deck for your next session.'
-              : 'Try another search or explore all subjects.'
+              ? 'Add a deck or clear the current filters.'
+              : 'Try another search or clear the filters.'
           }
           icon={showSubscribedOnly ? 'layers' : 'search'}
-          actionLabel="Explore all decks"
+          actionLabel="Show all decks"
           onAction={onClearFilters}
         />
       );
@@ -116,33 +106,26 @@ export const LibraryContent: React.FC<LibraryContentProps> = ({
 
   return (
     <FlatList
-      key={`library-grid-${numColumns}`}
       data={bodyState === 'ready' ? filteredDecks : []}
       ListHeaderComponent={header}
       ListEmptyComponent={
         <View style={styles.stateContainer}>{emptyState}</View>
       }
       renderItem={({ item: deck }) => (
-        <View style={{ width: cardWidth, maxWidth: '100%' }}>
-          <DeckCard
-            deck={deck}
-            isSubscribed={isSubscribed(deck)}
-            isSubscriptionPending={pendingDeckId === deck.deck_id}
-            onSubscriptionToggle={onSubscriptionToggle}
-            onPress={onDeckPress}
-            testID={`deck-card-${deck.deck_id}`}
-          />
-        </View>
+        <DeckCard
+          deck={deck}
+          isSubscribed={isSubscribed(deck)}
+          isSubscriptionPending={pendingDeckId === deck.deck_id}
+          onSubscriptionToggle={onSubscriptionToggle}
+          onPress={onDeckPress}
+          testID={`deck-card-${deck.deck_id}`}
+        />
       )}
       keyExtractor={(item) => item.deck_id.toString()}
-      numColumns={numColumns}
       contentContainerStyle={[
-        { paddingHorizontal: gridHorizontalPadding },
+        { paddingHorizontal: theme.spacing.lg },
         scrollContentContainerStyle,
       ]}
-      columnWrapperStyle={
-        numColumns > 1 ? { columnGap: gridColumnGap } : undefined
-      }
       keyboardShouldPersistTaps="handled"
       keyboardDismissMode="on-drag"
       showsVerticalScrollIndicator={false}
@@ -153,6 +136,6 @@ export const LibraryContent: React.FC<LibraryContentProps> = ({
 };
 
 const styles = StyleSheet.create({
-  stateContainer: { minHeight: 240, justifyContent: 'center' },
-  separator: { height: theme.spacing.lg },
+  stateContainer: { minHeight: 200, justifyContent: 'center' },
+  separator: { height: theme.spacing.sm },
 });

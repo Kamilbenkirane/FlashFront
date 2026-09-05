@@ -16,6 +16,19 @@ interface SeriesChartProps {
   suffix?: string;
 }
 
+const formatPointDate = (value: string | number) => {
+  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}(?:T|$)/.test(value))
+    return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime())
+    ? null
+    : date.toLocaleDateString(undefined, {
+        day: 'numeric',
+        month: 'short',
+        timeZone: 'UTC',
+      });
+};
+
 export const SeriesChart: React.FC<SeriesChartProps> = ({
   data,
   type,
@@ -44,6 +57,10 @@ export const SeriesChart: React.FC<SeriesChartProps> = ({
   );
 
   if (!selectedPoint) return null;
+  const selectedLabel =
+    formatPointDate(selectedPoint.x) ??
+    selectedPoint.label ??
+    `${selectedPoint.x}`;
 
   return (
     <View style={styles.series}>
@@ -53,7 +70,7 @@ export const SeriesChart: React.FC<SeriesChartProps> = ({
             {formatMetric(selectedPoint.y)}
           </Typography>
           <Typography variant="small" color="muted">
-            {selectedPoint.label ?? `${selectedPoint.x}`}
+            {selectedLabel}
           </Typography>
         </View>
         <View style={styles.seriesControls}>
@@ -122,7 +139,7 @@ export const SeriesChart: React.FC<SeriesChartProps> = ({
             )
           }
           accessibilityRole="adjustable"
-          accessibilityLabel={`${selectedPoint.label ?? selectedPoint.x}: ${formatMetric(selectedPoint.y)}`}
+          accessibilityLabel={`${selectedLabel}: ${formatMetric(selectedPoint.y)}`}
           accessibilityHint="Tap the chart or use the previous and next buttons to inspect each value"
           accessibilityActions={[
             { name: 'increment', label: 'Next data point' },
@@ -212,16 +229,13 @@ export const SeriesChart: React.FC<SeriesChartProps> = ({
         </Pressable>
       </View>
       <View style={styles.axisLabels}>
-        <Typography
-          variant="small"
-          color="muted"
-          numberOfLines={1}
-        >{`${data[0].x}`}</Typography>
-        <Typography
-          variant="small"
-          color="muted"
-          numberOfLines={1}
-        >{`${data[data.length - 1].x}`}</Typography>
+        <Typography variant="small" color="muted" numberOfLines={1}>
+          {formatPointDate(data[0].x) ?? `${data[0].x}`}
+        </Typography>
+        <Typography variant="small" color="muted" numberOfLines={1}>
+          {formatPointDate(data[data.length - 1].x) ??
+            `${data[data.length - 1].x}`}
+        </Typography>
       </View>
     </View>
   );

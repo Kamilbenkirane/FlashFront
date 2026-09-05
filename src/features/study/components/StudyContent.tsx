@@ -1,3 +1,4 @@
+import { ShuffleMark } from '@/components/ui/Brand/ShuffleMark';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { FeedbackState } from '@/components/ui/FeedbackState/FeedbackState';
@@ -11,7 +12,6 @@ import type {
 import DecksMultiSelect from '@/features/library/components/DecksMultiSelect';
 import { Flashcard } from '@/features/study/components/Flashcard/Flashcard';
 import { FlashcardMetaStrip } from '@/features/study/components/FlashcardMetaStrip';
-import { PracticeOrbit } from '@/features/study/components/PracticeOrbit';
 import { StudyReviewDock } from '@/features/study/components/StudyReviewDock';
 import { StudySessionStatsCard } from '@/features/study/components/StudySessionStatsCard';
 import useTabScreenSpacing from '@/hooks/useTabScreenSpacing';
@@ -31,7 +31,6 @@ export type StudyContentState = 'setup' | 'empty' | 'active';
 
 interface StudyContentProps {
   viewState: StudyContentState;
-  userName: string;
   sessionGoal: number;
   showSummary: boolean;
   onContinue: () => void;
@@ -67,7 +66,6 @@ interface StudyContentProps {
 
 export const StudyContent: React.FC<StudyContentProps> = ({
   viewState,
-  userName,
   sessionGoal,
   showSummary,
   onContinue,
@@ -97,7 +95,7 @@ export const StudyContent: React.FC<StudyContentProps> = ({
   onKnownReview,
   reviewFeedback,
 }) => {
-  const { height, width } = useWindowDimensions();
+  const { height } = useWindowDimensions();
   const { bottomSpacing, scrollIndicatorInsets } = useTabScreenSpacing();
   const [draftDeckIds, setDraftDeckIds] = useState<(string | number)[] | null>(
     null,
@@ -135,40 +133,28 @@ export const StudyContent: React.FC<StudyContentProps> = ({
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.summary}>
-          <Typography variant="small" color="primary" style={styles.eyebrow}>
-            A MOMENT WELL SPENT
+          <View style={styles.completeIcon}>
+            <AppIcon name="check" size={28} color={theme.colors.primary} />
+          </View>
+          <Typography
+            variant="heading1"
+            style={styles.centered}
+            accessibilityRole="header"
+          >
+            Session complete
           </Typography>
-          <PracticeOrbit
-            value={totalReviews}
-            total={sessionGoal}
-            label="reviews completed"
-            size={208}
-          />
-          <Typography variant="heading1" style={styles.centered}>
-            {totalReviews >= sessionGoal
-              ? 'Look how far you came.'
-              : 'Every review counts.'}
-          </Typography>
-          <Typography color="muted" style={styles.centered}>
-            You made time for your mind. Let it settle, then come back when
-            you’re ready.
-          </Typography>
+          <Typography color="muted">{totalReviews} reviews</Typography>
           <View style={{ width: '100%' }}>{stats}</View>
+          <Button title="Done" onPress={onChooseDecks} fullWidth size="lg" />
           <Button
-            title="Back to my decks"
-            onPress={onChooseDecks}
-            fullWidth
-            size="lg"
-          />
-          <Button
-            title="See my progress"
-            onPress={onViewProgress}
+            title="Continue studying"
+            onPress={onContinue}
             fullWidth
             variant="outline"
           />
           <Button
-            title="Keep practicing"
-            onPress={onContinue}
+            title="View progress"
+            onPress={onViewProgress}
             fullWidth
             variant="ghost"
           />
@@ -195,166 +181,69 @@ export const StudyContent: React.FC<StudyContentProps> = ({
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.setup}>
-          <View style={styles.greeting}>
-            <Typography color="muted">
-              Your space to grow{userName ? `, ${userName.split(' ')[0]}` : ''}.
-            </Typography>
-            <Typography variant="display" style={styles.headline}>
-              Make it stick.
-            </Typography>
-          </View>
-          <View
-            style={[styles.setupColumns, width >= 820 && styles.wideColumns]}
-          >
-            <Card
-              padding="lg"
-              style={[styles.hero, width >= 820 && { flex: 1 }]}
-            >
-              <View style={styles.heroTop}>
-                <View style={styles.heroCopy}>
-                  <Typography
-                    variant="small"
-                    color="primary"
-                    style={styles.eyebrow}
-                  >
-                    YOUR DAILY PRACTICE
-                  </Typography>
-                  <Typography variant="heading3" style={{ marginTop: 8 }}>
-                    A little focus.{'\n'}A brighter mind.
-                  </Typography>
-                </View>
-                <PracticeOrbit
-                  value={sessionGoal}
-                  total={0}
-                  label="review goal"
-                  size={108}
-                />
-              </View>
-              <View style={styles.heroFooter}>
-                <AppIcon
-                  name="sparkles"
-                  size={16}
-                  color={theme.colors.primary}
-                />
-                <Typography variant="caption" color="muted" style={{ flex: 1 }}>
-                  One connection at a time.
+          <Card padding="lg" style={styles.sessionPanel}>
+            <View style={styles.goalRow}>
+              <View style={{ gap: 6 }}>
+                <Typography variant="caption" color="muted">
+                  Session target
                 </Typography>
-              </View>
-            </Card>
-            <View style={[styles.nextSession, width >= 820 && { flex: 1 }]}>
-              <View style={styles.sectionHeader}>
-                <Typography variant="heading3">Your next session</Typography>
-                <Pressable
-                  onPress={onOpenLibrary}
-                  accessibilityRole="button"
-                  style={styles.textAction}
-                >
-                  <Typography variant="caption" color="primary">
-                    Browse library ↗
+                <View style={styles.goalValue}>
+                  <Typography style={styles.goalNumber}>
+                    {sessionGoal}
                   </Typography>
-                </Pressable>
-              </View>
-              {isDecksLoading ? (
-                <LoadingState message="Finding your decks…" />
-              ) : decksError ? (
-                <FeedbackState
-                  title="Your decks couldn’t load"
-                  description={decksError}
-                  icon="cloudOff"
-                  actionLabel="Try again"
-                  onAction={() => void reloadDecks()}
-                />
-              ) : decks.length === 0 ? (
-                <FeedbackState
-                  title="What sparks your curiosity?"
-                  description="Find a deck you love. Your first session starts there."
-                  icon="library"
-                  actionLabel="Explore the library"
-                  onAction={onOpenLibrary}
-                />
-              ) : (
-                <Card padding="lg" style={styles.sessionCard}>
-                  <View style={styles.sessionCardTitle}>
-                    <View style={styles.deckIcon}>
-                      <AppIcon
-                        name="layers"
-                        color={theme.colors.primary}
-                        size={22}
-                      />
-                    </View>
-                    <View style={{ flex: 1 }}>
-                      <Typography variant="heading3">
-                        Choose your focus
-                      </Typography>
-                      <Typography variant="caption" color="muted">
-                        One deck or a mix. You decide.
-                      </Typography>
-                    </View>
-                  </View>
-                  <DecksMultiSelect
-                    decks={decks}
-                    onSelectDecks={setDraftDeckIds}
-                    selectedDeckIds={draftSelection}
-                  />
-                  <View style={styles.sessionDetails}>
-                    <Typography variant="caption" color="muted">
-                      {sessionGoal} reviews · pause whenever you like
-                    </Typography>
-                  </View>
-                  <Button
-                    title="Start my session"
-                    onPress={() => onSelectDecks(draftSelection)}
-                    disabled={draftSelection.length === 0}
-                    fullWidth
-                    size="lg"
-                    iconPosition="right"
-                    icon={
-                      <AppIcon
-                        name="chevronRight"
-                        color={theme.colors.primaryForeground}
-                        size={19}
-                      />
-                    }
-                    testID="start-study-session"
-                  />
-                </Card>
-              )}
-            </View>
-          </View>
-          <View style={styles.guide}>
-            <Typography variant="small" color="muted" style={styles.eyebrow}>
-              THE ART OF REMEMBERING
-            </Typography>
-            <View style={styles.guideSteps}>
-              {[
-                {
-                  number: '01',
-                  title: 'Recall',
-                  description: 'Give your mind a moment.',
-                },
-                {
-                  number: '02',
-                  title: 'Reveal',
-                  description: 'Make the connection.',
-                },
-                {
-                  number: '03',
-                  title: 'Reflect',
-                  description: 'Let your next review adapt.',
-                },
-              ].map((step) => (
-                <View key={step.number} style={styles.guideStep}>
-                  <Typography variant="small" color="primary">
-                    {step.number} —
-                  </Typography>
-                  <Typography style={styles.stepTitle}>{step.title}</Typography>
-                  <Typography variant="small" color="muted">
-                    {step.description}
-                  </Typography>
+                  <Typography color="muted">reviews</Typography>
                 </View>
-              ))}
+              </View>
+              <ShuffleMark size={48} />
             </View>
-          </View>
+            <View style={styles.sectionHeader}>
+              <Typography variant="heading3">Decks</Typography>
+              <Pressable
+                onPress={onOpenLibrary}
+                accessibilityRole="button"
+                style={styles.textAction}
+              >
+                <Typography variant="caption" color="primary">
+                  Browse library
+                </Typography>
+              </Pressable>
+            </View>
+            {isDecksLoading ? (
+              <LoadingState message="Loading decks…" />
+            ) : decksError ? (
+              <FeedbackState
+                title="Couldn’t load decks"
+                description={decksError}
+                icon="cloudOff"
+                actionLabel="Try again"
+                onAction={() => void reloadDecks()}
+              />
+            ) : decks.length === 0 ? (
+              <FeedbackState
+                title="No decks yet"
+                description="Add a deck from the library to start studying."
+                icon="library"
+                actionLabel="Browse library"
+                onAction={onOpenLibrary}
+              />
+            ) : (
+              <View style={styles.sessionForm}>
+                <DecksMultiSelect
+                  decks={decks}
+                  onSelectDecks={setDraftDeckIds}
+                  selectedDeckIds={draftSelection}
+                />
+                <Button
+                  title="Start session"
+                  onPress={() => onSelectDecks(draftSelection)}
+                  disabled={draftSelection.length === 0}
+                  fullWidth
+                  size="lg"
+                  testID="start-study-session"
+                />
+              </View>
+            )}
+          </Card>
         </View>
       </ScrollView>
     );
@@ -368,7 +257,7 @@ export const StudyContent: React.FC<StudyContentProps> = ({
             <LoadingState message="Preparing your session…" />
           ) : sessionError ? (
             <FeedbackState
-              title="Let’s try that again"
+              title="Couldn’t load this session"
               description={sessionError}
               icon="cloudOff"
               actionLabel="Reload session"
@@ -376,12 +265,8 @@ export const StudyContent: React.FC<StudyContentProps> = ({
             />
           ) : (
             <FeedbackState
-              title={
-                sessionData?.length === 0
-                  ? 'A little breathing room.'
-                  : 'You’re all caught up.'
-              }
-              description="There are no cards ready in this session. Explore another deck, or come back later."
+              title="No cards to review"
+              description="Choose another deck or come back later."
               icon="checkCircle"
               actionLabel="Choose another deck"
               onAction={onChooseDecks}
@@ -401,14 +286,6 @@ export const StudyContent: React.FC<StudyContentProps> = ({
       keyboardShouldPersistTaps="handled"
     >
       <View style={styles.studyWidth}>
-        <View style={styles.cardHeading}>
-          <Typography variant="small" color="primary" style={styles.eyebrow}>
-            {isRevealed ? 'MAKE THE CONNECTION' : 'ONE THOUGHT AT A TIME'}
-          </Typography>
-          <Typography variant="small" color="muted">
-            {isRevealed ? '02 / Reflect' : '01 / Recall'}
-          </Typography>
-        </View>
         <Flashcard
           cardToken={currentCardToken}
           revealed={isRevealed}
@@ -417,52 +294,42 @@ export const StudyContent: React.FC<StudyContentProps> = ({
           onFlip={(revealed) =>
             setRevealedCardToken(revealed ? currentCardToken : null)
           }
-          style={{ minHeight: Math.max(250, Math.min(height - 440, 400)) }}
+          style={{ minHeight: Math.max(280, Math.min(height - 400, 420)) }}
           onSwipedLeft={onForgottenReview}
           onSwipedRight={onRememberedReview}
           testID="study-flashcard"
         />
-        <View style={styles.cardSupport}>
-          <FlashcardMetaStrip flashcard={currentCard} />
+        <FlashcardMetaStrip flashcard={currentCard} />
+        <View style={styles.reviewActions}>
+          {isRevealed ? (
+            <StudyReviewDock
+              disabled={isReviewProcessing}
+              pendingOutcome={pendingReviewOutcome}
+              onForgotten={onForgottenReview}
+              onRemembered={onRememberedReview}
+              onKnown={onKnownReview}
+            />
+          ) : (
+            <Button
+              title="Reveal answer"
+              size="lg"
+              fullWidth
+              disabled={isReviewProcessing}
+              onPress={() => setRevealedCardToken(currentCardToken)}
+              testID="reveal-answer"
+            />
+          )}
         </View>
-        {isRevealed ? (
-          <StudyReviewDock
-            disabled={isReviewProcessing}
-            pendingOutcome={pendingReviewOutcome}
-            onForgotten={onForgottenReview}
-            onRemembered={onRememberedReview}
-            onKnown={onKnownReview}
-          />
-        ) : (
-          <Button
-            title="Reveal answer"
-            size="lg"
-            fullWidth
-            disabled={isReviewProcessing}
-            onPress={() => setRevealedCardToken(currentCardToken)}
-            iconPosition="right"
-            icon={
-              <AppIcon
-                name="chevronDown"
-                size={19}
-                color={theme.colors.primaryForeground}
-              />
-            }
-            testID="reveal-answer"
-          />
-        )}
-        <Typography
-          variant="small"
-          color="muted"
-          style={styles.reviewHint}
-          accessibilityLiveRegion="polite"
-        >
-          {isReviewProcessing
-            ? 'Saving your review…'
-            : isRevealed
-              ? 'Forgetting is part of learning. Be honest with yourself.'
-              : 'Try to recall before you reveal.'}
-        </Typography>
+        {isReviewProcessing ? (
+          <Typography
+            variant="small"
+            color="muted"
+            style={styles.reviewHint}
+            accessibilityLiveRegion="polite"
+          >
+            Saving review…
+          </Typography>
+        ) : null}
         {reviewFeedback ? (
           <Card style={styles.feedback}>
             <Typography
@@ -474,42 +341,45 @@ export const StudyContent: React.FC<StudyContentProps> = ({
             </Typography>
           </Card>
         ) : null}
-        {totalReviews > 0 ? stats : null}
       </View>
     </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
-  scrollContent: { flexGrow: 1, paddingHorizontal: 24, paddingTop: 12 },
-  setup: { width: '100%', maxWidth: 1072, alignSelf: 'center' },
-  greeting: { gap: 10, marginTop: 8, marginBottom: 20 },
-  headline: { fontSize: 38, lineHeight: 44, letterSpacing: -1.6 },
-  eyebrow: {
-    letterSpacing: 1.6,
-    fontFamily: theme.fontFamily.medium,
-    fontSize: 10,
+  scrollContent: { flexGrow: 1, paddingHorizontal: 24, paddingTop: 16 },
+  setup: {
+    width: '100%',
+    maxWidth: 560,
+    alignSelf: 'center',
+    paddingTop: 12,
+    gap: 16,
   },
-  setupColumns: { gap: 20 },
-  wideColumns: { flexDirection: 'row', alignItems: 'flex-start' },
-  hero: { borderColor: '#658594', backgroundColor: '#0A2A3B', padding: 18 },
-  heroTop: {
+  sessionPanel: { gap: 18, borderRadius: 24 },
+  goalRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    gap: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
+    paddingBottom: 22,
   },
-  heroCopy: { flex: 1 },
-  heroFooter: {
-    flexDirection: 'row',
+  goalValue: { flexDirection: 'row', alignItems: 'baseline', gap: 10 },
+  goalNumber: {
+    fontFamily: theme.fontFamily.medium,
+    fontSize: 40,
+    lineHeight: 46,
+    color: theme.colors.foreground,
+  },
+  completeIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     alignItems: 'center',
-    gap: 10,
-    borderTopWidth: 1,
-    borderTopColor: theme.colors.border,
-    marginTop: 8,
-    paddingTop: 12,
+    justifyContent: 'center',
+    backgroundColor: theme.colors.primaryLight,
+    marginBottom: 8,
   },
-  nextSession: { gap: 12 },
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -517,49 +387,19 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   textAction: { minHeight: 44, justifyContent: 'center' },
-  sessionCard: { gap: 14 },
-  sessionCardTitle: { flexDirection: 'row', gap: 12, alignItems: 'center' },
-  deckIcon: {
-    width: 46,
-    height: 46,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: theme.colors.primaryLight,
-  },
-  sessionDetails: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 12,
-  },
-  guide: {
-    marginTop: 32,
-    paddingTop: 24,
-    borderTopWidth: 1,
-    borderTopColor: theme.colors.border,
-    gap: 20,
-  },
-  guideSteps: { flexDirection: 'row', gap: 16 },
-  guideStep: { flex: 1, gap: 8 },
-  stepTitle: { fontFamily: theme.fontFamily.medium },
+  sessionForm: { gap: 20 },
   summary: {
     flex: 1,
     width: '100%',
     maxWidth: 480,
     alignSelf: 'center',
     alignItems: 'center',
-    paddingTop: 28,
+    paddingTop: 48,
     gap: 16,
   },
   centered: { textAlign: 'center' },
   studyWidth: { width: '100%', maxWidth: 640, alignSelf: 'center' },
-  cardHeading: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 10,
-    paddingVertical: 14,
-  },
-  cardSupport: { paddingTop: 20, paddingBottom: 16 },
+  reviewActions: { paddingTop: 24 },
   reviewHint: { textAlign: 'center', paddingTop: 14 },
   feedback: { marginTop: 16 },
 });

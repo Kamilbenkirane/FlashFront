@@ -12,15 +12,6 @@ export const analyticsChartStyles = StyleSheet.create({
     paddingVertical: theme.spacing.xxl,
     gap: theme.spacing.sm,
   },
-  emptyBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: theme.spacing.sm,
-    borderRadius: theme.borderRadius.full,
-    paddingHorizontal: theme.spacing.md,
-    paddingVertical: theme.spacing.sm,
-  },
   emptyMessage: { textAlign: 'center', maxWidth: 240 },
   series: { gap: theme.spacing.md },
   seriesHeader: {

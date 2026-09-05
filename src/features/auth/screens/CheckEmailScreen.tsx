@@ -7,7 +7,7 @@ import { Typography } from '@/components/ui/Typography';
 import { AuthScaffold } from '@/features/auth/components/AuthScaffold';
 import { useAuth } from '@/providers/AuthProvider';
 import type React from 'react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 type CheckEmailScreenProps = AuthStackScreenProps<'CheckEmail'>;
@@ -28,6 +28,10 @@ const CheckEmailScreen: React.FC<CheckEmailScreenProps> = ({
     [route.params?.mode],
   );
 
+  useEffect(() => {
+    setNotice(route.params?.message || null);
+  }, [mode, route.params?.message]);
+
   const handleResend = async () => {
     setIsSubmitting(true);
     const result = await resendVerificationEmail();
@@ -40,7 +44,7 @@ const CheckEmailScreen: React.FC<CheckEmailScreenProps> = ({
 
   return (
     <AuthScaffold
-      title="Check your inbox."
+      title="Check your email"
       subtitle={
         mode === 'reset'
           ? `We sent a reset link to ${pendingEmail || 'your inbox'}.`
@@ -52,7 +56,7 @@ const CheckEmailScreen: React.FC<CheckEmailScreenProps> = ({
       <View style={styles.actions}>
         {mode === 'verify' ? (
           <Button
-            title="Resend verification email"
+            title="Resend email"
             size="lg"
             variant="outline"
             onPress={() => void handleResend()}

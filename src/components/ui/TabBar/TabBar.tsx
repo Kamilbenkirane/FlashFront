@@ -85,9 +85,7 @@ const TabItem: React.FC<TabItemProps> = ({
         <View style={styles.tabIconContainer}>
           <AppIcon
             color={
-              isFocused
-                ? theme.colors.primaryForeground
-                : theme.colors.mutedForeground
+              isFocused ? theme.colors.primary : theme.colors.mutedForeground
             }
             name={iconName}
             size={TAB_ICON_SIZE}

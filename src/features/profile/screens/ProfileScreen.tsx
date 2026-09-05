@@ -1,8 +1,6 @@
-import type { AppTabScreenProps } from '@/app/navigation/types';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Typography } from '@/components/ui/Typography';
-import { AppIcon } from '@/components/ui/icons';
 import { StatsDashboard } from '@/features/profile/components/StatsDashboard';
 import useTabScreenSpacing from '@/hooks/useTabScreenSpacing';
 import { useAuth } from '@/providers/AuthProvider';
@@ -15,9 +13,7 @@ import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-type ProfileScreenProps = AppTabScreenProps<'Profile'>;
-
-const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
+const ProfileScreen: React.FC = () => {
   const { authUser, signOut } = useAuth();
   const { user, userError, onboardingPreferences, deleteAccount } = useUser();
   const { scrollContentContainerStyle, scrollIndicatorInsets } =
@@ -25,13 +21,6 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
   const [showAccount, setShowAccount] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
-  const initials = (user?.user_name || authUser?.email || '?')
-    .trim()
-    .split(/\s+/)
-    .map((name) => name[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2);
 
   return (
     <SafeAreaView edges={['top', 'left', 'right']} style={styles.container}>
@@ -45,187 +34,117 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
       >
         <View style={styles.content}>
           <View style={styles.header}>
-            <View style={styles.headerCopy}>
-              <Typography
-                variant="small"
-                color="primary"
-                style={styles.eyebrow}
-              >
-                THE BIGGER PICTURE
-              </Typography>
-              <Typography variant="heading1" style={styles.title}>
-                Your progress
-              </Typography>
-            </View>
+            <Typography variant="heading1" style={styles.title}>
+              {showAccount ? 'Account' : 'Progress'}
+            </Typography>
             <Pressable
               onPress={() => {
                 triggerHaptic('selection');
                 setShowAccount(!showAccount);
               }}
-              style={[styles.avatar, showAccount && styles.avatarSelected]}
+              style={styles.accountButton}
               accessibilityRole="button"
-              accessibilityLabel="Account and study preferences"
+              accessibilityLabel={showAccount ? 'Done' : 'Account'}
               accessibilityState={{ expanded: showAccount }}
+              aria-expanded={showAccount}
             >
-              <Typography style={styles.avatarText}>{initials}</Typography>
-              <View style={styles.settingsBadge}>
-                <AppIcon
-                  name="settings"
-                  color={theme.colors.primary}
-                  size={12}
-                />
-              </View>
+              <Typography variant="button" color="primary">
+                {showAccount ? 'Done' : 'Account'}
+              </Typography>
             </Pressable>
-          </View>
-          <View style={styles.intro}>
-            <Typography variant="body" color="muted" style={styles.introCopy}>
-              Every review builds a little more.
-            </Typography>
-            {user ? (
-              <Button
-                title="Study"
-                size="sm"
-                variant="outline"
-                onPress={() => {
-                  triggerHaptic('impact');
-                  navigation.navigate('Flashcard');
-                }}
-                icon={
-                  <AppIcon
-                    name="chevronRight"
-                    size={17}
-                    color={theme.colors.primary}
-                  />
-                }
-                iconPosition="right"
-              />
-            ) : null}
           </View>
 
           {showAccount ? (
-            <Card padding="lg" style={styles.accountCard}>
-              <View style={styles.accountHeading}>
-                <Typography variant="heading2">Your account</Typography>
-                <Pressable
-                  onPress={() => setShowAccount(false)}
-                  style={styles.close}
-                  accessibilityRole="button"
-                  accessibilityLabel="Close account settings"
-                >
-                  <AppIcon
-                    name="close"
-                    size={20}
-                    color={theme.colors.mutedForeground}
-                  />
-                </Pressable>
-              </View>
-              <View style={styles.accountIdentity}>
-                <Typography variant="heading3">
-                  {user?.user_name || 'Your study profile'}
-                </Typography>
-                <Typography variant="body" color="muted">
-                  {authUser?.email || 'Email not available'}
-                </Typography>
-                {user?.subscription_date ? (
-                  <Typography variant="small" color="muted">
-                    Member since{' '}
-                    {new Date(user.subscription_date).toLocaleDateString(
-                      undefined,
-                      { month: 'long', year: 'numeric' },
-                    )}
+            <View style={styles.account}>
+              <Card padding="lg" style={styles.accountCard}>
+                <View style={styles.identity}>
+                  <Typography variant="heading3">
+                    {user?.user_name || 'Account'}
                   </Typography>
-                ) : null}
-              </View>
-              <Typography
-                variant="small"
-                color="primary"
-                style={styles.eyebrow}
-              >
-                STUDY PREFERENCES
-              </Typography>
-              <View style={styles.detailRow}>
-                <View style={styles.detailLabel}>
-                  <AppIcon
-                    name="crosshair"
-                    size={18}
-                    color={theme.colors.mutedForeground}
-                  />
                   <Typography variant="body" color="muted">
-                    Daily goal
+                    {authUser?.email || 'Email unavailable'}
                   </Typography>
+                  {user?.subscription_date ? (
+                    <Typography variant="caption" color="muted">
+                      Member since{' '}
+                      {new Date(user.subscription_date).toLocaleDateString(
+                        undefined,
+                        { month: 'long', year: 'numeric' },
+                      )}
+                    </Typography>
+                  ) : null}
                 </View>
-                <Typography variant="body">
-                  {onboardingPreferences?.dailyGoal || 20} cards
-                </Typography>
-              </View>
-              <View style={styles.detailRow}>
-                <View style={styles.detailLabel}>
-                  <AppIcon
-                    name="time"
-                    size={18}
-                    color={theme.colors.mutedForeground}
-                  />
-                  <Typography variant="body" color="muted">
-                    Reminders
-                  </Typography>
+                <View style={styles.preferences}>
+                  <Typography variant="heading3">Study preferences</Typography>
+                  <View style={styles.detailRow}>
+                    <Typography variant="body" color="muted">
+                      Daily goal
+                    </Typography>
+                    <Typography variant="body">
+                      {onboardingPreferences?.dailyGoal || 20} cards
+                    </Typography>
+                  </View>
+                  <View style={styles.detailRow}>
+                    <Typography variant="body" color="muted">
+                      Reminders
+                    </Typography>
+                    <Typography variant="body">
+                      {onboardingPreferences?.reminderEnabled ? 'On' : 'Off'}
+                    </Typography>
+                  </View>
                 </View>
-                <Typography variant="body">
-                  {onboardingPreferences?.reminderEnabled ? 'Enabled' : 'Off'}
-                </Typography>
-              </View>
+              </Card>
               {userError ? (
                 <Typography variant="caption" color="error">
                   {userError}
                 </Typography>
               ) : null}
-              <View style={styles.actions}>
-                <View style={styles.action}>
-                  <Button
-                    title="Sign out"
-                    variant="outline"
-                    loading={isSigningOut}
-                    disabled={isDeleting}
-                    fullWidth
-                    onPress={async () => {
-                      setIsSigningOut(true);
-                      await signOut();
-                      setIsSigningOut(false);
-                    }}
-                  />
-                </View>
-                <View style={styles.action}>
-                  <Button
-                    title="Delete account"
-                    variant="error"
-                    loading={isDeleting}
-                    disabled={isSigningOut}
-                    fullWidth
-                    onPress={() => {
-                      showAlert(
-                        'Delete account',
-                        'This removes your Shuffle account and study profile. This cannot be undone.',
-                        [
-                          { text: 'Cancel', style: 'cancel' },
-                          {
-                            text: 'Delete',
-                            style: 'destructive',
-                            onPress: async () => {
-                              setIsDeleting(true);
-                              const result = await deleteAccount();
-                              if (!result.error) await signOut();
-                              setIsDeleting(false);
-                            },
-                          },
-                        ],
-                      );
-                    }}
-                  />
-                </View>
-              </View>
-            </Card>
+              <Button
+                title="Sign out"
+                variant="outline"
+                loading={isSigningOut}
+                disabled={isDeleting}
+                fullWidth
+                onPress={async () => {
+                  setIsSigningOut(true);
+                  await signOut();
+                  setIsSigningOut(false);
+                }}
+              />
+              <Button
+                title="Delete account"
+                variant="ghost"
+                loading={isDeleting}
+                disabled={isSigningOut}
+                fullWidth
+                onPress={() => {
+                  showAlert(
+                    'Delete account?',
+                    'This removes your Shuffle account and study profile. This cannot be undone.',
+                    [
+                      { text: 'Cancel', style: 'cancel' },
+                      {
+                        text: 'Delete',
+                        style: 'destructive',
+                        onPress: async () => {
+                          setIsDeleting(true);
+                          const result = await deleteAccount();
+                          if (!result.error) await signOut();
+                          setIsDeleting(false);
+                        },
+                      },
+                    ],
+                  );
+                }}
+              />
+            </View>
+          ) : user ? (
+            <StatsDashboard />
+          ) : userError ? (
+            <Typography variant="body" color="error">
+              {userError}
+            </Typography>
           ) : null}
-
-          {user ? <StatsDashboard /> : null}
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -234,90 +153,44 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background },
-  scrollContainer: { paddingTop: theme.spacing.xxl },
+  scrollContainer: { paddingTop: theme.spacing.xl },
   content: {
     width: '100%',
-    maxWidth: 1120,
+    maxWidth: 840,
     alignSelf: 'center',
-    paddingHorizontal: theme.spacing.xl,
+    paddingHorizontal: theme.spacing.lg,
   },
-  header: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.lg },
-  headerCopy: { flex: 1, gap: theme.spacing.sm },
-  eyebrow: { letterSpacing: 1.8, fontFamily: theme.fontFamily.medium },
-  title: { fontSize: 36, lineHeight: 43, letterSpacing: -1.4 },
-  avatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    backgroundColor: theme.colors.secondary,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarSelected: { borderColor: theme.colors.primary },
-  avatarText: {
-    color: theme.colors.primary,
-    fontSize: 17,
-    fontFamily: theme.fontFamily.medium,
-  },
-  settingsBadge: {
-    position: 'absolute',
-    right: -2,
-    bottom: -2,
-    width: 21,
-    height: 21,
-    borderRadius: 11,
-    backgroundColor: theme.colors.card,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  intro: {
+  header: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: theme.spacing.lg,
-    marginTop: theme.spacing.md,
-    marginBottom: theme.spacing.xxl,
+    gap: theme.spacing.md,
+    paddingBottom: theme.spacing.lg,
   },
-  introCopy: { flex: 1 },
-  accountCard: { gap: theme.spacing.md, marginBottom: theme.spacing.xxl },
-  accountHeading: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  close: {
-    minWidth: 44,
+  title: { flex: 1 },
+  accountButton: {
     minHeight: 44,
-    alignItems: 'center',
+    minWidth: 64,
     justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: theme.spacing.sm,
   },
-  accountIdentity: { gap: theme.spacing.xs, paddingBottom: theme.spacing.lg },
+  account: { gap: theme.spacing.md },
+  accountCard: { gap: theme.spacing.xl },
+  identity: { gap: theme.spacing.xs },
+  preferences: {
+    gap: theme.spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.border,
+    paddingTop: theme.spacing.lg,
+  },
   detailRow: {
-    minHeight: 48,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    gap: theme.spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
-    paddingBottom: theme.spacing.sm,
-  },
-  detailLabel: {
-    flexDirection: 'row',
-    gap: theme.spacing.sm,
-    alignItems: 'center',
-    flex: 1,
-  },
-  actions: {
-    flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: theme.spacing.md,
-    marginTop: theme.spacing.sm,
+    gap: theme.spacing.sm,
+    minHeight: 32,
   },
-  action: { flex: 1, minWidth: 140 },
 });
 
 export default ProfileScreen;

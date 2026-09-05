@@ -140,17 +140,6 @@ export const StudyChatProposalCard: React.FC<StudyChatProposalCardProps> = ({
             <StudyChatMessageContent content={proposal.userFeedbackSummary} />
           </View>
         ) : null}
-        <Typography
-          variant="caption"
-          color={isSuccess ? 'success' : 'muted'}
-          accessibilityLiveRegion="polite"
-        >
-          {isSuccess
-            ? kind === 'edit'
-              ? 'Your changes are saved.'
-              : 'Your new card is in your deck.'
-            : 'Review the draft and make it your own before saving.'}
-        </Typography>
       </View>
 
       {state.isEditing ? (
@@ -215,7 +204,7 @@ export const StudyChatProposalCard: React.FC<StudyChatProposalCardProps> = ({
         </View>
       ) : null}
 
-      <View style={styles.actions}>
+      <View style={styles.actions} accessibilityLiveRegion="polite">
         <View style={styles.actionButton}>
           <Button
             title={validateLabel}
@@ -278,7 +267,7 @@ const styles = StyleSheet.create({
     opacity: 0.8,
   },
   previewFace: {
-    minHeight: 240,
+    minHeight: 180,
     borderRadius: theme.borderRadius.xl,
     borderWidth: 1,
     borderColor: theme.colors.border,
@@ -290,7 +279,7 @@ const styles = StyleSheet.create({
   },
   previewContent: {
     flexGrow: 1,
-    minHeight: 112,
+    minHeight: 64,
     alignItems: 'center',
     justifyContent: 'center',
   },

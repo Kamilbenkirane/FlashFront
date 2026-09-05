@@ -565,10 +565,12 @@ const FlashcardScreen = ({ navigation, route }: FlashcardScreenProps) => {
             : undefined
         }
         onOpenChat={
-          isStudyChatAvailable ? () => setShowStudyChat(true) : undefined
+          isStudyChatAvailable && !showSummary
+            ? () => setShowStudyChat(true)
+            : undefined
         }
         onOpenSettings={
-          activeDecksIds.length > 0
+          activeDecksIds.length > 0 && !showSummary
             ? () => setShowQuickSettings(true)
             : undefined
         }
@@ -576,7 +578,6 @@ const FlashcardScreen = ({ navigation, route }: FlashcardScreenProps) => {
 
       <StudyContent
         viewState={studyContentState}
-        userName={user?.user_name ?? ''}
         sessionGoal={sessionGoal}
         showSummary={showSummary}
         onContinue={() => {
@@ -631,6 +632,7 @@ const FlashcardScreen = ({ navigation, route }: FlashcardScreenProps) => {
         visible={showStudyChat}
         onClose={() => setShowStudyChat(false)}
         deckLabel={studyChatDeckLabel}
+        cardQuestion={currentCard?.recto}
         isComposerAvailable={hasStudyChatModel}
         unavailableMessage={studyChatUnavailableMessage}
         messages={studyChat.messages}

@@ -1,5 +1,4 @@
 import { Typography } from '@/components/ui/Typography';
-import { AppIcon } from '@/components/ui/icons';
 import { theme } from '@/tokens/theme';
 import { triggerHaptic } from '@/utils/haptics';
 import type React from 'react';
@@ -28,20 +27,16 @@ export const FilterBar: React.FC<FilterBarProps> = ({
 }) => (
   <View className={className} style={styles.container} testID={testID}>
     <View style={styles.tabs} accessibilityRole="tablist">
-      {[
-        { title: 'Explore', subscribed: false, icon: 'library' as const },
-        { title: 'My decks', subscribed: true, icon: 'layers' as const },
-      ].map(({ title, subscribed, icon }) => {
+      {[false, true].map((subscribed) => {
         const selected = showSubscribedOnly === subscribed;
+        const label = subscribed ? `Added (${subscribedCount})` : 'All decks';
         return (
           <Pressable
-            key={title}
+            key={String(subscribed)}
             accessibilityRole="tab"
             accessibilityState={{ selected }}
             aria-selected={selected}
-            accessibilityLabel={
-              subscribed ? `My decks, ${subscribedCount} decks` : title
-            }
+            accessibilityLabel={label}
             onPress={() => {
               if (!selected) {
                 triggerHaptic('selection');
@@ -50,31 +45,13 @@ export const FilterBar: React.FC<FilterBarProps> = ({
             }}
             style={[styles.tab, selected && styles.tabSelected]}
           >
-            <AppIcon
-              name={icon}
-              size={17}
-              color={
-                selected ? theme.colors.primary : theme.colors.mutedForeground
-              }
-            />
             <Typography variant="button" color={selected ? 'primary' : 'muted'}>
-              {title}
+              {label}
             </Typography>
-            {subscribed ? (
-              <View style={styles.count}>
-                <Typography
-                  variant="small"
-                  color={selected ? 'primary' : 'muted'}
-                >
-                  {subscribedCount}
-                </Typography>
-              </View>
-            ) : null}
           </Pressable>
         );
       })}
     </View>
-
     <ScrollView
       horizontal
       showsHorizontalScrollIndicator={false}
@@ -109,44 +86,29 @@ export const FilterBar: React.FC<FilterBarProps> = ({
 );
 
 const styles = StyleSheet.create({
-  container: { gap: theme.spacing.lg },
+  container: { gap: theme.spacing.sm },
   tabs: {
     flexDirection: 'row',
     backgroundColor: theme.colors.secondary,
-    borderRadius: theme.borderRadius.lg,
-    padding: 4,
-    gap: 4,
+    borderRadius: theme.borderRadius.md,
+    padding: 3,
+    gap: 3,
   },
   tab: {
     flex: 1,
-    minHeight: 48,
-    paddingHorizontal: theme.spacing.sm,
-    flexDirection: 'row',
+    minHeight: 44,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: theme.spacing.sm,
-    borderRadius: theme.borderRadius.md,
-    borderWidth: 1,
-    borderColor: 'transparent',
-  },
-  tabSelected: {
-    backgroundColor: theme.colors.card,
-    borderColor: theme.colors.border,
-  },
-  count: {
-    minWidth: 22,
-    paddingHorizontal: 5,
-    paddingVertical: 2,
+    paddingHorizontal: theme.spacing.sm,
     borderRadius: theme.borderRadius.sm,
-    backgroundColor: theme.colors.primaryLight,
-    alignItems: 'center',
   },
+  tabSelected: { backgroundColor: theme.colors.card },
   subjects: { gap: theme.spacing.sm },
   subject: {
     minHeight: 44,
     justifyContent: 'center',
-    paddingHorizontal: theme.spacing.lg,
-    borderRadius: theme.borderRadius.full,
+    paddingHorizontal: theme.spacing.md,
+    borderRadius: theme.borderRadius.md,
     borderWidth: 1,
     borderColor: theme.colors.border,
   },

@@ -19,15 +19,12 @@ import { theme } from '@/tokens/theme';
 import { showAlert } from '@/utils/showAlert';
 import type React from 'react';
 import { useEffect, useMemo, useState } from 'react';
-import { StyleSheet, View, useWindowDimensions } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 type LibraryScreenProps = AppTabScreenProps<'Library'>;
 
-const MIN_LIBRARY_CARD_WIDTH = 160;
-
 const LibraryScreen: React.FC<LibraryScreenProps> = ({ navigation }) => {
-  const { width } = useWindowDimensions();
   const { user } = useUser();
   const {
     decks: subscribedDecks,
@@ -174,22 +171,18 @@ const LibraryScreen: React.FC<LibraryScreenProps> = ({ navigation }) => {
       return;
     }
 
-    showAlert(
-      'Subscribe First',
-      `You need to subscribe to "${deck.deck_name}" before studying it.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Subscribe & Study',
-          onPress: async () => {
-            const didSubscribe = await handleSubscriptionToggle(deck, true);
-            if (didSubscribe) {
-              openDeckStudy(deck);
-            }
-          },
+    showAlert('Add deck?', `Add "${deck.deck_name}" to study it.`, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Add & study',
+        onPress: async () => {
+          const didSubscribe = await handleSubscriptionToggle(deck, true);
+          if (didSubscribe) {
+            openDeckStudy(deck);
+          }
         },
-      ],
-    );
+      },
+    ]);
   };
 
   let libraryBodyState: LibraryBodyState = 'ready';
@@ -204,26 +197,6 @@ const LibraryScreen: React.FC<LibraryScreenProps> = ({ navigation }) => {
   } else if (filteredDecks.length === 0) {
     libraryBodyState = 'filteredEmpty';
   }
-
-  const gridHorizontalPadding =
-    width >= 768 ? theme.spacing.xxxl : theme.spacing.xl;
-  const gridColumnGap = theme.spacing.md;
-  const availableGridWidth = Math.max(
-    Math.min(width, 1120) - gridHorizontalPadding * 2,
-    0,
-  );
-  const numColumns = Math.min(
-    width >= 820 ? 3 : 2,
-    Math.max(
-      1,
-      Math.floor(
-        (availableGridWidth + gridColumnGap) /
-          (MIN_LIBRARY_CARD_WIDTH + gridColumnGap),
-      ),
-    ),
-  );
-  const cardWidth =
-    (availableGridWidth - gridColumnGap * (numColumns - 1)) / numColumns;
 
   const header = (
     <>
@@ -248,12 +221,6 @@ const LibraryScreen: React.FC<LibraryScreenProps> = ({ navigation }) => {
         testID="library-filters"
       />
       <View style={styles.listHeading}>
-        <Typography variant="heading3">
-          {selectedSubject ||
-            (showSubscribedOnly
-              ? 'Made for your next session'
-              : 'Explore the collection')}
-        </Typography>
         <Typography variant="caption" color="muted">
           {isLibraryLoading || (showSubscribedOnly && isSubscribedDecksLoading)
             ? 'Loading…'
@@ -274,10 +241,6 @@ const LibraryScreen: React.FC<LibraryScreenProps> = ({ navigation }) => {
           subscribedDecksError={subscribedDecksError}
           showSubscribedOnly={showSubscribedOnly}
           pendingDeckId={pendingDeckId}
-          cardWidth={cardWidth}
-          numColumns={numColumns}
-          gridHorizontalPadding={gridHorizontalPadding}
-          gridColumnGap={gridColumnGap}
           reloadLibrary={reloadLibrary}
           reloadSubscribedDecks={reloadSubscribedDecks}
           isSubscribed={isSubscribed}
@@ -300,22 +263,16 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.background,
   },
   searchContainer: {
-    marginBottom: theme.spacing.xl,
+    marginBottom: theme.spacing.md,
   },
   content: {
     flex: 1,
     width: '100%',
-    maxWidth: 1120,
+    maxWidth: 840,
     alignSelf: 'center',
   },
   listHeading: {
-    paddingTop: theme.spacing.xxl,
-    paddingBottom: theme.spacing.lg,
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    gap: theme.spacing.sm,
+    paddingVertical: theme.spacing.md,
   },
 });
 

@@ -1,4 +1,3 @@
-import { ShuffleMark } from '@/components/ui/Brand/ShuffleMark';
 import { MathText } from '@/components/ui/MathText';
 import useReducedMotion from '@/hooks/useReducedMotion';
 import { theme } from '@/tokens/theme';
@@ -121,14 +120,7 @@ export const Flashcard: React.FC<FlashcardProps> = ({
   return (
     <GestureDetector gesture={gesture}>
       <View style={[styles.container, style]} testID={testID}>
-        <View
-          pointerEvents="none"
-          style={[styles.stackLayer, styles.stackLayerBack]}
-        />
-        <View
-          pointerEvents="none"
-          style={[styles.stackLayer, styles.stackLayerMiddle]}
-        />
+        <View pointerEvents="none" style={styles.cardEdge} />
         <Animated.View style={[styles.activeCardShell, motionStyle]}>
           <Pressable
             onPress={flip}
@@ -146,15 +138,9 @@ export const Flashcard: React.FC<FlashcardProps> = ({
             }
             accessibilityState={{ disabled }}
           >
-            <View style={styles.faceHeader}>
-              <View style={styles.eyebrow}>
-                <View style={styles.faceDot} />
-                <Text style={styles.eyebrowText}>
-                  {revealed ? 'ANSWER' : 'QUESTION'}
-                </Text>
-              </View>
-              <ShuffleMark size={28} color={theme.colors.gold} />
-            </View>
+            <Text style={styles.faceLabel}>
+              {revealed ? 'Answer' : 'Question'}
+            </Text>
             <View style={styles.textContent}>
               <MathText
                 content={currentText}
@@ -166,16 +152,6 @@ export const Flashcard: React.FC<FlashcardProps> = ({
                 layoutMode="auto"
                 fillContainer={false}
               />
-            </View>
-            <View style={styles.faceFooter}>
-              <Text style={styles.faceHint}>
-                {revealed
-                  ? 'How did that feel?'
-                  : 'Take a moment. You know more than you think.'}
-              </Text>
-              <Text style={styles.flipHint}>
-                {revealed ? 'Tap to revisit the question' : 'Tap to reveal'}
-              </Text>
             </View>
           </Pressable>
         </Animated.View>

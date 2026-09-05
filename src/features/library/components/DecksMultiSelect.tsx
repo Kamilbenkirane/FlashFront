@@ -96,6 +96,7 @@ const DecksMultiSelect: React.FC<DecksMultiSelectProps> = ({
           expanded: isVisible,
           disabled: availableDecks.length === 0,
         }}
+        aria-expanded={isVisible}
       >
         <AppIcon name="layers" size={21} color={theme.colors.primary} />
         <View style={styles.buttonCopy}>
@@ -104,13 +105,13 @@ const DecksMultiSelect: React.FC<DecksMultiSelectProps> = ({
               ? 'No decks available'
               : selectedNames.length > 0
                 ? selectedNames.join(', ')
-                : 'Choose your decks'}
+                : 'Choose decks'}
           </Typography>
-          <Typography variant="small" color="muted">
-            {selectedDeckIds.length > 0
-              ? `${selectedDeckIds.length} deck${selectedDeckIds.length === 1 ? '' : 's'} selected`
-              : 'Choose one or more to get started'}
-          </Typography>
+          {selectedDeckIds.length > 0 ? (
+            <Typography variant="small" color="muted">
+              {selectedDeckIds.length} selected
+            </Typography>
+          ) : null}
         </View>
         <AppIcon
           name={isVisible ? 'chevronUp' : 'chevronDown'}
@@ -215,7 +216,7 @@ const DecksMultiSelect: React.FC<DecksMultiSelectProps> = ({
 const styles = StyleSheet.create({
   container: { gap: theme.spacing.sm },
   button: {
-    minHeight: 64,
+    minHeight: 56,
     backgroundColor: theme.colors.card,
     padding: theme.spacing.lg,
     borderRadius: theme.borderRadius.lg,

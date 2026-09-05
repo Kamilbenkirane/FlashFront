@@ -1,5 +1,6 @@
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
+import { normalizePlainTextContent } from '@/components/ui/MathText/mathHtml';
 import { Typography } from '@/components/ui/Typography';
 import { AppIcon } from '@/components/ui/icons';
 import { StudyChatChartCard } from '@/features/study/components/StudyChatChartCard';
@@ -31,29 +32,16 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const suggestedPrompts = [
   {
-    title: 'Give me a hint',
-    detail: 'A nudge before the answer',
-    icon: 'lightbulb',
+    title: 'Hint',
     draft: 'Give me a small hint for this card without revealing the answer.',
   },
   {
-    title: 'Make it memorable',
-    detail: 'Find a useful memory cue',
-    icon: 'sparkles',
-    draft: 'Help me remember this card with a simple mnemonic.',
+    title: 'Explain',
+    draft: 'Explain this card in simple terms.',
   },
   {
-    title: 'Show me an example',
-    detail: 'Connect the idea to real life',
-    icon: 'book',
+    title: 'Example',
     draft: 'Explain this card with one concrete, real-world example.',
-  },
-  {
-    title: 'Visualize the idea',
-    detail: 'Explore a chart or illustration',
-    icon: 'chart',
-    draft:
-      'Explain this card visually with a chart or illustration if it would help.',
   },
 ] as const;
 
@@ -61,6 +49,7 @@ interface StudyChatModalProps {
   visible: boolean;
   onClose: () => void;
   deckLabel: string;
+  cardQuestion?: string;
   isComposerAvailable: boolean;
   unavailableMessage?: string | null;
   messages: StudyChatUiMessage[];
@@ -110,6 +99,7 @@ export const StudyChatModal: React.FC<StudyChatModalProps> = ({
   visible,
   onClose,
   deckLabel,
+  cardQuestion,
   isComposerAvailable,
   unavailableMessage = null,
   messages,
@@ -181,19 +171,12 @@ export const StudyChatModal: React.FC<StudyChatModalProps> = ({
             accessibilityViewIsModal
           >
             <View style={styles.header}>
-              <View style={styles.assistantMark}>
-                <AppIcon
-                  name="sparkles"
-                  size={22}
-                  color={theme.colors.primary}
-                />
-              </View>
               <View style={styles.headerCopy}>
                 <Typography variant="heading2" accessibilityRole="header">
                   Study assistant
                 </Typography>
                 <Typography variant="caption" color="muted" numberOfLines={2}>
-                  This card · {deckLabel}
+                  {deckLabel}
                 </Typography>
               </View>
               <Pressable
@@ -226,31 +209,28 @@ export const StudyChatModal: React.FC<StudyChatModalProps> = ({
               keyboardShouldPersistTaps="handled"
               showsVerticalScrollIndicator={false}
             >
+              {cardQuestion ? (
+                <View style={styles.cardContext}>
+                  <Typography variant="caption" color="muted">
+                    Current card
+                  </Typography>
+                  <Typography variant="body" numberOfLines={3}>
+                    {normalizePlainTextContent(cardQuestion)}
+                  </Typography>
+                </View>
+              ) : null}
               {isLoadingHistory && messages.length === 0 ? (
                 <View style={styles.emptyState}>
                   <ActivityIndicator
                     size="small"
                     color={theme.colors.primary}
                   />
-                  <Typography variant="body">
-                    Opening your conversation…
-                  </Typography>
+                  <Typography variant="body">Loading conversation…</Typography>
                 </View>
               ) : messages.length === 0 ? (
                 <View style={styles.welcome}>
-                  <Typography
-                    variant="caption"
-                    color="primary"
-                    style={styles.eyebrow}
-                  >
-                    A LITTLE CLARITY GOES A LONG WAY
-                  </Typography>
-                  <Typography variant="heading1" style={styles.welcomeTitle}>
-                    Make it click.
-                  </Typography>
-                  <Typography variant="body" color="muted">
-                    Find a clearer way to understand this card. Start with a
-                    question or try an idea below.
+                  <Typography variant="heading3">
+                    Ask about this card
                   </Typography>
                   {isComposerAvailable ? (
                     <View style={styles.suggestions}>
@@ -268,34 +248,11 @@ export const StudyChatModal: React.FC<StudyChatModalProps> = ({
                           accessibilityHint="Adds a suggested question to your message. You can edit it before sending."
                           accessibilityState={{ disabled: isStreaming }}
                         >
-                          <AppIcon
-                            name={prompt.icon}
-                            size={21}
-                            color={theme.colors.primary}
-                          />
-                          <View style={styles.suggestionCopy}>
-                            <Typography
-                              variant="body"
-                              style={styles.suggestionTitle}
-                            >
-                              {prompt.title}
-                            </Typography>
-                            <Typography variant="caption" color="muted">
-                              {prompt.detail}
-                            </Typography>
-                          </View>
-                          <AppIcon
-                            name="chevronRight"
-                            size={18}
-                            color={theme.colors.mutedForeground}
-                          />
+                          <Typography variant="body">{prompt.title}</Typography>
                         </Pressable>
                       ))}
                     </View>
                   ) : null}
-                  <Typography variant="caption" color="muted">
-                    Web search can bring in more context when you need it.
-                  </Typography>
                 </View>
               ) : (
                 messages.map((message) => {
@@ -456,7 +413,7 @@ export const StudyChatModal: React.FC<StudyChatModalProps> = ({
                 <TextInput
                   value={draft}
                   onChangeText={onChangeDraft}
-                  placeholder="What would you like to understand?"
+                  placeholder="Message"
                   placeholderTextColor={theme.colors.placeholder}
                   style={styles.input}
                   multiline
@@ -518,14 +475,6 @@ const styles = StyleSheet.create({
     gap: theme.spacing.md,
     backgroundColor: theme.colors.card,
   },
-  assistantMark: {
-    width: 44,
-    height: 44,
-    borderRadius: theme.borderRadius.lg,
-    backgroundColor: theme.colors.primaryLight,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   headerCopy: {
     flex: 1,
     gap: theme.spacing.xs,
@@ -557,27 +506,32 @@ const styles = StyleSheet.create({
     gap: theme.spacing.xxl,
   },
   welcome: {
+    flex: 1,
     gap: theme.spacing.md,
     paddingVertical: theme.spacing.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  eyebrow: {
-    letterSpacing: 1.2,
-    fontFamily: theme.fontFamily.medium,
-  },
-  welcomeTitle: {
-    fontSize: 32,
-    lineHeight: 38,
+  cardContext: {
+    gap: theme.spacing.sm,
+    padding: theme.spacing.lg,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: theme.borderRadius.xl,
+    backgroundColor: theme.colors.card,
   },
   suggestions: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
     gap: theme.spacing.sm,
-    marginVertical: theme.spacing.md,
   },
   suggestion: {
-    minHeight: 72,
-    flexDirection: 'row',
+    minHeight: 44,
     alignItems: 'center',
-    gap: theme.spacing.md,
-    padding: theme.spacing.lg,
+    justifyContent: 'center',
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
     backgroundColor: theme.colors.card,
     borderWidth: 1,
     borderColor: theme.colors.border,
@@ -586,13 +540,6 @@ const styles = StyleSheet.create({
   suggestionPressed: {
     backgroundColor: theme.colors.surfaceRaised,
     borderColor: theme.colors.primary,
-  },
-  suggestionCopy: {
-    flex: 1,
-    gap: 2,
-  },
-  suggestionTitle: {
-    fontFamily: theme.fontFamily.medium,
   },
   emptyState: {
     gap: theme.spacing.sm,

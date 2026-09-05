@@ -100,9 +100,6 @@ export const StudyChatChartCard: React.FC<StudyChatChartCardProps> = ({
             <View style={styles.viewerHeader}>
               <View style={styles.viewerTitle}>
                 <Typography variant="heading3">{attachment.title}</Typography>
-                <Typography variant="caption" color="muted">
-                  Chart
-                </Typography>
               </View>
               <Pressable
                 onPress={closeExpandedView}

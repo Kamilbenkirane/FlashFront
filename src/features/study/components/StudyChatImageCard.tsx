@@ -92,9 +92,6 @@ export const StudyChatImageCard: React.FC<StudyChatImageCardProps> = ({
             <View style={styles.viewerHeader}>
               <View style={styles.viewerTitle}>
                 <Typography variant="heading3">{attachment.title}</Typography>
-                <Typography variant="caption" color="muted">
-                  Illustration
-                </Typography>
               </View>
               <Pressable
                 onPress={() => setIsExpanded(false)}

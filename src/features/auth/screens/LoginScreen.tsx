@@ -56,8 +56,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation, route }) => {
 
   return (
     <AuthScaffold
-      title="Welcome back."
-      subtitle="Your next discovery is waiting. Sign in to pick up where you left off."
+      title="Sign in"
       onBack={() => {
         clearAuthError();
         navigation.goBack();
@@ -66,9 +65,6 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation, route }) => {
       notice={successMessage}
       footer={
         <View style={styles.footerLinkRow}>
-          <Typography variant="caption" color="muted">
-            Need an account?
-          </Typography>
           <Pressable
             style={styles.footerLink}
             onPress={() => {
@@ -80,7 +76,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation, route }) => {
             hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
           >
             <Typography variant="caption" color="primary">
-              Create one
+              Create account
             </Typography>
           </Pressable>
         </View>

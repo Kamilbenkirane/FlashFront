@@ -67,8 +67,7 @@ const SignupScreen: React.FC<SignupScreenProps> = ({ navigation }) => {
 
   return (
     <AuthScaffold
-      title="Your learning, your space."
-      subtitle="Create an account to keep your decks and progress together."
+      title="Create account"
       onBack={() => {
         clearAuthError();
         navigation.goBack();
@@ -76,9 +75,6 @@ const SignupScreen: React.FC<SignupScreenProps> = ({ navigation }) => {
       error={authError}
       footer={
         <View style={styles.footerLinkRow}>
-          <Typography variant="caption" color="muted">
-            Already have an account?
-          </Typography>
           <Pressable
             style={styles.footerLink}
             onPress={() => {
@@ -142,7 +138,7 @@ const SignupScreen: React.FC<SignupScreenProps> = ({ navigation }) => {
             }));
           }
         }}
-        placeholder="Repeat your password"
+        placeholder="Confirm password"
         autoComplete="new-password"
         secureTextEntry
         error={fieldErrors.confirmPassword}

@@ -3,6 +3,7 @@ Run the exported app on localhost:8094, then python3 scripts/check-redesign.py.
 Requires the locally installed Python Playwright and Chromium; no app dependencies added.
 """
 import json, os
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from urllib.parse import urlparse
 from playwright.sync_api import sync_playwright, expect
@@ -19,7 +20,7 @@ DECKS=[
  {'deck_id':5,'deck_name':'The beauty of numbers','subject':'Mathematics','author':'Shuffle','card_count':72},
  {'deck_id':6,'deck_name':'A brief history of art','subject':'Art','author':'Shuffle','card_count':54},
 ]
-SESSION=[{'card_id':1,'recto':'Why does trying to recall an idea help you remember it?', 'verso':'Retrieving a memory strengthens the pathways that make it easier to find again. This is the testing effect.','difficulty':1,'streak':0,'last_review_timestamp':None,'success':None}]
+SESSION=[{'card_id':1,'recto':'Why does trying to recall an idea help you remember it?', 'verso':'Retrieving a memory strengthens the pathways that make it easier to find again. This is the testing effect.','difficulty':1,'streak':3,'last_review_timestamp':(datetime.now(timezone.utc)-timedelta(hours=3)).isoformat(),'success':True}]
 OVERVIEW=dict(total_reviews=128,correct_reviews=108,incorrect_reviews=20,known_reviews=28,remembered_reviews=80,accuracy=84.375,unique_cards_reviewed=56,active_days=5,current_streak=4,longest_streak=8)
 TREND=[dict(x=f'2026-09-0{i+1}',y=v,label=day) for i,(v,day) in enumerate(zip([12,24,18,0,36,20,18],['M','T','W','T','F','S','S']))]
 ANALYTICS=dict(range='week',overview=OVERVIEW,review_count_trend=TREND,accuracy_trend=[dict(p,y=v) for p,v in zip(TREND,[65,80,78,0,85,90,94])],cards_reviewed_trend=TREND,deck_breakdown=[],recent_activity=[])
@@ -65,17 +66,21 @@ with sync_playwright() as p:
  page.get_by_role('button',name='I remembered the answer',exact=True).wait_for()
  page.wait_for_timeout(450)
  page.screenshot(path=str(ARTIFACTS/'study-answer-mobile.png'),full_page=True)
+ expect(page.get_by_text('Last review',exact=True)).to_be_visible()
+ expect(page.get_by_text('Recall streak',exact=True)).to_be_visible()
+ expect(page.get_by_text('3 in a row',exact=True)).to_be_visible()
+ expect(page.get_by_text('3h ago',exact=True)).to_be_visible()
  print('ANSWER',page.locator('body').inner_text()[:1500])
  page.get_by_role('button',name='I remembered the answer',exact=True).click()
  page.get_by_test_id('reveal-answer').wait_for()
  for _ in range(2):
   page.get_by_test_id('reveal-answer').click()
   page.get_by_role('button',name='I remembered the answer',exact=True).click()
- page.get_by_text('Look how far you came.',exact=True).wait_for()
+ page.get_by_text('Session complete',exact=True).wait_for()
  page.wait_for_timeout(450)
  page.screenshot(path=str(ARTIFACTS/'session-complete-mobile.png'),full_page=True)
  print('SUMMARY',page.locator('body').inner_text()[:1500])
- page.get_by_role('button',name='Back to my decks',exact=True).click()
+ page.get_by_role('button',name='Done',exact=True).click()
  page.get_by_test_id('start-study-session').wait_for()
  page.get_by_test_id('start-study-session').click()
  page.get_by_test_id('reveal-answer').wait_for()
@@ -97,7 +102,7 @@ with sync_playwright() as p:
  # Exercise the same-deck entry route after manually finishing a session.
  page.get_by_test_id('tab-flashcard').click()
  page.get_by_role('button',name='Finish this session',exact=True).click()
- page.get_by_text('Every review counts.',exact=True).wait_for()
+ page.get_by_text('Session complete',exact=True).wait_for()
  page.get_by_test_id('tab-library').click()
  page.get_by_role('button',name='Study The art of remembering',exact=True).click()
  page.get_by_test_id('reveal-answer').wait_for()
@@ -112,13 +117,13 @@ with sync_playwright() as p:
  if close.count()==0: close=page.get_by_role('button',name='Close quick settings',exact=True)
  close.click()
  page.get_by_role('button',name='Open study assistant',exact=True).click()
- page.get_by_role('button',name='Give me a hint',exact=True).click()
+ page.get_by_role('button',name='Hint',exact=True).click()
  expect(page.get_by_role('textbox',name='Study chat message',exact=True)).not_to_have_value('')
  page.get_by_role('button',name='Close study chat',exact=True).click()
  SESSION[0]['recto']='What does the spacing effect tell us about memory?\n\n**Consider this model:** $R(t) = e^{-t/S}$'
  SESSION[0]['verso']='## A stronger connection\n\nSpacing retrieval across time supports retention. The relationship $R(t) = e^{-t/S}$ is an illustrative forgetting curve.\n\n'+('Practice recalling before looking at the answer. Each effort helps you find the idea again.\n\n'*8)+'**End of the explanation.**'
  page.get_by_role('button',name='Finish this session',exact=True).click()
- page.get_by_role('button',name='Back to my decks',exact=True).click()
+ page.get_by_role('button',name='Done',exact=True).click()
  page.get_by_test_id('start-study-session').click()
  page.get_by_test_id('reveal-answer').wait_for()
  page.frame_locator('iframe').locator('.katex').first.wait_for()
@@ -137,8 +142,8 @@ with sync_playwright() as p:
   page.set_viewport_size({'width':screen_width,'height':screen_height})
   page.get_by_test_id('tab-library').click()
   page.get_by_test_id('library-search-input').fill('French')
-  expect(page.get_by_role('button',name='Everyday French, Languages deck',exact=True)).to_be_visible()
-  expect(page.get_by_role('button',name='The art of remembering, Psychology deck',exact=True)).not_to_be_visible()
+  expect(page.get_by_text('Everyday French',exact=True)).to_be_visible()
+  expect(page.get_by_text('The art of remembering',exact=True)).not_to_be_visible()
   page.get_by_role('button',name='Clear search',exact=True).click()
   page.wait_for_timeout(300)
   page.screenshot(path=str(ARTIFACTS/f'library-{screen_width}.png'))

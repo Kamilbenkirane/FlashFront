@@ -147,9 +147,6 @@ export const QuickSettings: React.FC<QuickSettingsProps> = ({
                 <Typography variant="heading2" accessibilityRole="header">
                   Session settings
                 </Typography>
-                <Typography variant="caption" color="muted">
-                  Make this session your own.
-                </Typography>
               </View>
               <Pressable
                 onPress={handleClose}
@@ -173,15 +170,7 @@ export const QuickSettings: React.FC<QuickSettingsProps> = ({
             >
               <View style={styles.body}>
                 <View style={styles.deckSection}>
-                  <View style={styles.deckSectionHeader}>
-                    <Typography variant="heading3">Your study decks</Typography>
-                    <Typography variant="caption" color="primary">
-                      {selectedDeckIds.length} selected
-                    </Typography>
-                  </View>
-                  <Typography variant="caption" color="muted">
-                    Choose what you want to focus on.
-                  </Typography>
+                  <Typography variant="heading3">Decks</Typography>
                   <DecksMultiSelect
                     decks={decks}
                     onSelectDecks={onSelectDecks}
@@ -190,16 +179,10 @@ export const QuickSettings: React.FC<QuickSettingsProps> = ({
                 </View>
 
                 <View style={styles.studyChatSection}>
-                  <View style={styles.studyChatHeader}>
-                    <Typography variant="heading3">Text model</Typography>
-                  </View>
-                  <Typography variant="caption" color="muted">
-                    Your assistant for hints, explanations, and follow-up
-                    questions.
-                  </Typography>
+                  <Typography variant="heading3">Text model</Typography>
                   {isStudyChatModelsLoading ? (
                     <Typography variant="small" color="muted">
-                      Loading study chat models...
+                      Loading models…
                     </Typography>
                   ) : studyChatModels.length === 0 ? (
                     <Typography
@@ -218,16 +201,9 @@ export const QuickSettings: React.FC<QuickSettingsProps> = ({
                         accessibilityHint="Shows the list of available models."
                         accessibilityState={{ expanded: isModelPickerOpen }}
                       >
-                        <View style={styles.modelPickerCopy}>
-                          <Typography variant="body">
-                            {selectedModelLabel}
-                          </Typography>
-                          <Typography variant="caption" color="muted">
-                            {isModelPickerOpen
-                              ? 'Choose a different model'
-                              : 'Tap to change'}
-                          </Typography>
-                        </View>
+                        <Typography variant="body" style={styles.modelLabel}>
+                          {selectedModelLabel}
+                        </Typography>
                         <AppIcon
                           color={theme.colors.mutedForeground}
                           name={isModelPickerOpen ? 'chevronUp' : 'chevronDown'}
@@ -264,15 +240,10 @@ export const QuickSettings: React.FC<QuickSettingsProps> = ({
                 </View>
 
                 <View style={styles.studyChatSection}>
-                  <View style={styles.studyChatHeader}>
-                    <Typography variant="heading3">Image model</Typography>
-                  </View>
-                  <Typography variant="caption" color="muted">
-                    Turn an idea into a visual explanation.
-                  </Typography>
+                  <Typography variant="heading3">Image model</Typography>
                   {isStudyChatImageModelsLoading ? (
                     <Typography variant="small" color="muted">
-                      Loading study chat image models...
+                      Loading image models…
                     </Typography>
                   ) : studyChatImageModels.length === 0 ? (
                     <Typography
@@ -294,16 +265,9 @@ export const QuickSettings: React.FC<QuickSettingsProps> = ({
                           expanded: isImageModelPickerOpen,
                         }}
                       >
-                        <View style={styles.modelPickerCopy}>
-                          <Typography variant="body">
-                            {selectedImageModelLabel}
-                          </Typography>
-                          <Typography variant="caption" color="muted">
-                            {isImageModelPickerOpen
-                              ? 'Choose a different image model'
-                              : 'Tap to change'}
-                          </Typography>
-                        </View>
+                        <Typography variant="body" style={styles.modelLabel}>
+                          {selectedImageModelLabel}
+                        </Typography>
                         <AppIcon
                           color={theme.colors.mutedForeground}
                           name={
@@ -396,7 +360,6 @@ const styles = StyleSheet.create({
   },
   headerCopy: {
     flex: 1,
-    gap: theme.spacing.xs,
   },
   closeButton: {
     minWidth: 44,
@@ -413,31 +376,15 @@ const styles = StyleSheet.create({
   },
   deckSection: {
     gap: theme.spacing.sm,
-    padding: theme.spacing.lg,
-    borderRadius: theme.borderRadius.xl,
-    backgroundColor: theme.colors.card,
-  },
-  deckSectionHeader: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    gap: theme.spacing.sm,
   },
   studyChatSection: {
-    gap: theme.spacing.sm,
-  },
-  studyChatHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
     gap: theme.spacing.sm,
   },
   modelPickerSection: {
     gap: theme.spacing.sm,
   },
   modelPickerTrigger: {
-    minHeight: 64,
+    minHeight: 52,
     borderWidth: 1,
     borderColor: theme.colors.border,
     borderRadius: theme.borderRadius.xl,
@@ -449,9 +396,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     gap: theme.spacing.md,
   },
-  modelPickerCopy: {
+  modelLabel: {
     flex: 1,
-    gap: 2,
   },
   modelButtons: {
     gap: theme.spacing.sm,

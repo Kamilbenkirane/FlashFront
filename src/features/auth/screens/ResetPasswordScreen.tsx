@@ -56,11 +56,7 @@ const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({
   };
 
   return (
-    <AuthScaffold
-      title="A fresh password."
-      subtitle="Choose a new password for your Shuffle account. Then you’re ready to keep learning."
-      error={authError}
-    >
+    <AuthScaffold title="New password" error={authError}>
       <AuthTextField
         label="New password"
         value={password}
@@ -91,7 +87,7 @@ const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({
             }));
           }
         }}
-        placeholder="Repeat your password"
+        placeholder="Confirm password"
         autoComplete="new-password"
         secureTextEntry
         error={fieldErrors.confirmPassword}
