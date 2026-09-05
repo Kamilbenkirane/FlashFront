@@ -1,20 +1,27 @@
-import { useEffect, useState } from 'react';
-import API_URL from '../config';
+import useAsyncResource from '@/hooks/useAsyncResource';
+import { listDecks } from '@/services/backendClient';
 import type { Deck } from '../interfaces';
 
-const useDeckLibrary = (): Deck[] => {
-  const [decks, setDecks] = useState<Deck[]>([]);
+const EMPTY_DECKS: Deck[] = [];
 
-  useEffect(() => {
-    const fetchDecks = async () => {
-      const response = await fetch(`${API_URL}/deck/list/`); // Adjust endpoint as necessary
-      const data = await response.json();
-      setDecks(data);
-    };
-    fetchDecks();
-  }, []);
+const useDeckLibrary = () => {
+  const {
+    data: decks,
+    isLoading,
+    error,
+    reload,
+  } = useAsyncResource({
+    initialData: EMPTY_DECKS,
+    load: listDecks,
+    fallbackErrorMessage: 'Could not load the deck library.',
+  });
 
-  return decks;
+  return {
+    decks,
+    isLoading,
+    error,
+    reload,
+  };
 };
 
 export default useDeckLibrary;

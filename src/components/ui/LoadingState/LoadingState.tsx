@@ -1,17 +1,8 @@
+import { theme } from '@/tokens/theme';
 import type React from 'react';
-import { ActivityIndicator, View } from 'react-native';
-import { Typography } from '../Typography/Typography';
-
-export interface LoadingStateProps {
-  message?: string;
-  size?: 'small' | 'large';
-  overlay?: boolean;
-  className?: string;
-  testID?: string;
-}
-
-const baseClasses = 'flex items-center justify-center p-8';
-const overlayClasses = 'absolute inset-0 z-[1000] bg-white/90 dark:bg-black/70';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { Typography } from '../Typography';
+import type { LoadingStateProps } from './LoadingState.types';
 
 export const LoadingState: React.FC<LoadingStateProps> = ({
   message = 'Loading...',
@@ -20,20 +11,49 @@ export const LoadingState: React.FC<LoadingStateProps> = ({
   className = '',
   testID,
 }) => {
-  const containerClassName =
-    `${baseClasses} ${overlay ? overlayClasses : ''} ${className}`.trim();
-
-  // Use primary color for spinner
-  const spinnerColor = '#3b82f6'; // primary-500
-
   return (
-    <View className={containerClassName} testID={testID}>
-      <ActivityIndicator size={size} color={spinnerColor} className="mb-4" />
+    <View
+      className={className}
+      style={[styles.container, overlay && styles.overlay]}
+      testID={testID}
+      accessible
+      accessibilityRole="progressbar"
+      accessibilityState={{ busy: true }}
+      accessibilityLabel={message || 'Loading'}
+    >
+      <ActivityIndicator
+        color={theme.colors.primary}
+        size={size === 'small' ? 'small' : 'large'}
+      />
       {message && (
-        <Typography variant="body" color="neutral" className="text-center mt-2">
+        <Typography
+          variant="body"
+          color="muted"
+          style={styles.message}
+          className="text-center"
+          accessibilityLiveRegion="polite"
+        >
           {message}
         </Typography>
       )}
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: theme.spacing.xxl,
+  },
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 1000,
+    backgroundColor: theme.colors.overlay,
+  },
+  message: {
+    marginTop: theme.spacing.md,
+    textAlign: 'center',
+  },
+});

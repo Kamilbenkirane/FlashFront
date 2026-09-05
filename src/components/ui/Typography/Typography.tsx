@@ -1,7 +1,9 @@
+import { theme } from '@/tokens/theme';
+import type { Theme } from '@/tokens/theme';
 import type React from 'react';
 import { Text, type TextProps } from 'react-native';
 
-export type TypographyVariant =
+type TypographyVariant =
   | 'heading1'
   | 'heading2'
   | 'heading3'
@@ -10,13 +12,16 @@ export type TypographyVariant =
   | 'button'
   | 'small';
 
-export type TypographyColor =
+type TypographyColor =
+  | 'default'
+  | 'muted'
+  | 'dim'
   | 'primary'
   | 'secondary'
   | 'success'
   | 'warning'
   | 'error'
-  | 'neutral';
+  | 'accent';
 
 export interface TypographyProps extends TextProps {
   variant?: TypographyVariant;
@@ -25,37 +30,50 @@ export interface TypographyProps extends TextProps {
   className?: string;
 }
 
-const variantClasses: Record<TypographyVariant, string> = {
-  heading1: 'text-[32px] font-bold leading-10',
-  heading2: 'text-2xl font-semibold leading-8',
-  heading3: 'text-xl font-semibold leading-7',
-  body: 'text-base font-normal leading-6',
-  caption: 'text-sm font-normal leading-5',
-  button: 'text-base font-semibold leading-5',
-  small: 'text-xs font-normal leading-4',
-};
-
-const colorClasses: Record<TypographyColor, string> = {
-  primary: 'text-primary-500',
-  secondary: 'text-primary-400',
-  success: 'text-success-500',
-  warning: 'text-warning-500',
-  error: 'text-error-500',
-  neutral: 'text-neutral-900 dark:text-neutral-100',
-};
+function resolveTypographyColor(theme: Theme, color: TypographyColor): string {
+  const c = theme.colors;
+  switch (color) {
+    case 'default':
+      return c.foreground;
+    case 'muted':
+      return c.mutedForeground;
+    case 'dim':
+      return c.placeholder;
+    case 'primary':
+      return c.primary;
+    case 'secondary':
+      return c.secondaryForeground;
+    case 'success':
+      return c.success.DEFAULT;
+    case 'warning':
+      return c.warning.DEFAULT;
+    case 'error':
+      return c.destructive.DEFAULT;
+    case 'accent':
+      return c.accentForeground;
+    default:
+      return c.foreground;
+  }
+}
 
 export const Typography: React.FC<TypographyProps> = ({
   variant = 'body',
-  color = 'neutral',
+  color = 'default',
   children,
   className = '',
+  style,
   ...props
 }) => {
-  const combinedClassName =
-    `${variantClasses[variant]} ${colorClasses[color]} ${className}`.trim();
-
   return (
-    <Text className={combinedClassName} {...props}>
+    <Text
+      className={className}
+      style={[
+        theme.typography[variant],
+        { color: resolveTypographyColor(theme, color) },
+        style,
+      ]}
+      {...props}
+    >
       {children}
     </Text>
   );

@@ -1,8 +1,9 @@
+import { theme } from '@/tokens/theme';
 import type React from 'react';
-import { View, type ViewProps } from 'react-native';
+import { StyleSheet, View, type ViewProps } from 'react-native';
 
-export type CardVariant = 'default' | 'elevated' | 'outlined';
-export type CardPadding = 'none' | 'sm' | 'md' | 'lg';
+type CardVariant = 'default' | 'raised' | 'muted' | 'outline';
+type CardPadding = 'none' | 'sm' | 'md' | 'lg';
 
 export interface CardProps extends ViewProps {
   variant?: CardVariant;
@@ -11,33 +12,82 @@ export interface CardProps extends ViewProps {
   className?: string;
 }
 
-const variantClasses: Record<CardVariant, string> = {
-  default: 'bg-neutral-50 dark:bg-neutral-800 shadow-sm rounded-xl',
-  elevated: 'bg-neutral-50 dark:bg-neutral-800 shadow-md rounded-xl',
-  outlined:
-    'bg-neutral-50 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-xl',
-};
-
-const paddingClasses: Record<CardPadding, string> = {
-  none: '',
-  sm: 'p-2',
-  md: 'p-4',
-  lg: 'p-6',
-};
-
 export const Card: React.FC<CardProps> = ({
   variant = 'default',
   padding = 'md',
   children,
   className = '',
+  style,
   ...props
 }) => {
-  const combinedClassName =
-    `${variantClasses[variant]} ${paddingClasses[padding]} ${className}`.trim();
+  const paddingStyles = {
+    none: styles.paddingNone,
+    sm: styles.paddingSm,
+    md: styles.paddingMd,
+    lg: styles.paddingLg,
+  };
+
+  const variantStyles = {
+    default: styles.variantDefault,
+    raised: styles.variantRaised,
+    muted: styles.variantMuted,
+    outline: styles.variantOutline,
+  };
 
   return (
-    <View className={combinedClassName} {...props}>
+    <View
+      className={className}
+      style={[
+        styles.base,
+        variantStyles[variant],
+        paddingStyles[padding],
+        style,
+      ]}
+      {...props}
+    >
       {children}
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  base: {
+    borderRadius: theme.borderRadius.xl,
+    overflow: 'hidden',
+    borderWidth: 1,
+  },
+  paddingNone: {
+    padding: 0,
+  },
+  paddingSm: {
+    padding: theme.spacing.sm,
+  },
+  paddingMd: {
+    padding: theme.spacing.lg,
+  },
+  paddingLg: {
+    padding: theme.spacing.xl,
+  },
+  variantDefault: {
+    backgroundColor: theme.colors.card,
+    borderColor: theme.colors.border,
+    ...theme.shadows.sm,
+  },
+  variantRaised: {
+    backgroundColor: theme.colors.card,
+    borderColor: theme.colors.border,
+    ...theme.shadows.md,
+  },
+  variantMuted: {
+    backgroundColor: theme.colors.secondary,
+    borderColor: theme.colors.border,
+    shadowOpacity: 0,
+    elevation: 0,
+  },
+  variantOutline: {
+    backgroundColor: theme.colors.background,
+    borderColor: theme.colors.border,
+    shadowOpacity: 0,
+    elevation: 0,
+  },
+});

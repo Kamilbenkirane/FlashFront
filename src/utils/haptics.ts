@@ -19,7 +19,3 @@ export const triggerHaptic = (type: 'impact' | 'selection' = 'impact') => {
     }
   }
 };
-
-export default {
-  triggerHaptic,
-};

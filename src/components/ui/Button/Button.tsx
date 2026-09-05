@@ -1,66 +1,50 @@
+import useReducedMotion from '@/hooks/useReducedMotion';
+import { theme } from '@/tokens/theme';
+import { MotiPressable } from 'moti/interactions';
 import type React from 'react';
-import { ActivityIndicator, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import type { ButtonProps, ButtonSize } from './Button.types';
 
-export type ButtonVariant =
-  | 'primary'
-  | 'secondary'
-  | 'success'
-  | 'warning'
-  | 'error'
-  | 'ghost';
-
-export type ButtonSize = 'sm' | 'md' | 'lg';
-
-export interface ButtonProps {
-  title: string;
-  onPress: () => void;
-  variant?: ButtonVariant;
-  size?: ButtonSize;
-  disabled?: boolean;
-  loading?: boolean;
-  fullWidth?: boolean;
-  icon?: React.ReactNode;
-  iconPosition?: 'left' | 'right';
-  className?: string;
-  textClassName?: string;
-  testID?: string;
-}
-
-const baseClasses =
-  'flex flex-row items-center justify-center rounded-lg shadow-sm';
-
-const sizeClasses: Record<ButtonSize, string> = {
-  sm: 'px-4 py-2 min-h-[32px]',
-  md: 'px-6 py-4 min-h-[44px]',
-  lg: 'px-8 py-6 min-h-[52px]',
+const sizeConfig: Record<
+  ButtonSize,
+  {
+    minHeight: number;
+    paddingHorizontal: number;
+    paddingVertical: number;
+    textStyle: {
+      fontSize: number;
+      lineHeight: number;
+    };
+  }
+> = {
+  sm: {
+    minHeight: 32,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    textStyle: {
+      fontSize: 13,
+      lineHeight: 18,
+    },
+  },
+  md: {
+    minHeight: 36,
+    paddingHorizontal: 16,
+    paddingVertical: 9,
+    textStyle: {
+      fontSize: 14,
+      lineHeight: 18,
+    },
+  },
+  lg: {
+    minHeight: 40,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    textStyle: {
+      fontSize: 14,
+      lineHeight: 18,
+    },
+  },
 };
-
-const variantClasses: Record<ButtonVariant, string> = {
-  primary: 'bg-primary-500',
-  secondary: 'bg-transparent border border-primary-500',
-  success: 'bg-success-500',
-  warning: 'bg-warning-500',
-  error: 'bg-error-500',
-  ghost: 'bg-transparent',
-};
-
-const textVariantClasses: Record<ButtonVariant, string> = {
-  primary: 'text-white',
-  secondary: 'text-primary-500',
-  success: 'text-white',
-  warning: 'text-white',
-  error: 'text-white',
-  ghost: 'text-primary-500',
-};
-
-const textSizeClasses: Record<ButtonSize, string> = {
-  sm: 'text-sm font-semibold',
-  md: 'text-base font-semibold',
-  lg: 'text-lg font-semibold',
-};
-
-const disabledClasses = 'bg-neutral-200 border-neutral-200 opacity-50';
-const disabledTextClasses = 'text-neutral-400';
 
 export const Button: React.FC<ButtonProps> = ({
   title,
@@ -75,60 +59,204 @@ export const Button: React.FC<ButtonProps> = ({
   className = '',
   textClassName = '',
   testID,
+  accessibilityLabel,
+  accessibilityHint,
+  accessibilityRole = 'button',
+  accessibilityState,
+  hitSlop,
 }) => {
+  const prefersReducedMotion = useReducedMotion();
+  const isDisabled = disabled || loading;
+  const resolvedAccessibilityState = {
+    ...accessibilityState,
+    disabled: isDisabled,
+    busy: loading || accessibilityState?.busy,
+  };
+  const resolvedHitSlop =
+    hitSlop ??
+    (size === 'sm'
+      ? { top: 6, right: 6, bottom: 6, left: 6 }
+      : { top: 4, right: 4, bottom: 4, left: 4 });
+
   const handlePress = () => {
-    if (!disabled && !loading) {
+    if (!isDisabled) {
       onPress();
     }
   };
 
-  const getSpinnerColor = () => {
-    if (disabled) return '#94a3b8'; // neutral-400
-    if (variant === 'secondary' || variant === 'ghost') {
-      return '#3b82f6'; // primary-500
-    }
-    return '#ffffff';
+  const variantStyles = {
+    primary: styles.variantPrimary,
+    secondary: styles.variantSecondary,
+    outline: styles.variantOutline,
+    success: styles.variantSuccess,
+    error: styles.variantError,
+    ghost: styles.variantGhost,
   };
 
-  const buttonClassName = `${baseClasses} ${sizeClasses[size]} ${
-    disabled ? disabledClasses : variantClasses[variant]
-  } ${fullWidth ? 'w-full' : ''} ${className}`.trim();
-
-  const textClasses = `${textSizeClasses[size]} ${
-    disabled ? disabledTextClasses : textVariantClasses[variant]
-  } ${textClassName}`.trim();
-
-  const renderContent = () => {
-    if (loading) {
-      return (
-        <View className="flex items-center justify-center">
-          <ActivityIndicator size="small" color={getSpinnerColor()} />
-        </View>
-      );
-    }
-
-    return (
-      <>
-        {icon && iconPosition === 'left' && (
-          <View className="mr-2">{icon}</View>
-        )}
-        <Text className={textClasses}>{title}</Text>
-        {icon && iconPosition === 'right' && (
-          <View className="ml-2">{icon}</View>
-        )}
-      </>
-    );
+  const textColors = {
+    primary: theme.colors.primaryForeground,
+    secondary: theme.colors.secondaryForeground,
+    outline: theme.colors.foreground,
+    success: theme.colors.success.DEFAULT,
+    error: theme.colors.destructive.DEFAULT,
+    ghost: theme.colors.primary,
   };
 
   return (
-    <TouchableOpacity
-      className={buttonClassName}
-      onPress={handlePress}
-      disabled={disabled || loading}
-      activeOpacity={0.7}
-      testID={testID}
+    <View
+      className={className}
+      style={fullWidth ? styles.fullWidth : undefined}
     >
-      {renderContent()}
-    </TouchableOpacity>
+      <MotiPressable
+        style={styles.pressable}
+        onPress={handlePress}
+        disabled={isDisabled}
+        testID={testID}
+        accessibilityRole={accessibilityRole}
+        accessibilityLabel={accessibilityLabel || title}
+        accessibilityHint={accessibilityHint}
+        accessibilityState={resolvedAccessibilityState}
+        hitSlop={resolvedHitSlop}
+        animate={({ hovered, pressed }) => {
+          'worklet';
+          return {
+            scale:
+              prefersReducedMotion || isDisabled
+                ? 1
+                : pressed
+                  ? 0.98
+                  : hovered
+                    ? 1.01
+                    : 1,
+          };
+        }}
+        transition={{
+          ...(prefersReducedMotion
+            ? { type: 'timing' as const, duration: 0 }
+            : {
+                type: 'spring' as const,
+                damping: 18,
+                stiffness: 260,
+                mass: 1,
+              }),
+        }}
+      >
+        <View
+          style={[
+            styles.base,
+            variantStyles[variant],
+            {
+              minHeight: sizeConfig[size].minHeight,
+              paddingHorizontal: sizeConfig[size].paddingHorizontal,
+              paddingVertical: sizeConfig[size].paddingVertical,
+            },
+            isDisabled && styles.disabled,
+          ]}
+        >
+          {loading ? (
+            <ActivityIndicator
+              size="small"
+              color={theme.colors.mutedForeground}
+            />
+          ) : (
+            <View style={styles.content}>
+              {icon && iconPosition === 'left' && (
+                <View style={styles.iconLeft}>{icon}</View>
+              )}
+              <Text
+                className={textClassName}
+                style={[
+                  styles.text,
+                  {
+                    color: isDisabled
+                      ? theme.colors.mutedForeground
+                      : textColors[variant],
+                    fontSize: sizeConfig[size].textStyle.fontSize,
+                    lineHeight: sizeConfig[size].textStyle.lineHeight,
+                  },
+                ]}
+              >
+                {title}
+              </Text>
+              {icon && iconPosition === 'right' && (
+                <View style={styles.iconRight}>{icon}</View>
+              )}
+            </View>
+          )}
+        </View>
+      </MotiPressable>
+    </View>
   );
 };
+
+const styles = StyleSheet.create({
+  fullWidth: {
+    width: '100%',
+  },
+  pressable: {
+    width: '100%',
+  },
+  base: {
+    minWidth: 44,
+    borderRadius: theme.borderRadius.lg,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...theme.shadows.sm,
+  },
+  content: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  text: {
+    fontFamily: theme.fontFamily.medium,
+    textAlign: 'center',
+  },
+  iconLeft: {
+    marginRight: theme.spacing.sm,
+  },
+  iconRight: {
+    marginLeft: theme.spacing.sm,
+  },
+  disabled: {
+    backgroundColor: theme.colors.secondary,
+    borderColor: theme.colors.input,
+    shadowOpacity: 0,
+    elevation: 0,
+  },
+  variantPrimary: {
+    backgroundColor: theme.colors.primary,
+    borderColor: theme.colors.primary,
+  },
+  variantSecondary: {
+    backgroundColor: theme.colors.secondary,
+    borderColor: theme.colors.border,
+    shadowOpacity: 0,
+    elevation: 0,
+  },
+  variantOutline: {
+    backgroundColor: theme.colors.background,
+    borderColor: theme.colors.input,
+    shadowOpacity: 0,
+    elevation: 0,
+  },
+  variantSuccess: {
+    backgroundColor: theme.colors.success.light,
+    borderColor: theme.colors.success.light,
+    shadowOpacity: 0,
+    elevation: 0,
+  },
+  variantError: {
+    backgroundColor: theme.colors.destructive.light,
+    borderColor: theme.colors.destructive.light,
+    shadowOpacity: 0,
+    elevation: 0,
+  },
+  variantGhost: {
+    backgroundColor: 'transparent',
+    borderColor: 'transparent',
+    shadowOpacity: 0,
+    elevation: 0,
+  },
+});
