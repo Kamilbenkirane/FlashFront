@@ -1,35 +1,46 @@
-// hooks/useSessionData.js
-import { useEffect, useState } from 'react';
-import API_URL from '../config';
+import useAsyncResource from '@/hooks/useAsyncResource';
+import { getCurrentSessionData } from '@/services/backendClient';
+import { useCallback, useMemo } from 'react';
 import type { SessionData } from '../interfaces';
 
-const useSessionData = (
-  userId: string | number | undefined,
-  activeDecksIds: (string | number)[],
-): SessionData[] | null => {
-  const [sessionData, setSessionData] = useState<SessionData[] | null>(null);
+const EMPTY_SESSION_DATA = null;
 
-  useEffect(() => {
-    if (userId && activeDecksIds.length > 0) {
-      const queryParams = activeDecksIds
-        .map((id) => `active_decks_id=${id}`)
-        .join('&');
-      const url = `${API_URL}/stack/get_session_df/${userId}?${queryParams}`;
-      const fetchSessionData = async () => {
-        try {
-          const response = await fetch(url);
-          const sessionData = await response.json();
-          setSessionData(sessionData);
-        } catch (error) {
-          // Silent failure - session data fetch failed
-        }
-      };
+const useSessionData = (activeDecksIds: (string | number)[]) => {
+  const activeDecksKey = useMemo(
+    () => activeDecksIds.map((deckId) => `${deckId}`).join(','),
+    [activeDecksIds],
+  );
+  const normalizedActiveDecksIds = useMemo(
+    () => activeDecksIds.map((deckId) => `${deckId}`),
+    [activeDecksKey],
+  );
 
-      fetchSessionData();
-    }
-  }, [userId, activeDecksIds]);
+  const loadSessionData = useCallback(() => {
+    return getCurrentSessionData(normalizedActiveDecksIds);
+  }, [normalizedActiveDecksIds]);
 
-  return sessionData;
+  const {
+    data: sessionData,
+    isLoading,
+    error,
+    reload,
+  } = useAsyncResource<SessionData[] | null>({
+    initialData: EMPTY_SESSION_DATA,
+    load: loadSessionData,
+    fallbackErrorMessage:
+      'Could not load this study session. Please try again.',
+    enabled: normalizedActiveDecksIds.length > 0,
+    initialLoading: false,
+    resetDataOnLoad: true,
+    resetDataOnError: true,
+  });
+
+  return {
+    sessionData,
+    isLoading,
+    error,
+    reload,
+  };
 };
 
 export default useSessionData;

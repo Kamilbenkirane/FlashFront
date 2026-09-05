@@ -1,0 +1,10 @@
+{
+  "$schema": "https://unpkg.com/knip@latest/schema.json",
+  "entry": ["App.tsx"],
+  "ignoreDependencies": [
+    "react-dom",
+    "react-native-web",
+    "concurrently",
+    "expo-updates"
+  ]
+}

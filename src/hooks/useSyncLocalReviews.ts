@@ -1,11 +1,10 @@
+import { flushPendingOperations } from '@/services/outbox';
 import { useEffect } from 'react';
-import syncLocalReviews from '../functions/syncLocalReviews';
 
-// Flush reviews queued while offline, re-running whenever a review lands.
-// syncLocalReviews already checks the API is reachable before it posts anything.
-const useSyncLocalReviews = (review_count: number) => {
+// useSyncLocalReviews depends each review
+const useSyncLocalReviews = (review_count) => {
   useEffect(() => {
-    syncLocalReviews();
+    void flushPendingOperations();
   }, [review_count]);
 };
 

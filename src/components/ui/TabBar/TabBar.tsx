@@ -1,43 +1,40 @@
-import type {
-  NavigationHelpers,
-  NavigationState,
-  ParamListBase,
-} from '@react-navigation/native';
+import { AppIcon } from '@/components/ui/icons';
+import useReducedMotion from '@/hooks/useReducedMotion';
+import { theme } from '@/tokens/theme';
+import { BottomTabBarHeightCallbackContext } from '@react-navigation/bottom-tabs';
+import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
+import { MotiView } from 'moti';
+import { MotiPressable } from 'moti/interactions';
 import type React from 'react';
-import { useEffect, useRef } from 'react';
-import { Animated, Pressable, Text, View, type ViewStyle } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useTheme } from '../../../context/ThemeContext';
-import { createTabBarStyles, getTabIcon } from './TabBar.styles';
+import { useContext, useEffect, useState } from 'react';
+import {
+  Keyboard,
+  type LayoutChangeEvent,
+  Platform,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
+import { getTabIcon, tabBarStyles as styles } from './TabBar.styles';
+import type { TabBarProps, TabItemProps } from './TabBar.types';
 
-export interface TabBarProps {
-  state: NavigationState;
-  descriptors: Record<string, any>; // React Navigation descriptors are complex
-  navigation: NavigationHelpers<ParamListBase>;
-  style?: ViewStyle;
-  testID?: string;
-}
+const getBlurTint = (color: string): 'light' | 'dark' => {
+  const normalizedColor = color.replace('#', '');
+  if (normalizedColor.length !== 6) {
+    return 'light';
+  }
 
-export interface TabItemProps {
-  route: NavigationState['routes'][0];
-  descriptor: any; // React Navigation descriptor type is very complex
-  navigation: NavigationHelpers<ParamListBase>;
-  isFocused: boolean;
-  onPress: () => void;
-  onLongPress: () => void;
-  testID?: string;
-}
+  const red = Number.parseInt(normalizedColor.slice(0, 2), 16);
+  const green = Number.parseInt(normalizedColor.slice(2, 4), 16);
+  const blue = Number.parseInt(normalizedColor.slice(4, 6), 16);
+  const luminance = (0.2126 * red + 0.7152 * green + 0.0722 * blue) / 255;
 
-export type TabIcon = 'study' | 'library' | 'profile';
+  return luminance < 0.45 ? 'dark' : 'light';
+};
 
-export interface TabConfig {
-  name: string;
-  icon: TabIcon;
-  label: string;
-  activeColor?: string;
-  inactiveColor?: string;
-}
+const TAB_ICON_SIZE = 18;
+const TAB_ICON_STROKE_WIDTH = 2.1;
 
 // Individual Tab Item Component
 const TabItem: React.FC<TabItemProps> = ({
@@ -49,29 +46,7 @@ const TabItem: React.FC<TabItemProps> = ({
   onLongPress,
   testID,
 }) => {
-  const { theme, isDark } = useTheme();
-  const styles = createTabBarStyles(isDark);
-  const scaleAnimation = useRef(new Animated.Value(1)).current;
-  const opacityAnimation = useRef(
-    new Animated.Value(isFocused ? 1 : 0.7),
-  ).current;
-
-  // Animate when tab focus changes
-  useEffect(() => {
-    Animated.parallel([
-      Animated.spring(scaleAnimation, {
-        toValue: isFocused ? 1.1 : 1,
-        useNativeDriver: true,
-        tension: 150,
-        friction: 8,
-      }),
-      Animated.timing(opacityAnimation, {
-        toValue: isFocused ? 1 : 0.7,
-        duration: 200,
-        useNativeDriver: true,
-      }),
-    ]).start();
-  }, [isFocused]);
+  const prefersReducedMotion = useReducedMotion();
 
   const handlePress = () => {
     // Add haptic feedback on iOS
@@ -81,45 +56,81 @@ const TabItem: React.FC<TabItemProps> = ({
     onPress();
   };
 
-  const icon = getTabIcon(route.name);
-  const label = descriptor.options.tabBarLabel || route.name;
+  const iconName = getTabIcon(route.name);
+  const label =
+    typeof descriptor.options.tabBarLabel === 'string'
+      ? descriptor.options.tabBarLabel
+      : route.name;
+  const accessibilityLabel =
+    typeof descriptor.options.tabBarAccessibilityLabel === 'string'
+      ? descriptor.options.tabBarAccessibilityLabel
+      : `${label} tab`;
 
   return (
-    <Pressable
+    <MotiPressable
       onPress={handlePress}
       onLongPress={onLongPress}
-      style={[styles.tabItem, isFocused && styles.activeTabItem]}
+      containerStyle={styles.tabItemContainer}
       testID={testID}
+      accessibilityRole="tab"
+      accessibilityLabel={accessibilityLabel}
+      accessibilityState={{ selected: isFocused }}
+      animate={({ hovered, pressed }) => {
+        'worklet';
+        return {
+          scale: prefersReducedMotion ? 1 : pressed ? 0.98 : hovered ? 1.01 : 1,
+        };
+      }}
     >
-      <Animated.View
+      <MotiView
         style={[
-          styles.tabIconContainer,
-          {
-            transform: [{ scale: scaleAnimation }],
-            opacity: opacityAnimation,
-          },
+          styles.tabItem,
+          isFocused ? styles.activeTabItem : styles.inactiveTabItem,
         ]}
+        animate={{
+          opacity: isFocused ? 1 : 0.88,
+        }}
+        transition={{
+          ...(prefersReducedMotion
+            ? { type: 'timing' as const, duration: 0 }
+            : {
+                type: 'spring' as const,
+                damping: 18,
+                stiffness: 240,
+              }),
+        }}
       >
+        <View style={styles.tabIconContainer}>
+          <AppIcon
+            color={
+              isFocused ? theme.colors.primary : theme.colors.mutedForeground
+            }
+            name={iconName}
+            size={TAB_ICON_SIZE}
+            strokeWidth={TAB_ICON_STROKE_WIDTH}
+          />
+        </View>
         <Text
           style={[
-            styles.tabIcon,
-            isFocused ? styles.activeTabIcon : styles.inactiveTabIcon,
+            styles.tabLabel,
+            isFocused ? styles.activeTabLabel : styles.inactiveTabLabel,
           ]}
         >
-          {icon}
+          {label}
         </Text>
-        {isFocused && <View style={styles.activeBadge} />}
-      </Animated.View>
-
-      <Text
-        style={[
-          styles.tabLabel,
-          isFocused ? styles.activeTabLabel : styles.inactiveTabLabel,
-        ]}
-      >
-        {label}
-      </Text>
-    </Pressable>
+        <MotiView
+          style={styles.activeIndicator}
+          animate={{
+            opacity: isFocused ? 1 : 0,
+            scaleX: prefersReducedMotion ? 1 : isFocused ? 1 : 0.6,
+          }}
+          transition={{
+            type: 'timing',
+            duration: prefersReducedMotion ? 0 : 180,
+          }}
+        />
+      </MotiView>
+    </MotiPressable>
   );
 };
 
@@ -128,76 +139,107 @@ export const TabBar: React.FC<TabBarProps> = ({
   state,
   descriptors,
   navigation,
+  insets,
   style,
   testID,
 }) => {
-  const { theme, isDark } = useTheme();
-  const styles = createTabBarStyles(isDark);
-  const insets = useSafeAreaInsets();
+  const prefersReducedMotion = useReducedMotion();
+  const onHeightChange = useContext(BottomTabBarHeightCallbackContext);
+  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
+  const focusedRoute = state.routes[state.index];
+  const focusedOptions = descriptors[focusedRoute.key]?.options;
+  const shouldHideOnKeyboard = focusedOptions.tabBarHideOnKeyboard ?? false;
+  const shouldShowTabBar = !(shouldHideOnKeyboard && isKeyboardVisible);
+  const bottomDockSpacing = Math.max(
+    insets.bottom - theme.spacing.lg,
+    theme.spacing.xs,
+  );
+  const blurTint = getBlurTint(theme.colors.background);
 
-  const handleQuickStudyPress = () => {
-    // Add haptic feedback
-    if (Haptics?.impactAsync) {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    }
+  useEffect(() => {
+    const keyboardShowEvent =
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const keyboardHideEvent =
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
 
-    // Navigate to study screen if not already there
-    if (state.index !== 0) {
-      // Assuming study is first tab
-      navigation.navigate('Flashcard');
-    }
+    const showSubscription = Keyboard.addListener(keyboardShowEvent, () => {
+      setIsKeyboardVisible(true);
+    });
+    const hideSubscription = Keyboard.addListener(keyboardHideEvent, () => {
+      setIsKeyboardVisible(false);
+    });
+
+    return () => {
+      showSubscription.remove();
+      hideSubscription.remove();
+    };
+  }, []);
+
+  const handleLayout = (event: LayoutChangeEvent) => {
+    onHeightChange?.(event.nativeEvent.layout.height);
   };
 
   return (
-    <View
-      style={[styles.container, { paddingBottom: insets.bottom + 8 }, style]}
+    <MotiView
+      style={[styles.container, style]}
+      onLayout={handleLayout}
+      pointerEvents={shouldShowTabBar ? 'auto' : 'none'}
       testID={testID}
+      animate={{
+        opacity: shouldShowTabBar ? 1 : 0,
+        translateY: prefersReducedMotion ? 0 : shouldShowTabBar ? 0 : 120,
+      }}
+      transition={{
+        type: 'timing',
+        duration: prefersReducedMotion ? 0 : shouldShowTabBar ? 240 : 180,
+      }}
     >
-      {state.routes.map((route, index: number) => {
-        const { options } = descriptors[route.key];
-        const isFocused = state.index === index;
-
-        const onPress = () => {
-          const event = navigation.emit({
-            type: 'tabPress' as any,
-            target: route.key,
-            canPreventDefault: true,
-          } as any) as { defaultPrevented: boolean };
-
-          if (!isFocused && !event.defaultPrevented) {
-            navigation.navigate(route.name);
-          }
-        };
-
-        const onLongPress = () => {
-          navigation.emit({
-            type: 'tabLongPress' as any,
-            target: route.key,
-          } as any);
-        };
-
-        return (
-          <TabItem
-            key={route.key}
-            route={route}
-            descriptor={descriptors[route.key]}
-            navigation={navigation}
-            isFocused={isFocused}
-            onPress={onPress}
-            onLongPress={onLongPress}
-            testID={`tab-${route.name.toLowerCase()}`}
+      <View style={[styles.dock, { paddingBottom: bottomDockSpacing }]}>
+        <View style={styles.shell}>
+          <BlurView
+            tint={blurTint}
+            intensity={Platform.OS === 'ios' ? 85 : 55}
+            style={StyleSheet.absoluteFill}
           />
-        );
-      })}
+          <View style={styles.shellTint} />
+          {state.routes.map((route, index: number) => {
+            const descriptor = descriptors[route.key];
+            const isFocused = state.index === index;
 
-      {/* Floating Action Button for Quick Study */}
-      <Pressable
-        style={styles.floatingActionButton}
-        onPress={handleQuickStudyPress}
-        testID="quick-study-fab"
-      >
-        <Text style={styles.fabIcon}>⚡</Text>
-      </Pressable>
-    </View>
+            const onPress = () => {
+              const event = navigation.emit({
+                type: 'tabPress',
+                target: route.key,
+                canPreventDefault: true,
+              });
+
+              if (!isFocused && !event.defaultPrevented) {
+                navigation.navigate(route.name);
+              }
+            };
+
+            const onLongPress = () => {
+              navigation.emit({
+                type: 'tabLongPress',
+                target: route.key,
+              });
+            };
+
+            return (
+              <TabItem
+                key={route.key}
+                route={route}
+                descriptor={descriptor}
+                navigation={navigation}
+                isFocused={isFocused}
+                onPress={onPress}
+                onLongPress={onLongPress}
+                testID={`tab-${route.name.toLowerCase()}`}
+              />
+            );
+          })}
+        </View>
+      </View>
+    </MotiView>
   );
 };

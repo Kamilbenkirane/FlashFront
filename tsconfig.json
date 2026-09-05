@@ -17,6 +17,10 @@
     "exactOptionalPropertyTypes": false,
 
     // Module Resolution
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"]
+    },
     "resolveJsonModule": true,
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,

@@ -1,23 +1,31 @@
-import { useEffect, useState } from 'react';
-import API_URL from '../config';
-import type { Deck, User } from '../interfaces';
+import useAsyncResource from '@/hooks/useAsyncResource';
+import { useUser } from '@/providers/UserProvider';
+import { listCurrentUserDecks } from '@/services/backendClient';
+import type { Deck } from '../interfaces';
 
-const useSubscribedDecks = (user: User | null): Deck[] => {
-  const [decks, setDecks] = useState<Deck[]>([]);
+const EMPTY_DECKS: Deck[] = [];
 
-  useEffect(() => {
-    if (user?.user_id) {
-      const fetchDecks = async () => {
-        const url = `${API_URL}/subscription/${user?.user_id}`;
-        const response = await fetch(url);
-        const data = await response.json();
-        setDecks(data);
-      };
-      fetchDecks();
-    }
-  }, [user]);
+const useSubscribedDecks = () => {
+  const { user } = useUser();
+  const {
+    data: decks,
+    isLoading,
+    error,
+    reload,
+  } = useAsyncResource({
+    initialData: EMPTY_DECKS,
+    load: listCurrentUserDecks,
+    fallbackErrorMessage: 'Could not load your subscriptions.',
+    enabled: Boolean(user),
+    initialLoading: false,
+  });
 
-  return decks;
+  return {
+    decks,
+    isLoading,
+    error,
+    reload,
+  };
 };
 
 export default useSubscribedDecks;

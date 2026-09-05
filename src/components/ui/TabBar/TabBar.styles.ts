@@ -1,123 +1,119 @@
+import type { AppIconName } from '@/components/ui/icons';
+import { theme } from '@/tokens/theme';
 import { StyleSheet } from 'react-native';
-import { theme } from '../../../theme';
 
 const { colors, spacing, borderRadius, shadows, typography } = theme;
 
-export const createTabBarStyles = (isDark: boolean) => {
-  const currentColors = isDark ? theme.darkColors : colors;
+export const tabBarStyles = StyleSheet.create({
+  container: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    zIndex: 20,
+  },
 
-  return StyleSheet.create({
-    container: {
-      flexDirection: 'row',
-      backgroundColor: currentColors.surface,
-      borderTopWidth: 1,
-      borderTopColor: currentColors.border,
-      paddingBottom: spacing.sm,
-      paddingTop: spacing.sm,
-      paddingHorizontal: spacing.md,
-      ...shadows.lg,
-    },
+  dock: {
+    width: '100%',
+    paddingHorizontal: spacing.lg,
+    alignItems: 'center',
+  },
 
-    tabItem: {
-      flex: 1,
-      alignItems: 'center',
-      justifyContent: 'center',
-      paddingVertical: spacing.sm,
-      paddingHorizontal: spacing.xs,
-      borderRadius: borderRadius.md,
-      minHeight: 60,
-      position: 'relative',
-    },
+  shell: {
+    width: '100%',
+    maxWidth: 396,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.xs,
+    paddingVertical: 3,
+    borderRadius: borderRadius.full,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.72)',
+    backgroundColor: 'rgba(255, 255, 255, 0.18)',
+    ...shadows.md,
+    shadowColor: '#0F172A',
+    shadowOpacity: 0.12,
+    elevation: 6,
+  },
 
-    activeTabItem: {
-      backgroundColor: currentColors.primary[50],
-    },
+  shellTint: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(248, 250, 252, 0.62)',
+  },
 
-    tabIconContainer: {
-      width: 32,
-      height: 32,
-      alignItems: 'center',
-      justifyContent: 'center',
-      marginBottom: spacing.xs,
-    },
+  tabItemContainer: {
+    flex: 1,
+  },
 
-    tabIcon: {
-      fontSize: 24,
-    },
+  tabItem: {
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 2,
+    paddingVertical: spacing.sm - 1,
+    paddingHorizontal: spacing.sm - 1,
+    borderRadius: borderRadius.full,
+    minHeight: 48,
+    borderWidth: 1,
+    borderColor: 'transparent',
+  },
 
-    activeTabIcon: {
-      color: currentColors.primary[500],
-    },
+  activeTabItem: {
+    backgroundColor: 'rgba(255, 255, 255, 0.84)',
+    borderColor: 'rgba(255, 255, 255, 0.92)',
+    ...shadows.sm,
+    shadowColor: '#0F172A',
+    shadowOpacity: 0.05,
+    elevation: 1,
+  },
 
-    inactiveTabIcon: {
-      color: currentColors.muted,
-    },
+  inactiveTabItem: {
+    backgroundColor: 'transparent',
+  },
 
-    tabLabel: {
-      ...typography.caption,
-      fontSize: 12,
-      fontWeight: '500',
-      textAlign: 'center',
-    },
+  tabIconContainer: {
+    width: 24,
+    height: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 
-    activeTabLabel: {
-      color: currentColors.primary[500],
-      fontWeight: '600',
-    },
+  tabLabel: {
+    ...typography.caption,
+    fontSize: 10,
+    fontWeight: '500',
+    textAlign: 'center',
+    lineHeight: 12,
+  },
 
-    inactiveTabLabel: {
-      color: currentColors.muted,
-    },
+  activeTabLabel: {
+    color: colors.primary,
+    fontWeight: '600',
+  },
 
-    activeBadge: {
-      position: 'absolute',
-      top: 4,
-      width: 4,
-      height: 4,
-      borderRadius: 2,
-      backgroundColor: currentColors.primary[500],
-    },
+  inactiveTabLabel: {
+    color: colors.mutedForeground,
+  },
 
-    floatingActionButton: {
-      position: 'absolute',
-      top: -25,
-      alignSelf: 'center',
-      width: 50,
-      height: 50,
-      borderRadius: 25,
-      backgroundColor: currentColors.primary[500],
-      alignItems: 'center',
-      justifyContent: 'center',
-      ...shadows.lg,
-      borderWidth: 3,
-      borderColor: currentColors.surface,
-    },
+  activeIndicator: {
+    width: 14,
+    height: 2,
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.primary,
+  },
+});
 
-    fabIcon: {
-      fontSize: 24,
-      color: '#ffffff',
-      fontWeight: 'bold',
-    },
-
-    // Animated indicator
-    indicator: {
-      position: 'absolute',
-      bottom: 0,
-      height: 3,
-      backgroundColor: currentColors.primary[500],
-      borderRadius: 2,
-    },
-  });
-};
-
-// Helper to get tab icons
-export const getTabIcon = (iconName: string): string => {
-  const iconMap: Record<string, string> = {
-    study: '🎯',
-    library: '📚',
-    profile: '👤',
-    flashcard: '🎯', // Alternative name mapping
+export const getTabIcon = (iconName: string): AppIconName => {
+  const iconMap: Record<string, AppIconName> = {
+    study: 'layers',
+    library: 'library',
+    profile: 'person',
+    flashcard: 'layers',
   };
 
-  return iconMap[iconName.toLowerCase()] || '📱';
+  return iconMap[iconName.toLowerCase()] || 'layers';
 };

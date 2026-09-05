@@ -1,3 +1,5 @@
+import useReducedMotion from '@/hooks/useReducedMotion';
+import { theme } from '@/tokens/theme';
 import React from 'react';
 import { View } from 'react-native';
 import Animated, {
@@ -5,34 +7,15 @@ import Animated, {
   useAnimatedStyle,
   withTiming,
 } from 'react-native-reanimated';
-import { Typography } from '../Typography/Typography';
+import { Typography } from '../Typography';
+import type { ProgressBarProps, ProgressBarSize } from './ProgressBar.types';
 
-export type ProgressBarColor = 'primary' | 'success' | 'warning' | 'error';
-export type ProgressBarSize = 'sm' | 'md' | 'lg';
-
-export interface ProgressBarProps {
-  progress: number;
-  total: number;
-  showLabel?: boolean;
-  showPercentage?: boolean;
-  color?: ProgressBarColor;
-  size?: ProgressBarSize;
-  className?: string;
-  testID?: string;
-}
-
-const sizeClasses: Record<ProgressBarSize, { track: string; fill: string }> = {
-  sm: { track: 'h-1 rounded-sm', fill: 'rounded-sm' },
-  md: { track: 'h-2 rounded', fill: 'rounded' },
-  lg: { track: 'h-3 rounded-md', fill: 'rounded-md' },
-};
-
-const colorClasses: Record<ProgressBarColor, string> = {
-  primary: 'bg-primary-500',
-  success: 'bg-success-500',
-  warning: 'bg-warning-500',
-  error: 'bg-error-500',
-};
+const sizeConfig: Record<ProgressBarSize, { height: number; radius: number }> =
+  {
+    sm: { height: 4, radius: 4 },
+    md: { height: 6, radius: 6 },
+    lg: { height: 8, radius: 8 },
+  };
 
 export const ProgressBar: React.FC<ProgressBarProps> = ({
   progress,
@@ -44,13 +27,16 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
   className = '',
   testID,
 }) => {
+  const prefersReducedMotion = useReducedMotion();
   const animatedProgress = useSharedValue(0);
 
   // Animate progress changes
   React.useEffect(() => {
     const percentage = total > 0 ? (progress / total) * 100 : 0;
-    animatedProgress.value = withTiming(percentage, { duration: 500 });
-  }, [progress, total]);
+    animatedProgress.value = withTiming(percentage, {
+      duration: prefersReducedMotion ? 0 : 500,
+    });
+  }, [prefersReducedMotion, progress, total]);
 
   const animatedStyle = useAnimatedStyle(
     () => ({
@@ -60,21 +46,38 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
   );
 
   const percentage = total > 0 ? Math.round((progress / total) * 100) : 0;
+  const fillColors = {
+    primary: theme.colors.primary,
+    success: theme.colors.success.DEFAULT,
+    warning: theme.colors.warning.DEFAULT,
+    error: theme.colors.destructive.DEFAULT,
+  };
+  const trackStyle = {
+    height: sizeConfig[size].height,
+    borderRadius: sizeConfig[size].radius,
+    backgroundColor: theme.colors.secondary,
+    overflow: 'hidden' as const,
+  };
 
   return (
-    <View className={`w-full ${className}`} testID={testID}>
+    <View
+      className={`w-full ${className}`}
+      testID={testID}
+      accessible
+      accessibilityRole="progressbar"
+      accessibilityValue={{ min: 0, max: total, now: progress }}
+      accessibilityLabel={`Progress ${progress} of ${total}`}
+    >
       {showLabel && (
         <View className="flex-row justify-between items-center mb-1">
-          <Typography
-            variant="caption"
-            className="text-neutral-600 dark:text-neutral-400"
-          >
+          <Typography variant="caption" color="muted">
             {`${progress} / ${total}`}
           </Typography>
           {showPercentage && (
             <Typography
               variant="caption"
-              className="text-neutral-600 dark:text-neutral-400 font-semibold"
+              color="muted"
+              className="font-semibold"
             >
               {`${percentage}%`}
             </Typography>
@@ -82,12 +85,16 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
         </View>
       )}
 
-      <View
-        className={`w-full bg-neutral-200 dark:bg-neutral-700 overflow-hidden ${sizeClasses[size].track}`}
-      >
+      <View style={trackStyle}>
         <Animated.View
-          className={`h-full ${colorClasses[color]} ${sizeClasses[size].fill}`}
-          style={animatedStyle}
+          style={[
+            animatedStyle,
+            {
+              height: '100%',
+              borderRadius: sizeConfig[size].radius,
+              backgroundColor: fillColors[color],
+            },
+          ]}
         />
       </View>
     </View>

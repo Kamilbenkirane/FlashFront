@@ -47,8 +47,10 @@ jobs:
           bun install --global eas-cli@18.6.0
           gem install fastlane cocoapods --no-document
 
-      - name: Typecheck
-        run: node_modules/.bin/tsc --noEmit
+      - name: Check app
+        run: |
+          bun run typecheck
+          bun run test
 
       - name: Build iOS on this runner
         env:
