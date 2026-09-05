@@ -25,6 +25,14 @@ export const mapAuthError = (message: string) => {
   if (normalized.includes('at least 8 characters')) {
     return 'Use a password with at least 8 characters.';
   }
+  if (
+    normalized.includes('recovery link') ||
+    normalized.includes('email link') ||
+    normalized.includes('otp_expired') ||
+    normalized.includes('token has expired')
+  ) {
+    return 'This link is invalid or has expired. Request a new email and open it on the device running FlashFront.';
+  }
   if (normalized.includes('network')) {
     return 'Could not reach the API. Check your connection and try again.';
   }
