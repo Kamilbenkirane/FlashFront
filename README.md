@@ -10,6 +10,8 @@ Expo and the sibling `../flashcard-learning-system` API together. The backend
 needs its own dependencies and `.env` configured. Run `bun start` to start only
 Expo, or `bun ios` to build a development client.
 
+See [authentication email setup](docs/auth.md) for password recovery and app redirects.
+
 ## Checks
 
 ```bash

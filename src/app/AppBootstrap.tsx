@@ -7,7 +7,6 @@ import {
   SpaceGrotesk_600SemiBold,
   SpaceGrotesk_700Bold,
 } from '@expo-google-fonts/space-grotesk';
-import { NavigationContainer } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 import React, { type ErrorInfo, type ReactNode, useCallback } from 'react';
@@ -129,9 +128,7 @@ const AppBootstrap = () => {
       <ErrorBoundary>
         <SafeAreaProvider initialMetrics={initialWindowMetrics}>
           <AppProviders>
-            <NavigationContainer>
-              <RootNavigator />
-            </NavigationContainer>
+            <RootNavigator />
           </AppProviders>
         </SafeAreaProvider>
       </ErrorBoundary>
