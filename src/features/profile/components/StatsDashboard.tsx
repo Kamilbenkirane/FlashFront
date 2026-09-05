@@ -71,22 +71,18 @@ export const StatsDashboard: React.FC = () => {
           <LoadingState message="Loading progress…" />
         </Card>
       ) : error ? (
-        <Card style={styles.stateCard}>
-          <FeedbackState
-            title="Couldn't load progress"
-            description={error}
-            actionLabel="Try again"
-            onAction={() => void reload()}
-          />
-        </Card>
+        <FeedbackState
+          title="Couldn't load progress"
+          description={error}
+          actionLabel="Try again"
+          onAction={() => void reload()}
+        />
       ) : overview.totalReviews === 0 ? (
-        <Card style={styles.stateCard}>
-          <FeedbackState
-            title="No reviews"
-            description="Study a deck or choose another period to see progress."
-            icon="chart"
-          />
-        </Card>
+        <FeedbackState
+          title="No reviews"
+          description="Study a deck or choose another period to see progress."
+          icon="chart"
+        />
       ) : (
         <>
           <Card padding="lg" style={styles.overview}>
