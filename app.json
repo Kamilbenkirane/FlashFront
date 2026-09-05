@@ -9,7 +9,9 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.kams96.FlashFrontKB24",
-      "buildNumber": "1.2.2"
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "splash": {
       "image": "./assets/splash.png",
@@ -29,8 +31,9 @@
     },
     "extra": {
       "eas": {
-        "projectId": "f0d87184-f966-4f70-9be0-72b6d7887e92"
+        "projectId": "cdc4ac5c-e279-4b3d-86d5-ca6d77e74a90"
       }
-    }
+    },
+    "owner": "kams96"
   }
 }

@@ -1,6 +1,7 @@
 {
   "cli": {
-    "version": ">= 7.2.0"
+    "version": ">= 7.2.0",
+    "appVersionSource": "remote"
   },
   "build": {
     "development": {
@@ -10,9 +11,20 @@
     "preview": {
       "distribution": "internal"
     },
-    "production": {}
+    "production": {
+      "autoIncrement": true,
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://flashcard-learning-system-cr-521314648273.us-central1.run.app"
+      }
+    }
   },
   "submit": {
-    "production": {}
+    "production": {
+      "ios": {
+        "appleId": "benkirane.kamil@gmail.com",
+        "appleTeamId": "TUXD57T9Q6",
+        "ascAppId": "6477821162"
+      }
+    }
   }
 }
