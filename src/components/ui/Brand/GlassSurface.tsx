@@ -14,18 +14,14 @@ export const GlassSurface = ({ children, style, ...props }: ViewProps) => {
   const [reduceTransparency, setReduceTransparency] = useState(true);
   useEffect(() => {
     if (Platform.OS === 'web') {
-      const transparency = window.matchMedia(
-        '(prefers-reduced-transparency: reduce)',
+      const preference = window.matchMedia(
+        '(prefers-reduced-transparency: reduce), (forced-colors: active)',
       );
-      const contrast = window.matchMedia('(forced-colors: active)');
-      const update = () =>
-        setReduceTransparency(transparency.matches || contrast.matches);
+      const update = () => setReduceTransparency(preference.matches);
       update();
-      transparency.addEventListener('change', update);
-      contrast.addEventListener('change', update);
+      preference.addEventListener('change', update);
       return () => {
-        transparency.removeEventListener('change', update);
-        contrast.removeEventListener('change', update);
+        preference.removeEventListener('change', update);
       };
     }
     if (Platform.OS !== 'ios') return;

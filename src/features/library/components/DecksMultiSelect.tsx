@@ -16,13 +16,10 @@ import {
 const DecksMultiSelect: React.FC<DecksMultiSelectProps> = ({
   decks,
   onSelectDecks,
-  selectedDeckIds: controlledSelectedDeckIds,
+  selectedDeckIds,
 }) => {
   const [isVisible, setIsVisible] = useState(false);
   const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
-  const [selectedDeckIds, setSelectedDeckIds] = useState<(string | number)[]>(
-    controlledSelectedDeckIds ?? [],
-  );
   const availableDecks = Array.isArray(decks) ? decks : [];
   const deckIdsKey = availableDecks
     .map((deck) => normalizeDeckId(deck.deck_id))
@@ -33,16 +30,6 @@ const DecksMultiSelect: React.FC<DecksMultiSelectProps> = ({
   );
 
   useEffect(() => {
-    if (controlledSelectedDeckIds !== undefined) {
-      setSelectedDeckIds((current) =>
-        areSameDeckSelections(current, controlledSelectedDeckIds)
-          ? current
-          : controlledSelectedDeckIds,
-      );
-    }
-  }, [controlledSelectedDeckIds]);
-
-  useEffect(() => {
     setIsVisible(false);
     setSelectedSubject(null);
   }, [availableDeckIds]);
@@ -50,7 +37,6 @@ const DecksMultiSelect: React.FC<DecksMultiSelectProps> = ({
   useEffect(() => {
     const next = pruneDeckSelection(selectedDeckIds, availableDeckIds);
     if (!areSameDeckSelections(selectedDeckIds, next)) {
-      setSelectedDeckIds(next);
       onSelectDecks(next);
     }
   }, [availableDeckIds, onSelectDecks, selectedDeckIds]);
@@ -64,9 +50,7 @@ const DecksMultiSelect: React.FC<DecksMultiSelectProps> = ({
   );
   const handleSelectDeck = (deck: Deck) => {
     triggerHaptic('selection');
-    const next = toggleDeckSelection(selectedDeckIds, deck.deck_id);
-    setSelectedDeckIds(next);
-    onSelectDecks(next);
+    onSelectDecks(toggleDeckSelection(selectedDeckIds, deck.deck_id));
   };
   const selectedNames = availableDecks
     .filter((deck) => isDeckSelected(deck.deck_id))

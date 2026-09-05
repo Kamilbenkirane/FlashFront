@@ -5,7 +5,7 @@ Requires the locally installed Python Playwright and Chromium; no app dependenci
 import json, os
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from urllib.parse import urlparse
+from urllib.parse import quote, urlparse
 from playwright.sync_api import sync_playwright, expect
 
 ROOT=Path(__file__).resolve().parents[1]
@@ -24,6 +24,7 @@ SESSION=[{'card_id':1,'recto':'Why does trying to recall an idea help you rememb
 OVERVIEW=dict(total_reviews=128,correct_reviews=108,incorrect_reviews=20,known_reviews=28,remembered_reviews=80,accuracy=84.375,unique_cards_reviewed=56,active_days=5,current_streak=4,longest_streak=8)
 TREND=[dict(x=f'2026-09-0{i+1}',y=v,label=day) for i,(v,day) in enumerate(zip([12,24,18,0,36,20,18],['M','T','W','T','F','S','S']))]
 ANALYTICS=dict(range='week',overview=OVERVIEW,review_count_trend=TREND,accuracy_trend=[dict(p,y=v) for p,v in zip(TREND,[65,80,78,0,85,90,94])],cards_reviewed_trend=TREND,deck_breakdown=[],recent_activity=[])
+ATTACHMENT=dict(artifact_id='preview',title='Recall over time',summary='An illustrative review pattern.',caption='Example, not personal data.',alt_text='A curve rises after each review.',image_path='',image_data_url='data:image/svg+xml,'+quote('<svg xmlns="http://www.w3.org/2000/svg" width="600" height="330"><rect width="600" height="330" fill="#0A2A3B"/><path d="M40 40V290H560M50 70Q130 240 220 220L240 70Q350 240 450 180L470 70" fill="none" stroke="#D8B878" stroke-width="5"/></svg>'))
 
 with sync_playwright() as p:
  browser=p.chromium.launch(headless=True)
@@ -42,6 +43,10 @@ with sync_playwright() as p:
   elif path=='/me/analytics': data=ANALYTICS
   elif path in ['/me/study-chat/models','/me/study-chat/image-models']: data={'models':[{'id':'test-model','label':'Learning assistant'}],'default_model':'test-model'}
   elif path=='/me/study-chat/history': data={'thread_id':None,'messages':[]}
+  elif path=='/me/study-chat' and route.request.method=='POST':
+   events=[dict(type='chart_ready',chart=dict(ATTACHMENT,chart_type='Line chart',data_mode='illustrative')),dict(type='image_ready',image=dict(ATTACHMENT,artifact_id='illustration')),dict(type='done')]
+   route.fulfill(status=200,content_type='application/x-ndjson',body='\n'.join(json.dumps(event) for event in events)+'\n',headers={'Access-Control-Allow-Origin':'*'})
+   return
   elif path=='/me/reviews': data={}
   else: data={}
   route.fulfill(status=200,content_type='application/json',body=json.dumps(data),headers={'Access-Control-Allow-Origin':'*'})
@@ -57,6 +62,14 @@ with sync_playwright() as p:
  page.wait_for_timeout(450)
  page.screenshot(path=str(ARTIFACTS/'study-home-mobile.png'),full_page=True)
  print('HOME',page.locator('body').inner_text()[:1500])
+ page.get_by_role('button',name='Selected decks:',exact=False).click()
+ deck=page.get_by_role('checkbox',name='Everyday French, Languages',exact=True)
+ expect(deck).not_to_be_checked()
+ deck.click()
+ expect(deck).to_be_checked()
+ deck.click()
+ expect(deck).not_to_be_checked()
+ page.get_by_role('button',name='Done 1 selected',exact=True).click()
  page.get_by_test_id('start-study-session').click()
  page.get_by_test_id('reveal-answer').wait_for()
  page.wait_for_timeout(450)
@@ -88,6 +101,17 @@ with sync_playwright() as p:
  page.wait_for_timeout(450)
  page.screenshot(path=str(ARTIFACTS/'assistant-mobile.png'),full_page=True)
  print('ASSISTANT',page.locator('body').inner_text()[:1500])
+ page.get_by_role('button',name='Example',exact=True).click()
+ page.get_by_role('button',name='Send',exact=True).click()
+ for kind,badge in [('chart','Line chart'),('image','Illustration')]:
+  attachment=page.get_by_role('button',name=f'Open {kind} fullscreen.',exact=False)
+  expect(attachment.get_by_text(badge,exact=True)).to_be_visible()
+  attachment.click()
+  close=page.get_by_role('button',name=f'Close fullscreen {kind}',exact=True)
+  expect(close).to_be_visible()
+  page.screenshot(path=str(ARTIFACTS/f'{kind}-fullscreen-mobile.png'))
+  close.click()
+  expect(close).not_to_be_visible()
  page.get_by_role('button',name='Close study chat',exact=True).click()
  page.get_by_test_id('tab-library').click()
  page.get_by_test_id('library-search-input').wait_for()
@@ -113,6 +137,13 @@ with sync_playwright() as p:
  page.wait_for_timeout(400)
  page.screenshot(path=str(ARTIFACTS/'settings-mobile.png'))
  print('SETTINGS',page.locator('body').inner_text()[-1800:])
+ page.get_by_role('button',name='Selected decks:',exact=False).click()
+ deck=page.get_by_role('checkbox',name='Everyday French, Languages',exact=True)
+ deck.click()
+ expect(deck).to_be_checked()
+ deck.click()
+ expect(deck).not_to_be_checked()
+ page.get_by_role('button',name='Done 1 selected',exact=True).click()
  close=page.get_by_role('button',name='Close session settings',exact=True)
  if close.count()==0: close=page.get_by_role('button',name='Close quick settings',exact=True)
  close.click()
@@ -160,6 +191,13 @@ with sync_playwright() as p:
   assert page.evaluate('document.documentElement.scrollWidth <= window.innerWidth'), 'Horizontal chart overflow'
  page.keyboard.press('Tab')
  assert page.evaluate('document.activeElement !== document.body'), 'Keyboard focus is missing'
+ # Both accessibility preferences remove blur, including live changes back to normal.
+ cdp=context.new_cdp_session(page)
+ blur=page.locator('[style*="backdrop-filter"]')
+ expect(blur).to_have_count(1)
+ for transparency,contrast in [('reduce','none'),('reduce','active'),('no-preference','active'),('no-preference','none')]:
+  cdp.send('Emulation.setEmulatedMedia',{'features':[{'name':'prefers-reduced-transparency','value':transparency},{'name':'forced-colors','value':contrast},{'name':'prefers-reduced-motion','value':'reduce'}]})
+  expect(blur).to_have_count(1 if transparency=='no-preference' and contrast=='none' else 0)
  assert not errors, errors
- print('PASS: recall/reveal/ratings, goal summary, new and same-deck sessions, assistant prompts, settings, long math, filters, charts, keyboard and reduced-motion responsive layouts. No browser errors.')
+ print('PASS: recall/reveal/ratings, goal summary, new and same-deck sessions, controlled deck selection, assistant prompts and attachment viewers, settings, long math, filters, charts, keyboard, reduced-motion layouts and opaque accessibility controls. No browser errors.')
  browser.close()

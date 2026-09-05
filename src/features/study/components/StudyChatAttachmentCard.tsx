@@ -2,22 +2,27 @@ import { Typography } from '@/components/ui/Typography';
 import { AppIcon } from '@/components/ui/icons';
 import useReducedMotion from '@/hooks/useReducedMotion';
 import { resolveAttachmentImageUri } from '@/services/studyChat/resolveAttachmentImageUri';
-import type { StudyChatImageAttachment } from '@/services/studyChat/types';
+import type {
+  StudyChatChartAttachment,
+  StudyChatImageAttachment,
+} from '@/services/studyChat/types';
 import { theme } from '@/tokens/theme';
 import type React from 'react';
 import { useState } from 'react';
 import { Image, Modal, Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-interface StudyChatImageCardProps {
-  attachment: StudyChatImageAttachment;
+interface StudyChatAttachmentCardProps {
+  attachment: StudyChatChartAttachment | StudyChatImageAttachment;
 }
 
-export const StudyChatImageCard: React.FC<StudyChatImageCardProps> = ({
-  attachment,
-}) => {
+export const StudyChatAttachmentCard: React.FC<
+  StudyChatAttachmentCardProps
+> = ({ attachment }) => {
   const prefersReducedMotion = useReducedMotion();
   const [isExpanded, setIsExpanded] = useState(false);
+  const isChart = 'chartType' in attachment;
+  const kind = isChart ? 'chart' : 'image';
   const imageUri = resolveAttachmentImageUri(
     attachment.imagePath,
     attachment.imageDataUrl,
@@ -32,8 +37,8 @@ export const StudyChatImageCard: React.FC<StudyChatImageCardProps> = ({
           pressed ? styles.cardPressed : null,
         ]}
         accessibilityRole="button"
-        accessibilityLabel={`${attachment.title}. ${attachment.summary}. ${attachment.altText}. Open image fullscreen.`}
-        accessibilityHint="Shows a larger version of the generated image."
+        accessibilityLabel={`${attachment.title}. ${attachment.summary}. ${attachment.altText}. Open ${kind} fullscreen.`}
+        accessibilityHint={`Shows a larger version of the ${isChart ? 'chart' : 'generated image'}.`}
       >
         <Image
           source={{ uri: imageUri }}
@@ -45,7 +50,7 @@ export const StudyChatImageCard: React.FC<StudyChatImageCardProps> = ({
         <View style={styles.content}>
           <View style={styles.attachmentHeader}>
             <Typography variant="caption" color="primary">
-              Illustration
+              {isChart ? attachment.chartType : 'Illustration'}
             </Typography>
             <View style={styles.expandHint}>
               <Typography variant="caption" color="muted">
@@ -97,7 +102,7 @@ export const StudyChatImageCard: React.FC<StudyChatImageCardProps> = ({
                 onPress={() => setIsExpanded(false)}
                 style={styles.viewerCloseButton}
                 accessibilityRole="button"
-                accessibilityLabel="Close fullscreen image"
+                accessibilityLabel={`Close fullscreen ${kind}`}
                 hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
               >
                 <AppIcon

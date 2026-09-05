@@ -3,8 +3,7 @@ import { Card } from '@/components/ui/Card';
 import { normalizePlainTextContent } from '@/components/ui/MathText/mathHtml';
 import { Typography } from '@/components/ui/Typography';
 import { AppIcon } from '@/components/ui/icons';
-import { StudyChatChartCard } from '@/features/study/components/StudyChatChartCard';
-import { StudyChatImageCard } from '@/features/study/components/StudyChatImageCard';
+import { StudyChatAttachmentCard } from '@/features/study/components/StudyChatAttachmentCard';
 import { StudyChatMessageContent } from '@/features/study/components/StudyChatMessageContent';
 import { StudyChatProposalCard } from '@/features/study/components/StudyChatProposalCard';
 import useReducedMotion from '@/hooks/useReducedMotion';
@@ -344,13 +343,13 @@ export const StudyChatModal: React.FC<StudyChatModalProps> = ({
                               </Typography>
                             ) : null}
                             {attachments.map((attachment) => (
-                              <StudyChatChartCard
+                              <StudyChatAttachmentCard
                                 key={attachment.artifactId}
                                 attachment={attachment}
                               />
                             ))}
                             {imageAttachments.map((attachment) => (
-                              <StudyChatImageCard
+                              <StudyChatAttachmentCard
                                 key={attachment.artifactId}
                                 attachment={attachment}
                               />
