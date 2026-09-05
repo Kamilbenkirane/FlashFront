@@ -5,10 +5,10 @@ export interface FlashcardProps {
   flashcard: StudyCard;
   cardToken: number;
   disabled?: boolean;
+  revealed?: boolean;
   onFlip?: (isFlipped: boolean) => void;
   onSwipedLeft?: () => void;
   onSwipedRight?: () => void;
-  onSwipedUp?: () => void;
   style?: StyleProp<ViewStyle>;
   testID?: string;
 }

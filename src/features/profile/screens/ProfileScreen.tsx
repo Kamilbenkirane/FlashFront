@@ -9,286 +9,315 @@ import { useAuth } from '@/providers/AuthProvider';
 import { useUser } from '@/providers/UserProvider';
 import { theme } from '@/tokens/theme';
 import { triggerHaptic } from '@/utils/haptics';
+import { showAlert } from '@/utils/showAlert';
 import type React from 'react';
 import { useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 type ProfileScreenProps = AppTabScreenProps<'Profile'>;
 
 const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
   const { authUser, signOut } = useAuth();
-  const { user, onboardingPreferences, deleteAccount } = useUser();
-  const {
-    scrollContentContainerStyle,
-    scrollIndicatorInsets,
-    viewportOffsetStyle,
-  } = useTabScreenSpacing();
-
-  const [showAnalytics, setShowAnalytics] = useState(false);
+  const { user, userError, onboardingPreferences, deleteAccount } = useUser();
+  const { scrollContentContainerStyle, scrollIndicatorInsets } =
+    useTabScreenSpacing();
+  const [showAccount, setShowAccount] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
-
-  const getUserInitials = () => {
-    if (!user?.user_name) {
-      return '?';
-    }
-
-    return user.user_name
-      .split(' ')
-      .map((name) => name[0])
-      .join('')
-      .toUpperCase()
-      .slice(0, 2);
-  };
+  const initials = (user?.user_name || authUser?.email || '?')
+    .trim()
+    .split(/\s+/)
+    .map((name) => name[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2);
 
   return (
     <SafeAreaView edges={['top', 'left', 'right']} style={styles.container}>
       <ScrollView
-        style={[styles.container, viewportOffsetStyle]}
         contentContainerStyle={[
           styles.scrollContainer,
           scrollContentContainerStyle,
         ]}
         scrollIndicatorInsets={scrollIndicatorInsets}
+        showsVerticalScrollIndicator={false}
       >
-        <View style={styles.header}>
-          <View style={styles.avatar}>
-            <Typography style={styles.avatarText}>
-              {getUserInitials()}
-            </Typography>
-          </View>
-          <Typography variant="heading2">
-            {user?.user_name || 'Your profile'}
-          </Typography>
-          {authUser?.email ? (
-            <Typography variant="caption" color="muted">
-              {authUser.email}
-            </Typography>
-          ) : null}
-          {user?.subscription_date ? (
-            <Typography variant="caption" color="muted">
-              Member since{' '}
-              {new Date(user.subscription_date).toLocaleDateString()}
-            </Typography>
-          ) : null}
-        </View>
-
-        <Card variant="raised" style={styles.cardSpacing}>
-          <View style={styles.sectionHeader}>
-            <AppIcon
-              color={theme.colors.primary}
-              name="person"
-              size={22}
-              style={{ marginRight: theme.spacing.sm }}
-            />
-            <Typography variant="heading3">Account</Typography>
-          </View>
-          <View style={styles.detailRow}>
-            <Typography variant="caption" color="muted">
-              Study profile
-            </Typography>
-            <Typography variant="body">
-              {user?.user_name || 'Not available'}
-            </Typography>
-          </View>
-          <View style={styles.detailRow}>
-            <Typography variant="caption" color="muted">
-              Email
-            </Typography>
-            <Typography variant="body">
-              {authUser?.email || 'Not available'}
-            </Typography>
-          </View>
-        </Card>
-
-        <Card variant="default" style={styles.cardSpacing}>
-          <View style={styles.sectionHeader}>
-            <AppIcon
-              color={theme.colors.primary}
-              name="settings"
-              size={22}
-              style={{ marginRight: theme.spacing.sm }}
-            />
-            <Typography variant="heading3">Study preferences</Typography>
-          </View>
-
-          <View style={styles.detailRow}>
-            <Typography variant="caption" color="muted">
-              Daily goal
-            </Typography>
-            <Typography variant="body">
-              {onboardingPreferences?.dailyGoal || 20} cards / day
-            </Typography>
-          </View>
-          <View style={styles.detailRow}>
-            <Typography variant="caption" color="muted">
-              Reminder preference
-            </Typography>
-            <Typography variant="body">
-              {onboardingPreferences?.reminderEnabled ? 'Enabled' : 'Off'}
-            </Typography>
-          </View>
-        </Card>
-
-        {user ? (
-          <Card variant="default" style={styles.cardSpacing}>
+        <View style={styles.content}>
+          <View style={styles.header}>
+            <View style={styles.headerCopy}>
+              <Typography
+                variant="small"
+                color="primary"
+                style={styles.eyebrow}
+              >
+                THE BIGGER PICTURE
+              </Typography>
+              <Typography variant="heading1" style={styles.title}>
+                Your progress
+              </Typography>
+            </View>
             <Pressable
               onPress={() => {
-                setShowAnalytics(!showAnalytics);
-                triggerHaptic('impact');
+                triggerHaptic('selection');
+                setShowAccount(!showAccount);
               }}
+              style={[styles.avatar, showAccount && styles.avatarSelected]}
               accessibilityRole="button"
-              accessibilityLabel="Toggle detailed analytics"
-              accessibilityState={{ expanded: showAnalytics }}
+              accessibilityLabel="Account and study preferences"
+              accessibilityState={{ expanded: showAccount }}
             >
-              <View style={styles.sectionHeader}>
+              <Typography style={styles.avatarText}>{initials}</Typography>
+              <View style={styles.settingsBadge}>
                 <AppIcon
+                  name="settings"
                   color={theme.colors.primary}
-                  name="chart"
-                  size={22}
-                  style={{ marginRight: theme.spacing.sm }}
-                />
-                <Typography variant="heading3" style={{ flex: 1 }}>
-                  Detailed Analytics
-                </Typography>
-                <AppIcon
-                  color={theme.colors.mutedForeground}
-                  name={showAnalytics ? 'chevronDown' : 'chevronRight'}
-                  size={20}
+                  size={12}
                 />
               </View>
             </Pressable>
-
-            {showAnalytics ? <StatsDashboard /> : null}
-          </Card>
-        ) : null}
-
-        <Card variant="default" style={styles.cardSpacing}>
-          <View style={styles.sectionHeader}>
-            <AppIcon
-              color={theme.colors.primary}
-              name="information"
-              size={22}
-              style={{ marginRight: theme.spacing.sm }}
-            />
-            <Typography variant="heading3">Account actions</Typography>
+          </View>
+          <View style={styles.intro}>
+            <Typography variant="body" color="muted" style={styles.introCopy}>
+              Every review builds a little more.
+            </Typography>
+            {user ? (
+              <Button
+                title="Study"
+                size="sm"
+                variant="outline"
+                onPress={() => {
+                  triggerHaptic('impact');
+                  navigation.navigate('Flashcard');
+                }}
+                icon={
+                  <AppIcon
+                    name="chevronRight"
+                    size={17}
+                    color={theme.colors.primary}
+                  />
+                }
+                iconPosition="right"
+              />
+            ) : null}
           </View>
 
-          <View style={styles.actions}>
-            <Button
-              title="Sign out"
-              variant="outline"
-              onPress={async () => {
-                setIsSigningOut(true);
-                await signOut();
-                setIsSigningOut(false);
-              }}
-              loading={isSigningOut}
-              fullWidth
-            />
-            <Button
-              title="Delete account"
-              variant="error"
-              onPress={() => {
-                Alert.alert(
-                  'Delete account',
-                  'This removes your FlashFront account and study profile. This cannot be undone.',
-                  [
-                    { text: 'Cancel', style: 'cancel' },
-                    {
-                      text: 'Delete',
-                      style: 'destructive',
-                      onPress: async () => {
-                        setIsDeleting(true);
-                        const result = await deleteAccount();
-                        if (!result.error) {
-                          await signOut();
-                        }
-                        setIsDeleting(false);
-                      },
-                    },
-                  ],
-                );
-              }}
-              loading={isDeleting}
-              fullWidth
-            />
-          </View>
-        </Card>
+          {showAccount ? (
+            <Card padding="lg" style={styles.accountCard}>
+              <View style={styles.accountHeading}>
+                <Typography variant="heading2">Your account</Typography>
+                <Pressable
+                  onPress={() => setShowAccount(false)}
+                  style={styles.close}
+                  accessibilityRole="button"
+                  accessibilityLabel="Close account settings"
+                >
+                  <AppIcon
+                    name="close"
+                    size={20}
+                    color={theme.colors.mutedForeground}
+                  />
+                </Pressable>
+              </View>
+              <View style={styles.accountIdentity}>
+                <Typography variant="heading3">
+                  {user?.user_name || 'Your study profile'}
+                </Typography>
+                <Typography variant="body" color="muted">
+                  {authUser?.email || 'Email not available'}
+                </Typography>
+                {user?.subscription_date ? (
+                  <Typography variant="small" color="muted">
+                    Member since{' '}
+                    {new Date(user.subscription_date).toLocaleDateString(
+                      undefined,
+                      { month: 'long', year: 'numeric' },
+                    )}
+                  </Typography>
+                ) : null}
+              </View>
+              <Typography
+                variant="small"
+                color="primary"
+                style={styles.eyebrow}
+              >
+                STUDY PREFERENCES
+              </Typography>
+              <View style={styles.detailRow}>
+                <View style={styles.detailLabel}>
+                  <AppIcon
+                    name="crosshair"
+                    size={18}
+                    color={theme.colors.mutedForeground}
+                  />
+                  <Typography variant="body" color="muted">
+                    Daily goal
+                  </Typography>
+                </View>
+                <Typography variant="body">
+                  {onboardingPreferences?.dailyGoal || 20} cards
+                </Typography>
+              </View>
+              <View style={styles.detailRow}>
+                <View style={styles.detailLabel}>
+                  <AppIcon
+                    name="time"
+                    size={18}
+                    color={theme.colors.mutedForeground}
+                  />
+                  <Typography variant="body" color="muted">
+                    Reminders
+                  </Typography>
+                </View>
+                <Typography variant="body">
+                  {onboardingPreferences?.reminderEnabled ? 'Enabled' : 'Off'}
+                </Typography>
+              </View>
+              {userError ? (
+                <Typography variant="caption" color="error">
+                  {userError}
+                </Typography>
+              ) : null}
+              <View style={styles.actions}>
+                <View style={styles.action}>
+                  <Button
+                    title="Sign out"
+                    variant="outline"
+                    loading={isSigningOut}
+                    disabled={isDeleting}
+                    fullWidth
+                    onPress={async () => {
+                      setIsSigningOut(true);
+                      await signOut();
+                      setIsSigningOut(false);
+                    }}
+                  />
+                </View>
+                <View style={styles.action}>
+                  <Button
+                    title="Delete account"
+                    variant="error"
+                    loading={isDeleting}
+                    disabled={isSigningOut}
+                    fullWidth
+                    onPress={() => {
+                      showAlert(
+                        'Delete account',
+                        'This removes your Shuffle account and study profile. This cannot be undone.',
+                        [
+                          { text: 'Cancel', style: 'cancel' },
+                          {
+                            text: 'Delete',
+                            style: 'destructive',
+                            onPress: async () => {
+                              setIsDeleting(true);
+                              const result = await deleteAccount();
+                              if (!result.error) await signOut();
+                              setIsDeleting(false);
+                            },
+                          },
+                        ],
+                      );
+                    }}
+                  />
+                </View>
+              </View>
+            </Card>
+          ) : null}
 
-        {user && (
-          <View style={{ marginTop: theme.spacing.lg }}>
-            <Button
-              title="Start Quick Study Session"
-              onPress={() => {
-                triggerHaptic('impact');
-                navigation.navigate('Flashcard');
-              }}
-              variant="primary"
-              fullWidth
-              className="mb-4"
-              icon={
-                <AppIcon
-                  color={theme.colors.primaryForeground}
-                  name="flash"
-                  size={20}
-                />
-              }
-            />
-          </View>
-        )}
+          {user ? <StatsDashboard /> : null}
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: theme.colors.background,
+  container: { flex: 1, backgroundColor: theme.colors.background },
+  scrollContainer: { paddingTop: theme.spacing.xxl },
+  content: {
+    width: '100%',
+    maxWidth: 1120,
+    alignSelf: 'center',
+    paddingHorizontal: theme.spacing.xl,
   },
-  scrollContainer: {
-    padding: theme.spacing.lg,
-  },
-  header: {
-    alignItems: 'center',
-    marginBottom: theme.spacing.xl,
-  },
+  header: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.lg },
+  headerCopy: { flex: 1, gap: theme.spacing.sm },
+  eyebrow: { letterSpacing: 1.8, fontFamily: theme.fontFamily.medium },
+  title: { fontSize: 36, lineHeight: 43, letterSpacing: -1.4 },
   avatar: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: theme.colors.primaryLight,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: theme.spacing.md,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     borderWidth: 1,
     borderColor: theme.colors.border,
-    ...theme.shadows.md,
+    backgroundColor: theme.colors.secondary,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
+  avatarSelected: { borderColor: theme.colors.primary },
   avatarText: {
-    fontSize: 32,
     color: theme.colors.primary,
-    fontFamily: theme.fontFamily.semibold,
+    fontSize: 17,
+    fontFamily: theme.fontFamily.medium,
   },
-  cardSpacing: {
-    marginBottom: theme.spacing.lg,
+  settingsBadge: {
+    position: 'absolute',
+    right: -2,
+    bottom: -2,
+    width: 21,
+    height: 21,
+    borderRadius: 11,
+    backgroundColor: theme.colors.card,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  sectionHeader: {
+  intro: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: theme.spacing.md,
+    gap: theme.spacing.lg,
+    marginTop: theme.spacing.md,
+    marginBottom: theme.spacing.xxl,
   },
+  introCopy: { flex: 1 },
+  accountCard: { gap: theme.spacing.md, marginBottom: theme.spacing.xxl },
+  accountHeading: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  close: {
+    minWidth: 44,
+    minHeight: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  accountIdentity: { gap: theme.spacing.xs, paddingBottom: theme.spacing.lg },
   detailRow: {
-    gap: theme.spacing.xs,
-    paddingVertical: theme.spacing.sm,
-    borderTopWidth: 1,
-    borderTopColor: theme.colors.border,
+    minHeight: 48,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: theme.spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
+    paddingBottom: theme.spacing.sm,
+  },
+  detailLabel: {
+    flexDirection: 'row',
+    gap: theme.spacing.sm,
+    alignItems: 'center',
+    flex: 1,
   },
   actions: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: theme.spacing.md,
+    marginTop: theme.spacing.sm,
   },
+  action: { flex: 1, minWidth: 140 },
 });
 
 export default ProfileScreen;

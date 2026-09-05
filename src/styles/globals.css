@@ -9,7 +9,7 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --card: var(--surface-raised);
+  --card: #0a2a3b;
   --card-foreground: var(--foreground);
   --popover: var(--background);
   --popover-foreground: var(--foreground);
@@ -79,4 +79,14 @@ body {
   font-family: var(--font-sans);
   background-color: var(--background);
   color: var(--foreground);
+}
+
+/* Keep keyboard focus obvious on the web without changing native controls. */
+:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 4px;
+}
+::selection {
+  background: #d8b878;
+  color: #061d2a;
 }

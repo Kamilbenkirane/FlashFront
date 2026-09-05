@@ -1,46 +1,44 @@
-import { Card } from '@/components/ui/Card';
 import { Typography } from '@/components/ui/Typography';
+import { AppIcon } from '@/components/ui/icons';
 import { theme } from '@/tokens/theme';
 import type React from 'react';
 import { StyleSheet, View } from 'react-native';
 
-interface LibraryHeaderProps {
-  accountLabel: string;
-}
-
-export const LibraryHeader: React.FC<LibraryHeaderProps> = ({
-  accountLabel,
-}) => {
-  return (
-    <View style={styles.header}>
-      <Typography variant="heading2" style={styles.headerTitle}>
-        Deck Library
+export const LibraryHeader: React.FC = () => (
+  <View style={styles.header}>
+    <View style={styles.eyebrowRow}>
+      <AppIcon name="sparkles" size={15} color={theme.colors.primary} />
+      <Typography variant="small" color="primary" style={styles.eyebrow}>
+        THE COLLECTION
       </Typography>
-
-      <Card variant="raised">
-        <Typography variant="caption" color="muted" style={styles.sectionLabel}>
-          Signed in as
-        </Typography>
-        <Typography variant="body">{accountLabel}</Typography>
-      </Card>
     </View>
-  );
-};
+    <Typography variant="heading1" style={styles.title}>
+      A world to learn.
+    </Typography>
+    <Typography variant="body" color="muted">
+      Find a new fascination. Make it yours.
+    </Typography>
+  </View>
+);
 
 const styles = StyleSheet.create({
   header: {
-    paddingHorizontal: theme.spacing.lg,
-    paddingVertical: theme.spacing.lg,
-    backgroundColor: 'transparent',
+    paddingTop: theme.spacing.xxl,
+    paddingBottom: theme.spacing.xxl,
+    gap: theme.spacing.sm,
   },
-  headerTitle: {
-    textAlign: 'left',
-    marginBottom: theme.spacing.md,
-    color: theme.colors.foreground,
+  eyebrowRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.sm,
   },
-  sectionLabel: {
-    marginBottom: theme.spacing.sm,
-    color: theme.colors.muted,
+  eyebrow: {
+    letterSpacing: 2.2,
     fontFamily: theme.fontFamily.medium,
+  },
+  title: {
+    fontSize: 36,
+    lineHeight: 43,
+    letterSpacing: -1.4,
   },
 });

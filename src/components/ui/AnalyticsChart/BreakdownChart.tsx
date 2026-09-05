@@ -67,7 +67,7 @@ export const BreakdownChart: React.FC<BreakdownChartProps> = ({
                   styles.breakdownFill,
                   {
                     backgroundColor: color,
-                    width: `${Math.max(percentage, 4)}%`,
+                    width: `${percentage}%`,
                   },
                 ]}
               />

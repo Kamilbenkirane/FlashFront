@@ -1,27 +1,28 @@
 {
   "expo": {
-    "name": "FlashFrontKB24",
+    "name": "Shuffle",
     "slug": "FlashFront",
     "scheme": "flashfront",
     "version": "1.0.0",
     "orientation": "portrait",
+    "userInterfaceStyle": "dark",
     "icon": "./assets/icon.png",
     "ios": {
       "supportsTablet": true,
+      "icon": {
+        "light": "./assets/icon.png",
+        "dark": "./assets/icon-dark.png",
+        "tinted": "./assets/icon-tinted.png"
+      },
       "bundleIdentifier": "com.kams96.FlashFrontKB24",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
     },
-    "splash": {
-      "image": "./assets/splash.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
-    },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#061D2A"
       },
       "package": "com.kams96.FlashFrontKB24"
     },
@@ -33,7 +34,18 @@
         "projectId": "cdc4ac5c-e279-4b3d-86d5-ca6d77e74a90"
       }
     },
-    "plugins": ["expo-secure-store"],
+    "plugins": [
+      "expo-secure-store",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash.png",
+          "imageWidth": 180,
+          "resizeMode": "contain",
+          "backgroundColor": "#061D2A"
+        }
+      ]
+    ],
     "owner": "kams96"
   }
 }

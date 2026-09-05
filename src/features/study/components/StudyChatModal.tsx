@@ -6,6 +6,7 @@ import { StudyChatChartCard } from '@/features/study/components/StudyChatChartCa
 import { StudyChatImageCard } from '@/features/study/components/StudyChatImageCard';
 import { StudyChatMessageContent } from '@/features/study/components/StudyChatMessageContent';
 import { StudyChatProposalCard } from '@/features/study/components/StudyChatProposalCard';
+import useReducedMotion from '@/hooks/useReducedMotion';
 import type {
   StudyChatFlashcardProposal,
   StudyChatNewFlashcardProposal,
@@ -26,6 +27,35 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+const suggestedPrompts = [
+  {
+    title: 'Give me a hint',
+    detail: 'A nudge before the answer',
+    icon: 'lightbulb',
+    draft: 'Give me a small hint for this card without revealing the answer.',
+  },
+  {
+    title: 'Make it memorable',
+    detail: 'Find a useful memory cue',
+    icon: 'sparkles',
+    draft: 'Help me remember this card with a simple mnemonic.',
+  },
+  {
+    title: 'Show me an example',
+    detail: 'Connect the idea to real life',
+    icon: 'book',
+    draft: 'Explain this card with one concrete, real-world example.',
+  },
+  {
+    title: 'Visualize the idea',
+    detail: 'Explore a chart or illustration',
+    icon: 'chart',
+    draft:
+      'Explain this card visually with a chart or illustration if it would help.',
+  },
+] as const;
 
 interface StudyChatModalProps {
   visible: boolean;
@@ -98,6 +128,8 @@ export const StudyChatModal: React.FC<StudyChatModalProps> = ({
   isStreaming,
   error = null,
 }) => {
+  const prefersReducedMotion = useReducedMotion();
+  const insets = useSafeAreaInsets();
   const scrollViewRef = useRef<ScrollView | null>(null);
   const canSend =
     isComposerAvailable &&
@@ -110,30 +142,58 @@ export const StudyChatModal: React.FC<StudyChatModalProps> = ({
       return;
     }
     const frame = requestAnimationFrame(() => {
-      scrollViewRef.current?.scrollToEnd({ animated: true });
+      scrollViewRef.current?.scrollToEnd({
+        animated: !prefersReducedMotion && !isStreaming,
+      });
     });
     return () => cancelAnimationFrame(frame);
-  }, [messages, visible]);
+  }, [isStreaming, messages, prefersReducedMotion, visible]);
 
   return (
     <Modal
       visible={visible}
       transparent
-      animationType="slide"
+      animationType={prefersReducedMotion ? 'none' : 'slide'}
       onRequestClose={onClose}
+      presentationStyle="overFullScreen"
+      statusBarTranslucent
     >
       <View style={styles.overlay}>
-        <Pressable style={styles.backdrop} onPress={onClose} />
+        <Pressable
+          style={styles.backdrop}
+          onPress={onClose}
+          accessible={false}
+        />
         <KeyboardAvoidingView
-          style={styles.keyboardArea}
+          style={[
+            styles.keyboardArea,
+            {
+              paddingTop: insets.top + theme.spacing.sm,
+              paddingBottom: insets.bottom + theme.spacing.sm,
+            },
+          ]}
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         >
-          <Card variant="raised" padding="none" style={styles.sheet}>
+          <Card
+            variant="raised"
+            padding="none"
+            style={styles.sheet}
+            accessibilityViewIsModal
+          >
             <View style={styles.header}>
+              <View style={styles.assistantMark}>
+                <AppIcon
+                  name="sparkles"
+                  size={22}
+                  color={theme.colors.primary}
+                />
+              </View>
               <View style={styles.headerCopy}>
-                <Typography variant="heading3">Ask about this card</Typography>
-                <Typography variant="small" color="muted">
-                  {deckLabel}
+                <Typography variant="heading2" accessibilityRole="header">
+                  Study assistant
+                </Typography>
+                <Typography variant="caption" color="muted" numberOfLines={2}>
+                  This card · {deckLabel}
                 </Typography>
               </View>
               <Pressable
@@ -146,14 +206,14 @@ export const StudyChatModal: React.FC<StudyChatModalProps> = ({
                 <AppIcon
                   name="close"
                   size={20}
-                  color={theme.colors.mutedForeground}
+                  color={theme.colors.foreground}
                 />
               </Pressable>
             </View>
 
             {error ? (
-              <View style={styles.errorBanner}>
-                <Typography variant="small" color="error">
+              <View style={styles.errorBanner} accessibilityRole="alert">
+                <Typography variant="caption" color="error">
                   {error}
                 </Typography>
               </View>
@@ -173,18 +233,68 @@ export const StudyChatModal: React.FC<StudyChatModalProps> = ({
                     color={theme.colors.primary}
                   />
                   <Typography variant="body">
-                    Loading this card chat...
+                    Opening your conversation…
                   </Typography>
                 </View>
               ) : messages.length === 0 ? (
-                <View style={styles.emptyState}>
-                  <Typography variant="body">
-                    Ask for a hint, a mnemonic, a clearer explanation, or a
-                    real-world example. You can also ask for a graph, plot, or
-                    image.
+                <View style={styles.welcome}>
+                  <Typography
+                    variant="caption"
+                    color="primary"
+                    style={styles.eyebrow}
+                  >
+                    A LITTLE CLARITY GOES A LONG WAY
                   </Typography>
-                  <Typography variant="small" color="muted">
-                    Web search is available when the answer needs extra context.
+                  <Typography variant="heading1" style={styles.welcomeTitle}>
+                    Make it click.
+                  </Typography>
+                  <Typography variant="body" color="muted">
+                    Find a clearer way to understand this card. Start with a
+                    question or try an idea below.
+                  </Typography>
+                  {isComposerAvailable ? (
+                    <View style={styles.suggestions}>
+                      {suggestedPrompts.map((prompt) => (
+                        <Pressable
+                          key={prompt.title}
+                          onPress={() => onChangeDraft(prompt.draft)}
+                          disabled={isStreaming}
+                          style={({ pressed }) => [
+                            styles.suggestion,
+                            pressed && styles.suggestionPressed,
+                          ]}
+                          accessibilityRole="button"
+                          accessibilityLabel={prompt.title}
+                          accessibilityHint="Adds a suggested question to your message. You can edit it before sending."
+                          accessibilityState={{ disabled: isStreaming }}
+                        >
+                          <AppIcon
+                            name={prompt.icon}
+                            size={21}
+                            color={theme.colors.primary}
+                          />
+                          <View style={styles.suggestionCopy}>
+                            <Typography
+                              variant="body"
+                              style={styles.suggestionTitle}
+                            >
+                              {prompt.title}
+                            </Typography>
+                            <Typography variant="caption" color="muted">
+                              {prompt.detail}
+                            </Typography>
+                          </View>
+                          <AppIcon
+                            name="chevronRight"
+                            size={18}
+                            color={theme.colors.mutedForeground}
+                          />
+                        </Pressable>
+                      ))}
+                    </View>
+                  ) : null}
+                  <Typography variant="caption" color="muted">
+                    Web search can bring in more context when you need it.
                   </Typography>
                 </View>
               ) : (
@@ -213,6 +323,13 @@ export const StudyChatModal: React.FC<StudyChatModalProps> = ({
                           : styles.assistantMessageRow,
                       ]}
                     >
+                      <Typography
+                        variant="caption"
+                        color={isUserMessage ? 'muted' : 'primary'}
+                        style={styles.speaker}
+                      >
+                        {isUserMessage ? 'You' : 'Study assistant'}
+                      </Typography>
                       <View
                         style={[
                           styles.messageBubble,
@@ -225,10 +342,7 @@ export const StudyChatModal: React.FC<StudyChatModalProps> = ({
                         ]}
                       >
                         {isUserMessage ? (
-                          <Typography
-                            variant="body"
-                            style={{ color: theme.colors.primaryForeground }}
-                          >
+                          <Typography variant="body" selectable>
                             {message.content}
                           </Typography>
                         ) : isEmptyStreamingAssistantMessage ? (
@@ -342,7 +456,7 @@ export const StudyChatModal: React.FC<StudyChatModalProps> = ({
                 <TextInput
                   value={draft}
                   onChangeText={onChangeDraft}
-                  placeholder="Ask a follow-up question..."
+                  placeholder="What would you like to understand?"
                   placeholderTextColor={theme.colors.placeholder}
                   style={styles.input}
                   multiline
@@ -351,6 +465,7 @@ export const StudyChatModal: React.FC<StudyChatModalProps> = ({
                 />
                 <Button
                   title="Send"
+                  size="lg"
                   onPress={onSend}
                   disabled={!canSend}
                   loading={isStreaming}
@@ -358,7 +473,7 @@ export const StudyChatModal: React.FC<StudyChatModalProps> = ({
               </View>
             ) : unavailableMessage ? (
               <View style={styles.emptyState}>
-                <Typography variant="small" color="muted">
+                <Typography variant="caption" color="muted">
                   {unavailableMessage}
                 </Typography>
               </View>
@@ -374,7 +489,7 @@ const styles = StyleSheet.create({
   overlay: {
     flex: 1,
     justifyContent: 'flex-end',
-    backgroundColor: 'rgba(15, 23, 42, 0.18)',
+    backgroundColor: theme.colors.overlay,
   },
   backdrop: {
     ...StyleSheet.absoluteFillObject,
@@ -382,34 +497,42 @@ const styles = StyleSheet.create({
   keyboardArea: {
     flex: 1,
     justifyContent: 'flex-end',
-    paddingHorizontal: theme.spacing.md,
-    paddingTop: theme.spacing.xl,
-    paddingBottom: theme.spacing.md,
+    paddingHorizontal: theme.spacing.sm,
   },
   sheet: {
     width: '100%',
-    height: '72%',
-    maxHeight: 640,
+    flex: 1,
+    maxWidth: 760,
+    borderRadius: theme.borderRadius.xxl,
     alignSelf: 'center',
+    backgroundColor: theme.colors.background,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: theme.spacing.lg,
-    paddingTop: theme.spacing.lg,
-    paddingBottom: theme.spacing.md,
+    paddingVertical: theme.spacing.lg,
     borderBottomWidth: 1,
     borderBottomColor: theme.colors.border,
     gap: theme.spacing.md,
+    backgroundColor: theme.colors.card,
+  },
+  assistantMark: {
+    width: 44,
+    height: 44,
+    borderRadius: theme.borderRadius.lg,
+    backgroundColor: theme.colors.primaryLight,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   headerCopy: {
     flex: 1,
     gap: theme.spacing.xs,
   },
   closeButton: {
-    width: 36,
-    height: 36,
+    width: 44,
+    height: 44,
     borderRadius: theme.borderRadius.full,
     alignItems: 'center',
     justifyContent: 'center',
@@ -431,7 +554,45 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     paddingHorizontal: theme.spacing.lg,
     paddingVertical: theme.spacing.lg,
+    gap: theme.spacing.xxl,
+  },
+  welcome: {
     gap: theme.spacing.md,
+    paddingVertical: theme.spacing.lg,
+  },
+  eyebrow: {
+    letterSpacing: 1.2,
+    fontFamily: theme.fontFamily.medium,
+  },
+  welcomeTitle: {
+    fontSize: 32,
+    lineHeight: 38,
+  },
+  suggestions: {
+    gap: theme.spacing.sm,
+    marginVertical: theme.spacing.md,
+  },
+  suggestion: {
+    minHeight: 72,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.md,
+    padding: theme.spacing.lg,
+    backgroundColor: theme.colors.card,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: theme.borderRadius.xl,
+  },
+  suggestionPressed: {
+    backgroundColor: theme.colors.surfaceRaised,
+    borderColor: theme.colors.primary,
+  },
+  suggestionCopy: {
+    flex: 1,
+    gap: 2,
+  },
+  suggestionTitle: {
+    fontFamily: theme.fontFamily.medium,
   },
   emptyState: {
     gap: theme.spacing.sm,
@@ -441,6 +602,10 @@ const styles = StyleSheet.create({
   },
   messageRow: {
     width: '100%',
+    gap: theme.spacing.sm,
+  },
+  speaker: {
+    fontFamily: theme.fontFamily.medium,
   },
   userMessageRow: {
     alignItems: 'flex-end',
@@ -449,16 +614,16 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
   },
   messageBubble: {
-    maxWidth: '88%',
-    paddingHorizontal: theme.spacing.md,
-    paddingVertical: theme.spacing.sm,
+    maxWidth: '100%',
     borderRadius: theme.borderRadius.xl,
   },
   userMessageBubble: {
-    backgroundColor: theme.colors.primary,
+    maxWidth: '90%',
+    padding: theme.spacing.lg,
+    backgroundColor: theme.colors.surfaceRaised,
+    borderBottomRightRadius: theme.borderRadius.sm,
   },
   assistantMessageBubble: {
-    backgroundColor: theme.colors.secondary,
     width: '100%',
   },
   errorMessageBubble: {
@@ -473,7 +638,7 @@ const styles = StyleSheet.create({
     gap: theme.spacing.xs,
   },
   assistantContent: {
-    gap: theme.spacing.sm,
+    gap: theme.spacing.lg,
     width: '100%',
     minWidth: 0,
   },
@@ -481,6 +646,8 @@ const styles = StyleSheet.create({
     textAlign: 'left',
   },
   composer: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
     gap: theme.spacing.md,
     paddingHorizontal: theme.spacing.lg,
     paddingTop: theme.spacing.md,
@@ -490,13 +657,14 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.card,
   },
   input: {
-    minHeight: 92,
-    maxHeight: 160,
+    flex: 1,
+    minHeight: 56,
+    maxHeight: 136,
     borderWidth: 1,
     borderColor: theme.colors.input,
     borderRadius: theme.borderRadius.xl,
     paddingHorizontal: theme.spacing.md,
-    paddingVertical: theme.spacing.sm,
+    paddingVertical: theme.spacing.md,
     color: theme.colors.foreground,
     fontFamily: theme.fontFamily.sans,
     fontSize: theme.typography.body.fontSize,

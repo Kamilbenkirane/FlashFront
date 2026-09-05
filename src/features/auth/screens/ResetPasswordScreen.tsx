@@ -57,8 +57,8 @@ const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({
 
   return (
     <AuthScaffold
-      title="Choose a new password"
-      subtitle="Pick a new password for your FlashFront account."
+      title="A fresh password."
+      subtitle="Choose a new password for your Shuffle account. Then you’re ready to keep learning."
       error={authError}
     >
       <AuthTextField
@@ -101,6 +101,7 @@ const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({
       <View style={styles.actions}>
         <Button
           title="Save new password"
+          size="lg"
           onPress={() => void handleSubmit()}
           loading={isSubmitting}
           fullWidth

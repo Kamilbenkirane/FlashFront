@@ -3,6 +3,7 @@ import { Card } from '@/components/ui/Card';
 import { Typography } from '@/components/ui/Typography';
 import { AppIcon } from '@/components/ui/icons';
 import DecksMultiSelect from '@/features/library/components/DecksMultiSelect';
+import useReducedMotion from '@/hooks/useReducedMotion';
 import type { Deck } from '@/interfaces';
 import {
   STUDY_CHAT_BACKEND_KEY_MESSAGE,
@@ -14,6 +15,7 @@ import { triggerHaptic } from '@/utils/haptics';
 import type React from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export interface SessionSettings {
   studyChatModelId: string;
@@ -53,6 +55,8 @@ export const QuickSettings: React.FC<QuickSettingsProps> = ({
   studyChatImageModelsError = null,
   testID,
 }) => {
+  const prefersReducedMotion = useReducedMotion();
+  const insets = useSafeAreaInsets();
   const [isModelPickerOpen, setIsModelPickerOpen] = useState(false);
   const [isImageModelPickerOpen, setIsImageModelPickerOpen] = useState(false);
 
@@ -114,53 +118,84 @@ export const QuickSettings: React.FC<QuickSettingsProps> = ({
     <Modal
       visible={visible}
       transparent
-      animationType="fade"
+      animationType={prefersReducedMotion ? 'none' : 'fade'}
       onRequestClose={handleClose}
       testID={testID}
       presentationStyle="overFullScreen"
+      statusBarTranslucent
     >
-      <Pressable style={styles.overlay} onPress={handleClose}>
+      <Pressable
+        style={[
+          styles.overlay,
+          {
+            paddingTop: insets.top + theme.spacing.md,
+            paddingBottom: insets.bottom + theme.spacing.md,
+          },
+        ]}
+        onPress={handleClose}
+        accessible={false}
+      >
         <Pressable
           style={styles.panel}
           onPress={(event) => event.stopPropagation()}
           accessibilityViewIsModal
+          accessible={false}
         >
           <Card variant="raised" padding="none" style={styles.card}>
+            <View style={styles.header}>
+              <View style={styles.headerCopy}>
+                <Typography variant="heading2" accessibilityRole="header">
+                  Session settings
+                </Typography>
+                <Typography variant="caption" color="muted">
+                  Make this session your own.
+                </Typography>
+              </View>
+              <Pressable
+                onPress={handleClose}
+                style={styles.closeButton}
+                accessibilityRole="button"
+                accessibilityLabel="Close session settings"
+                hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
+              >
+                <AppIcon
+                  color={theme.colors.foreground}
+                  name="close"
+                  size={18}
+                />
+              </Pressable>
+            </View>
             <ScrollView
+              style={styles.scroll}
               contentContainerStyle={styles.scrollContent}
               showsVerticalScrollIndicator={false}
               keyboardShouldPersistTaps="handled"
             >
-              <View style={styles.header}>
-                <Typography variant="heading3">Quick Settings</Typography>
-                <Pressable
-                  onPress={handleClose}
-                  style={styles.closeButton}
-                  accessibilityRole="button"
-                  accessibilityLabel="Close quick settings"
-                  hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
-                >
-                  <AppIcon
-                    color={theme.colors.mutedForeground}
-                    name="close"
-                    size={18}
-                  />
-                </Pressable>
-              </View>
-
               <View style={styles.body}>
-                <View style={styles.studyChatSection}>
-                  <View style={styles.studyChatHeader}>
-                    <Typography variant="body">
-                      Study chat text model
-                    </Typography>
-                    <Typography variant="small" color="muted">
-                      {selectedModelLabel}
+                <View style={styles.deckSection}>
+                  <View style={styles.deckSectionHeader}>
+                    <Typography variant="heading3">Your study decks</Typography>
+                    <Typography variant="caption" color="primary">
+                      {selectedDeckIds.length} selected
                     </Typography>
                   </View>
-                  <Typography variant="small" color="muted">
-                    Pick the model used for card follow-up questions on this
-                    screen.
+                  <Typography variant="caption" color="muted">
+                    Choose what you want to focus on.
+                  </Typography>
+                  <DecksMultiSelect
+                    decks={decks}
+                    onSelectDecks={onSelectDecks}
+                    selectedDeckIds={selectedDeckIds}
+                  />
+                </View>
+
+                <View style={styles.studyChatSection}>
+                  <View style={styles.studyChatHeader}>
+                    <Typography variant="heading3">Text model</Typography>
+                  </View>
+                  <Typography variant="caption" color="muted">
+                    Your assistant for hints, explanations, and follow-up
+                    questions.
                   </Typography>
                   {isStudyChatModelsLoading ? (
                     <Typography variant="small" color="muted">
@@ -187,7 +222,7 @@ export const QuickSettings: React.FC<QuickSettingsProps> = ({
                           <Typography variant="body">
                             {selectedModelLabel}
                           </Typography>
-                          <Typography variant="small" color="muted">
+                          <Typography variant="caption" color="muted">
                             {isModelPickerOpen
                               ? 'Choose a different model'
                               : 'Tap to change'}
@@ -211,7 +246,7 @@ export const QuickSettings: React.FC<QuickSettingsProps> = ({
                                     ? 'primary'
                                     : 'secondary'
                                 }
-                                size="sm"
+                                size="lg"
                                 fullWidth
                                 onPress={() => handleModelSelect(model.id)}
                                 accessibilityState={{
@@ -230,15 +265,10 @@ export const QuickSettings: React.FC<QuickSettingsProps> = ({
 
                 <View style={styles.studyChatSection}>
                   <View style={styles.studyChatHeader}>
-                    <Typography variant="body">
-                      Study chat image model
-                    </Typography>
-                    <Typography variant="small" color="muted">
-                      {selectedImageModelLabel}
-                    </Typography>
+                    <Typography variant="heading3">Image model</Typography>
                   </View>
-                  <Typography variant="small" color="muted">
-                    Pick the model used when study chat generates an image.
+                  <Typography variant="caption" color="muted">
+                    Turn an idea into a visual explanation.
                   </Typography>
                   {isStudyChatImageModelsLoading ? (
                     <Typography variant="small" color="muted">
@@ -268,7 +298,7 @@ export const QuickSettings: React.FC<QuickSettingsProps> = ({
                           <Typography variant="body">
                             {selectedImageModelLabel}
                           </Typography>
-                          <Typography variant="small" color="muted">
+                          <Typography variant="caption" color="muted">
                             {isImageModelPickerOpen
                               ? 'Choose a different image model'
                               : 'Tap to change'}
@@ -295,7 +325,7 @@ export const QuickSettings: React.FC<QuickSettingsProps> = ({
                                     ? 'primary'
                                     : 'secondary'
                                 }
-                                size="sm"
+                                size="lg"
                                 fullWidth
                                 onPress={() => handleImageModelSelect(model.id)}
                                 accessibilityState={{
@@ -311,36 +341,17 @@ export const QuickSettings: React.FC<QuickSettingsProps> = ({
                     </View>
                   )}
                 </View>
-
-                <View style={styles.deckSection}>
-                  <View style={styles.deckSectionHeader}>
-                    <Typography variant="body">Manage decks</Typography>
-                    <Typography variant="small" color="muted">
-                      {selectedDeckIds.length} selected
-                    </Typography>
-                  </View>
-                  <Typography variant="small" color="muted">
-                    Add or remove decks for this study session without leaving
-                    the page.
-                  </Typography>
-                  <DecksMultiSelect
-                    decks={decks}
-                    onSelectDecks={onSelectDecks}
-                    selectedDeckIds={selectedDeckIds}
-                  />
-                </View>
-              </View>
-
-              <View style={styles.footer}>
-                <Button
-                  title="Done"
-                  variant="primary"
-                  size="lg"
-                  onPress={handleClose}
-                  fullWidth
-                />
               </View>
             </ScrollView>
+            <View style={styles.footer}>
+              <Button
+                title="Done"
+                variant="primary"
+                size="lg"
+                onPress={handleClose}
+                fullWidth
+              />
+            </View>
           </Card>
         </Pressable>
       </Pressable>
@@ -354,15 +365,20 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.overlay,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: theme.spacing.lg,
+    paddingHorizontal: theme.spacing.md,
   },
   panel: {
     width: '100%',
-    maxWidth: 400,
-    maxHeight: '88%',
+    maxWidth: 760,
+    maxHeight: '100%',
   },
   card: {
     maxHeight: '100%',
+    borderRadius: theme.borderRadius.xxl,
+    backgroundColor: theme.colors.background,
+  },
+  scroll: {
+    flexShrink: 1,
   },
   scrollContent: {
     flexGrow: 1,
@@ -375,30 +391,35 @@ const styles = StyleSheet.create({
     paddingVertical: theme.spacing.lg,
     borderBottomWidth: 1,
     borderBottomColor: theme.colors.border,
+    gap: theme.spacing.md,
+    backgroundColor: theme.colors.card,
+  },
+  headerCopy: {
+    flex: 1,
+    gap: theme.spacing.xs,
   },
   closeButton: {
-    minWidth: 40,
-    minHeight: 40,
+    minWidth: 44,
+    minHeight: 44,
     alignItems: 'center',
     justifyContent: 'center',
     padding: theme.spacing.xs,
     borderRadius: theme.borderRadius.full,
+    backgroundColor: theme.colors.secondary,
   },
   body: {
     padding: theme.spacing.xl,
-    gap: theme.spacing.lg,
-  },
-  row: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    gap: theme.spacing.md,
+    gap: theme.spacing.xxl,
   },
   deckSection: {
     gap: theme.spacing.sm,
+    padding: theme.spacing.lg,
+    borderRadius: theme.borderRadius.xl,
+    backgroundColor: theme.colors.card,
   },
   deckSectionHeader: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     justifyContent: 'space-between',
     alignItems: 'center',
     gap: theme.spacing.sm,
@@ -416,13 +437,13 @@ const styles = StyleSheet.create({
     gap: theme.spacing.sm,
   },
   modelPickerTrigger: {
-    minHeight: 52,
+    minHeight: 64,
     borderWidth: 1,
     borderColor: theme.colors.border,
     borderRadius: theme.borderRadius.xl,
-    backgroundColor: theme.colors.background,
-    paddingHorizontal: theme.spacing.md,
-    paddingVertical: theme.spacing.sm,
+    backgroundColor: theme.colors.card,
+    paddingHorizontal: theme.spacing.lg,
+    paddingVertical: theme.spacing.md,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -444,5 +465,6 @@ const styles = StyleSheet.create({
     paddingTop: theme.spacing.md,
     borderTopWidth: 1,
     borderTopColor: theme.colors.border,
+    backgroundColor: theme.colors.card,
   },
 });

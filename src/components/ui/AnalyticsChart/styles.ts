@@ -2,19 +2,10 @@ import { theme } from '@/tokens/theme';
 import { StyleSheet } from 'react-native';
 
 export const analyticsChartStyles = StyleSheet.create({
-  panel: {
-    marginVertical: theme.spacing.sm,
-    gap: theme.spacing.md,
-  },
-  panelHeader: {
-    gap: theme.spacing.xs,
-  },
-  panelTitle: {
-    textAlign: 'left',
-  },
-  panelBody: {
-    width: '100%',
-  },
+  panel: { gap: theme.spacing.lg },
+  panelHeader: { gap: theme.spacing.xs },
+  panelTitle: { textAlign: 'left' },
+  panelBody: { width: '100%' },
   emptyState: {
     alignItems: 'center',
     justifyContent: 'center',
@@ -30,54 +21,40 @@ export const analyticsChartStyles = StyleSheet.create({
     paddingHorizontal: theme.spacing.md,
     paddingVertical: theme.spacing.sm,
   },
-  emptyMessage: {
-    textAlign: 'center',
-    maxWidth: 240,
-  },
-  seriesContent: {
-    alignItems: 'flex-end',
-    gap: theme.spacing.md,
-    paddingVertical: theme.spacing.xs,
-    paddingRight: theme.spacing.sm,
-  },
-  seriesItem: {
-    width: 72,
+  emptyMessage: { textAlign: 'center', maxWidth: 240 },
+  series: { gap: theme.spacing.md },
+  seriesHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-  },
-  metricSlot: {
-    minHeight: 18,
-    justifyContent: 'flex-end',
-    marginBottom: theme.spacing.sm,
-  },
-  metricLabel: {
-    textAlign: 'center',
-  },
-  plotTrack: {
-    width: 28,
-    justifyContent: 'flex-end',
-    alignItems: 'center',
-  },
-  bar: {
-    borderRadius: theme.borderRadius.full,
-  },
-  axisLabel: {
-    marginTop: theme.spacing.sm,
-    textAlign: 'center',
-  },
-  captionSlot: {
-    width: '100%',
-    minHeight: 30,
-    marginTop: 2,
-  },
-  captionLabel: {
-    textAlign: 'center',
-  },
-  breakdownList: {
-    gap: theme.spacing.lg,
-  },
-  breakdownRow: {
     gap: theme.spacing.sm,
   },
+  seriesSummary: { flex: 1, minWidth: 0, gap: 3 },
+  seriesControls: { flexDirection: 'row', gap: 2 },
+  seriesControl: {
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: theme.borderRadius.md,
+    backgroundColor: theme.colors.secondary,
+  },
+  plotRow: { flexDirection: 'row', gap: theme.spacing.sm },
+  yAxis: {
+    width: 29,
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
+    paddingVertical: 1,
+  },
+  plot: { flex: 1, minWidth: 0, minHeight: 44 },
+  axisLabels: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingLeft: 37,
+    gap: theme.spacing.md,
+  },
+  breakdownList: { gap: theme.spacing.xl },
+  breakdownRow: { gap: theme.spacing.sm },
   breakdownHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -91,29 +68,20 @@ export const analyticsChartStyles = StyleSheet.create({
     flex: 1,
     minWidth: 0,
   },
-  breakdownTitle: {
-    flexShrink: 1,
-    lineHeight: 20,
-  },
-  breakdownMetric: {
-    textAlign: 'right',
-    minWidth: 64,
-  },
+  breakdownTitle: { flexShrink: 1, lineHeight: 22 },
+  breakdownMetric: { textAlign: 'right', minWidth: 64 },
   breakdownSwatch: {
-    width: 10,
-    height: 10,
+    width: 7,
+    height: 7,
     borderRadius: theme.borderRadius.full,
-    marginTop: 5,
+    marginTop: 7,
   },
   breakdownTrack: {
     width: '100%',
-    height: 10,
+    height: 5,
     borderRadius: theme.borderRadius.full,
     overflow: 'hidden',
     backgroundColor: theme.colors.secondary,
   },
-  breakdownFill: {
-    height: '100%',
-    borderRadius: theme.borderRadius.full,
-  },
+  breakdownFill: { height: '100%', borderRadius: theme.borderRadius.full },
 });

@@ -1,116 +1,156 @@
+import { GlassSurface } from '@/components/ui/Brand/GlassSurface';
+import { ShuffleMark } from '@/components/ui/Brand/ShuffleMark';
 import { ProgressBar } from '@/components/ui/ProgressBar';
 import { Typography } from '@/components/ui/Typography';
 import { AppIcon } from '@/components/ui/icons';
 import { theme } from '@/tokens/theme';
-import type React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 interface StudyHeaderProps {
   title: string;
   completedCards: number;
   totalCards: number;
+  isActive?: boolean;
   onOpenChat?: () => void;
   onOpenSettings?: () => void;
+  onFinish?: () => void;
 }
 
-export const StudyHeader: React.FC<StudyHeaderProps> = ({
+export const StudyHeader = ({
   title,
   completedCards,
   totalCards,
+  isActive,
   onOpenChat,
   onOpenSettings,
-}) => {
-  return (
-    <View style={styles.header}>
-      <View style={styles.headerTop}>
-        <Typography variant="heading2" style={styles.headerTitle}>
-          {title}
-        </Typography>
-        <View style={styles.actions}>
-          {onOpenChat ? (
-            <Pressable
-              onPress={onOpenChat}
-              style={styles.actionButton}
-              accessibilityRole="button"
-              accessibilityLabel="Open study chat"
-              hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
-            >
-              <AppIcon
-                color={theme.colors.mutedForeground}
-                name="sparkles"
-                size={18}
-                strokeWidth={1.75}
-              />
-            </Pressable>
-          ) : null}
-          {onOpenSettings ? (
-            <Pressable
-              onPress={onOpenSettings}
-              style={styles.actionButton}
-              accessibilityRole="button"
-              accessibilityLabel="Open study settings"
-              hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
-            >
-              <AppIcon
-                color={theme.colors.mutedForeground}
-                name="settings"
-                size={18}
-                strokeWidth={1.75}
-              />
-            </Pressable>
-          ) : null}
-        </View>
+  onFinish,
+}: StudyHeaderProps) => (
+  <View style={styles.header}>
+    <View style={styles.row}>
+      <View style={styles.brand}>
+        <ShuffleMark size={34} />
+        <Typography style={styles.wordmark}>Shuffle</Typography>
       </View>
-
-      {totalCards > 0 ? (
+      <View style={styles.actions}>
+        {onFinish ? (
+          <Pressable
+            onPress={onFinish}
+            accessibilityRole="button"
+            accessibilityLabel="Finish this session"
+            style={styles.finish}
+          >
+            <Typography variant="caption" color="muted">
+              Finish
+            </Typography>
+          </Pressable>
+        ) : null}
+        {onOpenChat || onOpenSettings ? (
+          <GlassSurface style={styles.actions}>
+            {onOpenChat ? (
+              <Pressable
+                onPress={onOpenChat}
+                accessibilityRole="button"
+                accessibilityLabel="Open study assistant"
+                style={styles.iconButton}
+              >
+                <AppIcon
+                  name="sparkles"
+                  size={20}
+                  color={theme.colors.primary}
+                />
+              </Pressable>
+            ) : null}
+            {onOpenSettings ? (
+              <Pressable
+                onPress={onOpenSettings}
+                accessibilityRole="button"
+                accessibilityLabel="Open session settings"
+                style={styles.iconButton}
+              >
+                <AppIcon
+                  name="settings"
+                  size={19}
+                  color={theme.colors.foreground}
+                />
+              </Pressable>
+            ) : null}
+          </GlassSurface>
+        ) : (
+          <Typography variant="small" color="muted" style={styles.eyebrow}>
+            MAKE IT STICK
+          </Typography>
+        )}
+      </View>
+    </View>
+    {isActive ? (
+      <View style={styles.session}>
+        <View style={styles.sessionLabel}>
+          <Typography
+            variant="caption"
+            color="muted"
+            numberOfLines={1}
+            style={{ flex: 1 }}
+          >
+            {title}
+          </Typography>
+          <Typography variant="caption" color="primary">
+            {completedCards} / {totalCards} reviews
+          </Typography>
+        </View>
         <ProgressBar
           progress={completedCards}
           total={totalCards}
-          showLabel={true}
-          showPercentage={true}
-          color="primary"
-          size="lg"
-          className="mt-2"
+          showLabel={false}
+          size="sm"
         />
-      ) : null}
-    </View>
-  );
-};
+      </View>
+    ) : null}
+  </View>
+);
 
 const styles = StyleSheet.create({
   header: {
-    paddingHorizontal: theme.spacing.lg,
-    paddingVertical: theme.spacing.lg,
-    backgroundColor: 'transparent',
+    width: '100%',
+    maxWidth: 1120,
+    alignSelf: 'center',
+    paddingHorizontal: 24,
+    paddingTop: 12,
+    paddingBottom: 12,
+    gap: 20,
   },
-  headerTop: {
+  row: {
     flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: theme.spacing.md,
+    gap: 12,
   },
-  headerTitle: {
-    textAlign: 'left',
-    color: theme.colors.foreground,
-    flex: 1,
+  brand: { flexDirection: 'row', alignItems: 'center', gap: 9 },
+  wordmark: {
+    fontSize: 25,
+    lineHeight: 32,
+    fontFamily: theme.fontFamily.medium,
+    letterSpacing: -1.1,
   },
-  actions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: theme.spacing.sm,
-    marginLeft: theme.spacing.md,
-  },
-  actionButton: {
-    minWidth: 40,
-    minHeight: 40,
-    padding: theme.spacing.sm,
-    borderRadius: theme.borderRadius.lg,
+  eyebrow: { letterSpacing: 1.5, fontSize: 10 },
+  actions: { flexDirection: 'row', alignItems: 'center' },
+  iconButton: {
+    width: 44,
+    height: 44,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: theme.colors.background,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    shadowOpacity: 0,
-    elevation: 0,
+  },
+  finish: {
+    minWidth: 48,
+    minHeight: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 6,
+  },
+  session: { maxWidth: 640, width: '100%', alignSelf: 'center', gap: 10 },
+  sessionLabel: {
+    flexDirection: 'row',
+    gap: 16,
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
 });

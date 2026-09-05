@@ -7,6 +7,7 @@ import { theme } from '@/tokens/theme';
 import { triggerHaptic } from '@/utils/haptics';
 import type React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
+import Svg, { Circle, Ellipse, G, Line, Path } from 'react-native-svg';
 
 export interface DeckCardProps {
   deck: Deck;
@@ -18,6 +19,65 @@ export interface DeckCardProps {
   className?: string;
 }
 
+const DeckArtwork = ({ variant }: { variant: number }) => (
+  <Svg width="100%" height="100%" viewBox="0 0 240 128" accessible={false}>
+    <G stroke={theme.colors.primary} fill="none" strokeWidth={0.8}>
+      {variant === 0 ? (
+        <>
+          <Circle cx={120} cy={68} r={35} opacity={0.75} />
+          <Circle cx={120} cy={68} r={55} opacity={0.18} />
+          <Ellipse
+            cx={120}
+            cy={68}
+            rx={86}
+            ry={22}
+            rotation={-28}
+            origin="120, 68"
+            opacity={0.75}
+          />
+          <Ellipse cx={120} cy={68} rx={22} ry={35} opacity={0.35} />
+          <Circle
+            cx={182}
+            cy={36}
+            r={4}
+            fill={theme.colors.primary}
+            stroke="none"
+          />
+        </>
+      ) : variant === 1 ? (
+        <>
+          <Path
+            d="M 66 117 V 67 A 54 54 0 0 1 174 67 V 117 M 79 117 V 67 A 41 41 0 0 1 161 67 V 117 M 92 117 V 67 A 28 28 0 0 1 148 67 V 117"
+            opacity={0.6}
+          />
+          <Line x1={46} x2={194} y1={117} y2={117} opacity={0.25} />
+          <Path
+            d="M120 43 L125 62 L144 67 L125 72 L120 91 L115 72 L96 67 L115 62 Z"
+            fill={theme.colors.primary}
+            fillOpacity={0.12}
+          />
+        </>
+      ) : (
+        <>
+          <Path
+            d="M52 85 L88 35 L132 64 L185 28 L168 99 L132 64 L88 35"
+            opacity={0.65}
+          />
+          <Circle cx={120} cy={66} r={55} strokeDasharray="2 7" opacity={0.3} />
+          <G fill={theme.colors.primary} stroke="none">
+            <Circle cx={52} cy={85} r={3} />
+            <Circle cx={88} cy={35} r={4} />
+            <Circle cx={132} cy={64} r={5} />
+            <Circle cx={185} cy={28} r={3} />
+            <Circle cx={168} cy={99} r={3} />
+          </G>
+        </>
+      )}
+      <Path d="M31 28 H39 M35 24 V32 M204 91 H212 M208 87 V95" opacity={0.45} />
+    </G>
+  </Svg>
+);
+
 export const DeckCard: React.FC<DeckCardProps> = ({
   deck,
   isSubscribed,
@@ -26,166 +86,140 @@ export const DeckCard: React.FC<DeckCardProps> = ({
   onPress,
   className = '',
   testID,
-}) => {
-  const handleSubscriptionToggle = () => {
-    triggerHaptic('impact');
-    onSubscriptionToggle(deck, !isSubscribed);
-  };
-
-  const handlePress = () => {
-    triggerHaptic('impact');
-    onPress(deck);
-  };
-
-  const metaItems = [
-    deck.author,
-    deck.card_count ? `${deck.card_count} cards` : null,
-  ]
-    .filter(Boolean)
-    .join(' • ');
-
-  return (
+}) => (
+  <Card padding="none" className={className} style={styles.card}>
     <Pressable
-      onPress={handlePress}
-      className={className}
-      style={styles.container}
+      onPress={() => {
+        triggerHaptic('impact');
+        onPress(deck);
+      }}
+      disabled={isSubscriptionPending}
+      style={({ pressed }) => [styles.main, pressed && styles.pressed]}
       testID={testID}
       accessibilityRole="button"
-      accessibilityLabel={`${deck.deck_name} deck`}
+      accessibilityLabel={`${deck.deck_name}, ${deck.subject} deck`}
+      accessibilityState={{ disabled: isSubscriptionPending }}
       accessibilityHint={
         isSubscribed
-          ? 'Opens this deck and starts studying'
-          : 'Opens deck details. Subscribe first to study it.'
+          ? 'Starts studying this deck'
+          : 'Offers to add this deck and start studying'
       }
     >
-      <Card variant="default" style={styles.card}>
-        <View style={styles.header}>
-          <View style={styles.headerLeading}>
-            <View style={styles.subjectChip}>
-              <Typography
-                variant="caption"
-                color="primary"
-                numberOfLines={1}
-                ellipsizeMode="tail"
-                style={styles.subjectChipLabel}
-              >
-                {deck.subject}
-              </Typography>
-            </View>
-          </View>
-          <View style={styles.statusSlot}>
-            <View
-              style={[
-                styles.statusIcon,
-                isSubscribed ? styles.statusIconActive : styles.statusIconIdle,
-              ]}
-              accessible={false}
-              importantForAccessibility="no"
-            >
-              <AppIcon
-                color={
-                  isSubscribed
-                    ? theme.colors.success.DEFAULT
-                    : theme.colors.primary
-                }
-                name={isSubscribed ? 'check' : 'plus'}
-                size={16}
-                strokeWidth={2.35}
-              />
-            </View>
-          </View>
-        </View>
-
-        <View style={styles.content}>
-          <Typography variant="heading3" style={styles.title} numberOfLines={2}>
-            {deck.deck_name}
+      <View style={styles.artwork} pointerEvents="none">
+        <DeckArtwork variant={Number(deck.deck_id) % 3} />
+      </View>
+      <View style={styles.content}>
+        <Typography
+          variant="small"
+          color="primary"
+          style={styles.subject}
+          numberOfLines={1}
+        >
+          {deck.subject}
+        </Typography>
+        <Typography variant="heading3" style={styles.title} numberOfLines={2}>
+          {deck.deck_name}
+        </Typography>
+        {deck.author ? (
+          <Typography variant="small" color="muted" numberOfLines={1}>
+            {deck.author}
           </Typography>
-
-          <View style={styles.meta}>
-            <Typography variant="caption" color="muted" numberOfLines={1}>
-              {metaItems || 'Ready to study'}
-            </Typography>
-          </View>
+        ) : null}
+        <View style={styles.meta}>
+          <Typography variant="caption" color="muted">
+            {deck.card_count === undefined
+              ? 'Explore deck'
+              : `${deck.card_count} cards`}
+          </Typography>
+          <AppIcon name="chevronRight" size={17} color={theme.colors.primary} />
         </View>
-
-        <View style={styles.footer}>
-          <Button
-            title={isSubscribed ? 'Unsubscribe' : 'Subscribe'}
-            variant={isSubscribed ? 'outline' : 'primary'}
-            size="sm"
-            onPress={handleSubscriptionToggle}
-            loading={isSubscriptionPending}
-            disabled={isSubscriptionPending}
-            fullWidth
-          />
-        </View>
-      </Card>
+      </View>
     </Pressable>
-  );
-};
+    <View style={styles.footer}>
+      <Button
+        title={isSubscribed ? 'Study deck' : 'Add deck'}
+        variant="primary"
+        size="sm"
+        onPress={() => {
+          triggerHaptic('impact');
+          if (isSubscribed) onPress(deck);
+          else onSubscriptionToggle(deck, true);
+        }}
+        accessibilityLabel={
+          isSubscribed
+            ? `Study ${deck.deck_name}`
+            : `Add ${deck.deck_name} to my decks`
+        }
+        loading={isSubscriptionPending}
+        disabled={isSubscriptionPending}
+        fullWidth
+      />
+    </View>
+    {isSubscribed ? (
+      <Pressable
+        style={styles.removeControl}
+        accessibilityRole="button"
+        accessibilityLabel={`Remove ${deck.deck_name} from my decks`}
+        accessibilityState={{ disabled: isSubscriptionPending }}
+        disabled={isSubscriptionPending}
+        onPress={() => {
+          triggerHaptic('selection');
+          onSubscriptionToggle(deck, false);
+        }}
+      >
+        <View style={styles.savedBadge}>
+          <AppIcon name="check" size={14} color={theme.colors.primary} />
+        </View>
+      </Pressable>
+    ) : null}
+  </Card>
+);
 
 const styles = StyleSheet.create({
-  container: {
-    width: '100%',
+  card: { flex: 1, width: '100%' },
+  main: { flex: 1 },
+  pressed: { opacity: 0.75 },
+  artwork: {
+    height: 112,
+    backgroundColor: theme.colors.secondary,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
   },
-  card: {
-    minHeight: 188,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: theme.spacing.sm,
-    marginBottom: theme.spacing.md,
-  },
-  headerLeading: {
-    flex: 1,
-    minWidth: 0,
-  },
-  subjectChip: {
-    maxWidth: '100%',
-    alignSelf: 'flex-start',
-    paddingHorizontal: theme.spacing.sm,
-    paddingVertical: 6,
-    borderRadius: theme.borderRadius.full,
-    backgroundColor: theme.colors.primaryLight,
-  },
-  subjectChipLabel: {
-    flexShrink: 1,
-  },
-  statusSlot: {
-    width: 44,
-    minWidth: 44,
-    alignItems: 'flex-end',
-    justifyContent: 'center',
-    flexShrink: 0,
-  },
-  statusIcon: {
-    width: 30,
-    height: 30,
-    borderRadius: theme.borderRadius.full,
+  savedBadge: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: theme.colors.card,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-  },
-  statusIconActive: {
-    backgroundColor: theme.colors.success.light,
-    borderColor: theme.colors.success.light,
-  },
-  statusIconIdle: {
-    backgroundColor: theme.colors.secondary,
     borderColor: theme.colors.border,
   },
-  content: {
-    flex: 1,
-    marginBottom: theme.spacing.lg,
+  removeControl: {
+    position: 'absolute',
+    top: 2,
+    right: 2,
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
+  content: { flex: 1, padding: theme.spacing.md, gap: 6 },
+  subject: { letterSpacing: 0.6, fontFamily: theme.fontFamily.medium },
   title: {
-    marginBottom: theme.spacing.sm,
+    minHeight: 48,
+    lineHeight: 24,
+    fontFamily: theme.fontFamily.semibold,
   },
   meta: {
-    marginBottom: theme.spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: theme.spacing.xs,
+    marginTop: theme.spacing.sm,
   },
   footer: {
-    marginTop: theme.spacing.sm,
+    paddingHorizontal: theme.spacing.md,
+    paddingBottom: theme.spacing.md,
   },
 });

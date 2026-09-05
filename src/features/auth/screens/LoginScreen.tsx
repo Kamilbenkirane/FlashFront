@@ -56,16 +56,21 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation, route }) => {
 
   return (
     <AuthScaffold
-      title="Sign in"
-      subtitle="Use your email and password to pick up where you left off."
+      title="Welcome back."
+      subtitle="Your next discovery is waiting. Sign in to pick up where you left off."
+      onBack={() => {
+        clearAuthError();
+        navigation.goBack();
+      }}
       error={authError}
       notice={successMessage}
       footer={
         <View style={styles.footerLinkRow}>
-          <Typography variant="small" color="muted">
+          <Typography variant="caption" color="muted">
             Need an account?
           </Typography>
           <Pressable
+            style={styles.footerLink}
             onPress={() => {
               clearAuthError();
               navigation.navigate('Signup');
@@ -74,7 +79,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation, route }) => {
             accessibilityLabel="Create an account"
             hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
           >
-            <Typography variant="small" color="primary">
+            <Typography variant="caption" color="primary">
               Create one
             </Typography>
           </Pressable>
@@ -117,12 +122,14 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation, route }) => {
       <View style={styles.actions}>
         <Button
           title="Sign in"
+          size="lg"
           onPress={() => void handleSubmit()}
           loading={isSubmitting}
           fullWidth
         />
         <Button
           title="Forgot password?"
+          size="lg"
           variant="ghost"
           onPress={() => {
             clearAuthError();
@@ -141,9 +148,15 @@ const styles = StyleSheet.create({
   },
   footerLinkRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     justifyContent: 'center',
     alignItems: 'center',
     gap: 4,
+  },
+  footerLink: {
+    minHeight: 44,
+    justifyContent: 'center',
+    paddingHorizontal: 4,
   },
 });
 

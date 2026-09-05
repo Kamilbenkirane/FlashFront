@@ -1,9 +1,9 @@
 import { Typography } from '@/components/ui/Typography';
 import { AppIcon } from '@/components/ui/icons';
+import useReducedMotion from '@/hooks/useReducedMotion';
 import { resolveAttachmentImageUri } from '@/services/studyChat/resolveAttachmentImageUri';
 import type { StudyChatChartAttachment } from '@/services/studyChat/types';
 import { theme } from '@/tokens/theme';
-import { BlurView } from 'expo-blur';
 import type React from 'react';
 import { useState } from 'react';
 import { Image, Modal, Pressable, StyleSheet, View } from 'react-native';
@@ -16,6 +16,7 @@ interface StudyChatChartCardProps {
 export const StudyChatChartCard: React.FC<StudyChatChartCardProps> = ({
   attachment,
 }) => {
+  const prefersReducedMotion = useReducedMotion();
   const [isExpanded, setIsExpanded] = useState(false);
   const imageUri = resolveAttachmentImageUri(
     attachment.imagePath,
@@ -39,7 +40,7 @@ export const StudyChatChartCard: React.FC<StudyChatChartCardProps> = ({
           pressed ? styles.cardPressed : null,
         ]}
         accessibilityRole="button"
-        accessibilityLabel={`${attachment.title}. Open chart fullscreen.`}
+        accessibilityLabel={`${attachment.title}. ${attachment.summary}. ${attachment.altText}. Open chart fullscreen.`}
         accessibilityHint="Shows a larger version of the chart."
       >
         <Image
@@ -50,13 +51,25 @@ export const StudyChatChartCard: React.FC<StudyChatChartCardProps> = ({
           accessibilityLabel={attachment.altText}
         />
         <View style={styles.content}>
-          <Typography variant="small" color="muted">
-            {attachment.chartType}
-          </Typography>
+          <View style={styles.attachmentHeader}>
+            <Typography variant="caption" color="primary">
+              {attachment.chartType}
+            </Typography>
+            <View style={styles.expandHint}>
+              <Typography variant="caption" color="muted">
+                View
+              </Typography>
+              <AppIcon
+                name="chevronRight"
+                size={16}
+                color={theme.colors.mutedForeground}
+              />
+            </View>
+          </View>
           <Typography variant="body" style={styles.title}>
             {attachment.title}
           </Typography>
-          <Typography variant="small">{attachment.summary}</Typography>
+          <Typography variant="body">{attachment.summary}</Typography>
           {attachment.caption ? (
             <Typography variant="caption" color="muted">
               {attachment.caption}
@@ -68,41 +81,43 @@ export const StudyChatChartCard: React.FC<StudyChatChartCardProps> = ({
       <Modal
         visible={isExpanded}
         transparent
-        animationType="fade"
+        animationType={prefersReducedMotion ? 'none' : 'fade'}
         presentationStyle="overFullScreen"
         statusBarTranslucent
         onRequestClose={closeExpandedView}
       >
         <View style={styles.viewerOverlay} accessibilityViewIsModal>
-          <BlurView
-            intensity={90}
-            tint="dark"
-            style={StyleSheet.absoluteFill}
-          />
           <Pressable
             style={styles.viewerBackdrop}
             onPress={closeExpandedView}
-            accessibilityRole="button"
-            accessibilityLabel="Close fullscreen chart"
+            accessible={false}
           />
           <SafeAreaView
             edges={['top', 'right', 'bottom', 'left']}
             style={styles.viewerSafeArea}
             pointerEvents="box-none"
           >
-            <Pressable
-              onPress={closeExpandedView}
-              style={styles.viewerCloseButton}
-              accessibilityRole="button"
-              accessibilityLabel="Close fullscreen chart"
-              hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
-            >
-              <AppIcon
-                name="close"
-                size={20}
-                color={theme.colors.primaryForeground}
-              />
-            </Pressable>
+            <View style={styles.viewerHeader}>
+              <View style={styles.viewerTitle}>
+                <Typography variant="heading3">{attachment.title}</Typography>
+                <Typography variant="caption" color="muted">
+                  Chart
+                </Typography>
+              </View>
+              <Pressable
+                onPress={closeExpandedView}
+                style={styles.viewerCloseButton}
+                accessibilityRole="button"
+                accessibilityLabel="Close fullscreen chart"
+                hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
+              >
+                <AppIcon
+                  name="close"
+                  size={20}
+                  color={theme.colors.foreground}
+                />
+              </Pressable>
+            </View>
             <View style={styles.viewerImageContainer} pointerEvents="none">
               <Image
                 source={{ uri: imageUri }}
@@ -112,6 +127,15 @@ export const StudyChatChartCard: React.FC<StudyChatChartCardProps> = ({
                 accessibilityLabel={attachment.altText}
               />
             </View>
+            {attachment.caption ? (
+              <Typography
+                variant="caption"
+                color="muted"
+                style={styles.viewerCaption}
+              >
+                {attachment.caption}
+              </Typography>
+            ) : null}
           </SafeAreaView>
         </View>
       </Modal>
@@ -123,15 +147,13 @@ const styles = StyleSheet.create({
   card: {
     width: '100%',
     overflow: 'hidden',
-    borderRadius: theme.borderRadius.lg,
-    backgroundColor: theme.colors.background,
+    borderRadius: theme.borderRadius.xl,
+    backgroundColor: theme.colors.card,
     borderWidth: 1,
     borderColor: theme.colors.border,
-    gap: theme.spacing.sm,
   },
   cardPressed: {
-    opacity: 0.96,
-    transform: [{ scale: 0.992 }],
+    opacity: 0.8,
   },
   image: {
     width: '100%',
@@ -139,33 +161,58 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.background,
   },
   content: {
+    gap: theme.spacing.sm,
+    padding: theme.spacing.lg,
+  },
+  attachmentHeader: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: theme.spacing.sm,
+  },
+  expandHint: {
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: theme.spacing.xs,
-    paddingHorizontal: theme.spacing.md,
-    paddingBottom: theme.spacing.md,
   },
   title: {
     fontFamily: theme.fontFamily.semibold,
   },
   viewerOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(15, 23, 42, 0.18)',
+    backgroundColor: theme.colors.background,
   },
   viewerBackdrop: {
     ...StyleSheet.absoluteFillObject,
   },
   viewerSafeArea: {
     flex: 1,
-    paddingHorizontal: theme.spacing.md,
+    width: '100%',
+    maxWidth: 760,
+    alignSelf: 'center',
+    paddingHorizontal: theme.spacing.lg,
     paddingVertical: theme.spacing.sm,
   },
+  viewerHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.lg,
+    paddingVertical: theme.spacing.sm,
+  },
+  viewerTitle: {
+    flex: 1,
+    gap: theme.spacing.xs,
+  },
   viewerCloseButton: {
-    alignSelf: 'flex-end',
     width: 44,
     height: 44,
     borderRadius: theme.borderRadius.full,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(148, 163, 184, 0.18)',
+    backgroundColor: theme.colors.surfaceRaised,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
   },
   viewerImageContainer: {
     flex: 1,
@@ -175,5 +222,8 @@ const styles = StyleSheet.create({
   viewerImage: {
     width: '100%',
     height: '100%',
+  },
+  viewerCaption: {
+    paddingVertical: theme.spacing.md,
   },
 });

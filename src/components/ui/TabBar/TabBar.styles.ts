@@ -23,26 +23,21 @@ export const tabBarStyles = StyleSheet.create({
 
   shell: {
     width: '100%',
-    maxWidth: 396,
+    maxWidth: 480,
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
     paddingHorizontal: spacing.xs,
-    paddingVertical: 3,
+    paddingVertical: 5,
     borderRadius: borderRadius.full,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.72)',
-    backgroundColor: 'rgba(255, 255, 255, 0.18)',
+    borderColor: colors.input,
+    backgroundColor: colors.navy,
     ...shadows.md,
     shadowColor: '#0F172A',
     shadowOpacity: 0.12,
     elevation: 6,
-  },
-
-  shellTint: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(248, 250, 252, 0.62)',
   },
 
   tabItemContainer: {
@@ -57,14 +52,14 @@ export const tabBarStyles = StyleSheet.create({
     paddingVertical: spacing.sm - 1,
     paddingHorizontal: spacing.sm - 1,
     borderRadius: borderRadius.full,
-    minHeight: 48,
+    minHeight: 54,
     borderWidth: 1,
     borderColor: 'transparent',
   },
 
   activeTabItem: {
-    backgroundColor: 'rgba(255, 255, 255, 0.84)',
-    borderColor: 'rgba(255, 255, 255, 0.92)',
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
     ...shadows.sm,
     shadowColor: '#0F172A',
     shadowOpacity: 0.05,
@@ -84,26 +79,19 @@ export const tabBarStyles = StyleSheet.create({
 
   tabLabel: {
     ...typography.caption,
-    fontSize: 10,
+    fontSize: 12,
     fontWeight: '500',
     textAlign: 'center',
-    lineHeight: 12,
+    lineHeight: 16,
   },
 
   activeTabLabel: {
-    color: colors.primary,
+    color: colors.primaryForeground,
     fontWeight: '600',
   },
 
   inactiveTabLabel: {
     color: colors.mutedForeground,
-  },
-
-  activeIndicator: {
-    width: 14,
-    height: 2,
-    borderRadius: borderRadius.full,
-    backgroundColor: colors.primary,
   },
 });
 
@@ -111,7 +99,7 @@ export const getTabIcon = (iconName: string): AppIconName => {
   const iconMap: Record<string, AppIconName> = {
     study: 'layers',
     library: 'library',
-    profile: 'person',
+    profile: 'chart',
     flashcard: 'layers',
   };
 

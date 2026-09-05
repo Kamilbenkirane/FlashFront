@@ -1,20 +1,52 @@
+import { ShuffleMark } from '@/components/ui/Brand/ShuffleMark';
 import { Button } from '@/components/ui/Button';
-import { Card } from '@/components/ui/Card';
 import { FeedbackState } from '@/components/ui/FeedbackState/FeedbackState';
 import { LoadingState } from '@/components/ui/LoadingState';
-import { ProgressBar } from '@/components/ui/ProgressBar';
 import { Typography } from '@/components/ui/Typography';
+import { AppIcon } from '@/components/ui/icons';
+import { AuthTextField } from '@/features/auth/components/AuthTextField';
 import DecksMultiSelect from '@/features/library/components/DecksMultiSelect';
+import { getOnboardingStepError } from '@/features/onboarding/onboardingValidation';
 import useDeckLibrary from '@/hooks/useDeckLibrary';
+import useReducedMotion from '@/hooks/useReducedMotion';
 import { useAuth } from '@/providers/AuthProvider';
 import { useUser } from '@/providers/UserProvider';
 import { theme } from '@/tokens/theme';
+import { MotiView } from 'moti';
 import type React from 'react';
-import { useEffect, useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, Switch, TextInput, View } from 'react-native';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Switch,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const DEFAULT_DAILY_GOAL = 20;
+const steps = [
+  {
+    label: 'About you',
+    title: 'Make yourself at home.',
+    subtitle: 'A few small choices to make Shuffle feel like yours.',
+  },
+  {
+    label: 'Your interests',
+    title: 'Follow your curiosity.',
+    subtitle:
+      'Choose at least one starter deck. Your first discovery begins here.',
+  },
+  {
+    label: 'Your rhythm',
+    title: 'Small steps add up.',
+    subtitle:
+      'Choose a daily card goal that fits your day. Even five cards count.',
+  },
+];
 
 const getSuggestedDisplayName = (
   authEmail: string | undefined,
@@ -23,11 +55,9 @@ const getSuggestedDisplayName = (
   if (existingName) {
     return existingName;
   }
-
   if (!authEmail) {
     return '';
   }
-
   return authEmail.split('@')[0]?.replace(/[._-]+/g, ' ') || '';
 };
 
@@ -40,6 +70,9 @@ const OnboardingScreen: React.FC = () => {
     error: decksError,
     reload: reloadDecks,
   } = useDeckLibrary();
+  const reducedMotion = useReducedMotion();
+  const scrollRef = useRef<ScrollView>(null);
+  const [step, setStep] = useState(0);
   const [displayName, setDisplayName] = useState('');
   const [selectedDeckIds, setSelectedDeckIds] = useState<(string | number)[]>(
     [],
@@ -56,30 +89,30 @@ const OnboardingScreen: React.FC = () => {
     );
   }, [authUser?.email, user?.user_name]);
 
-  const progressValue = useMemo(() => {
-    let completed = 0;
-    if (displayName.trim()) {
-      completed += 1;
-    }
-    if (selectedDeckIds.length > 0) {
-      completed += 1;
-    }
+  useEffect(() => {
+    scrollRef.current?.scrollTo({ y: 0, animated: !reducedMotion });
+  }, [step, reducedMotion]);
 
-    return completed;
-  }, [displayName, selectedDeckIds.length]);
-
-  const handleFinish = async () => {
-    if (!displayName.trim()) {
-      setFieldError('Choose a display name to continue.');
-      return;
-    }
-
-    if (selectedDeckIds.length === 0) {
-      setFieldError('Pick at least one starter deck to continue.');
-      return;
-    }
-
+  const handleSelectDecks = useCallback((deckIds: (string | number)[]) => {
+    setSelectedDeckIds(deckIds);
     setFieldError(null);
+  }, []);
+
+  const handleContinue = async () => {
+    if (isSubmitting) {
+      return;
+    }
+    const error = getOnboardingStepError(step, displayName, selectedDeckIds);
+    setFieldError(error);
+    if (error) {
+      return;
+    }
+    Keyboard.dismiss();
+    if (step < steps.length - 1) {
+      setStep((current) => current + 1);
+      return;
+    }
+
     setIsSubmitting(true);
     const result = await completeOnboarding({
       displayName,
@@ -88,217 +121,483 @@ const OnboardingScreen: React.FC = () => {
       reminderEnabled,
     });
     setIsSubmitting(false);
-
     if (result.error) {
       setFieldError(result.error);
     }
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView
-        contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}
+    <SafeAreaView style={styles.screen}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.flex}
       >
-        <View style={styles.header}>
-          <Typography variant="heading1" style={styles.headerTitle}>
-            Finish setup
-          </Typography>
-          <Typography
-            variant="body"
-            color="muted"
-            style={styles.headerSubtitle}
-          >
-            Personalize FlashFront once so the rest of the app can feel like
-            yours.
-          </Typography>
-        </View>
-
-        <ProgressBar
-          progress={progressValue}
-          total={2}
-          showLabel={true}
-          showPercentage={false}
-          color="primary"
-          size="lg"
-        />
-
-        <Card variant="raised" padding="lg" style={styles.card}>
-          <View style={styles.section}>
-            <Typography variant="heading3">Account</Typography>
-            <Typography variant="body" color="muted">
-              Signed in as {authUser?.email || 'your account'}.
-            </Typography>
-          </View>
-
-          <View style={styles.section}>
-            <Typography variant="caption" color="muted">
-              Display name
-            </Typography>
-            <TextInput
-              value={displayName}
-              onChangeText={setDisplayName}
-              placeholder="Ada Lovelace"
-              placeholderTextColor={theme.colors.placeholder}
-              style={styles.input}
-              autoCapitalize="words"
-              autoCorrect={false}
-            />
-          </View>
-
-          <View style={styles.section}>
-            <Typography variant="heading3">Starter decks</Typography>
-            <Typography variant="body" color="muted">
-              Choose at least one deck so your first study session is ready.
-            </Typography>
-            {decksLoading ? (
-              <LoadingState
-                message="Loading starter decks..."
-                className="justify-center"
-              />
-            ) : decksError ? (
-              <FeedbackState
-                title="Couldn't load decks"
-                description={decksError}
-                icon="cloudOff"
-                actionLabel="Retry"
-                onAction={() => void reloadDecks()}
-              />
-            ) : (
-              <DecksMultiSelect
-                decks={decks}
-                onSelectDecks={setSelectedDeckIds}
-              />
-            )}
-          </View>
-
-          <View style={styles.section}>
-            <Typography variant="heading3">Daily habit</Typography>
-            <Typography variant="body" color="muted">
-              Start with a target that feels easy to keep every day.
-            </Typography>
-            <View style={styles.goalRow}>
-              <Button
-                title="-"
-                variant="outline"
-                size="sm"
-                onPress={() =>
-                  setDailyGoal((current) => Math.max(5, current - 5))
-                }
-              />
-              <View style={styles.goalValue}>
-                <Typography variant="heading2">{dailyGoal}</Typography>
-                <Typography variant="caption" color="muted">
-                  cards / day
-                </Typography>
+        <ScrollView
+          ref={scrollRef}
+          contentContainerStyle={styles.content}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode={
+            Platform.OS === 'ios' ? 'interactive' : 'on-drag'
+          }
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.shell}>
+            <View style={styles.masthead}>
+              <View style={styles.brand}>
+                <ShuffleMark size={32} />
+                <Typography style={styles.brandName}>Shuffle</Typography>
               </View>
-              <Button
-                title="+"
-                variant="outline"
-                size="sm"
-                onPress={() =>
-                  setDailyGoal((current) => Math.min(60, current + 5))
-                }
-              />
+              <Typography variant="caption" color="muted">
+                Let's begin
+              </Typography>
             </View>
 
-            <View style={styles.toggleRow}>
-              <View style={styles.toggleCopy}>
-                <Typography variant="body">
-                  Daily reminder preference
-                </Typography>
-                <Typography variant="small" color="muted">
-                  Save whether you want reminder nudges later on.
+            <View
+              style={styles.steps}
+              accessible
+              accessibilityRole="progressbar"
+              accessibilityLabel={`Setup: ${steps[step].label}`}
+              accessibilityValue={{ min: 1, max: steps.length, now: step + 1 }}
+            >
+              {steps.map((item, index) => (
+                <View key={item.label} style={styles.step}>
+                  <View
+                    style={[
+                      styles.stepTrack,
+                      index <= step && styles.stepTrackActive,
+                    ]}
+                  />
+                  <Typography
+                    variant="caption"
+                    color={index === step ? 'primary' : 'muted'}
+                    style={styles.stepLabel}
+                  >
+                    {item.label}
+                  </Typography>
+                </View>
+              ))}
+            </View>
+
+            <View style={styles.header}>
+              <Typography
+                variant="caption"
+                color="primary"
+                style={styles.eyebrow}
+              >
+                YOUR FIRST CHAPTER · 0{step + 1}
+              </Typography>
+              <Typography
+                style={styles.title}
+                accessibilityRole="header"
+                accessibilityLiveRegion="polite"
+              >
+                {steps[step].title}
+              </Typography>
+              <Typography color="muted" style={styles.subtitle}>
+                {steps[step].subtitle}
+              </Typography>
+            </View>
+
+            <MotiView
+              key={step}
+              from={{ opacity: 0, translateY: reducedMotion ? 0 : 8 }}
+              animate={{ opacity: 1, translateY: 0 }}
+              transition={{ type: 'timing', duration: reducedMotion ? 0 : 220 }}
+              style={styles.panel}
+            >
+              {step === 0 ? (
+                <>
+                  <View style={styles.deckIntro}>
+                    <View style={styles.welcomeMark}>
+                      <AppIcon
+                        name="sparkles"
+                        size={24}
+                        color={theme.colors.primary}
+                      />
+                    </View>
+                    <Typography variant="heading3" style={styles.readyCopy}>
+                      A space for your curiosity.
+                    </Typography>
+                  </View>
+                  <AuthTextField
+                    label="What should we call you?"
+                    value={displayName}
+                    onChangeText={(value) => {
+                      setDisplayName(value);
+                      setFieldError(null);
+                    }}
+                    placeholder="Your name"
+                    autoCapitalize="words"
+                    autoComplete="name"
+                    helperText="The name on your learning profile."
+                    returnKeyType="done"
+                    onSubmitEditing={() => void handleContinue()}
+                  />
+                  <View style={styles.accountRow}>
+                    <AppIcon
+                      name="person"
+                      size={18}
+                      color={theme.colors.mutedForeground}
+                    />
+                    <View style={styles.accountCopy}>
+                      <Typography variant="caption" color="muted">
+                        Signed in as
+                      </Typography>
+                      <Typography variant="caption">
+                        {authUser?.email || 'your account'}
+                      </Typography>
+                    </View>
+                  </View>
+                </>
+              ) : step === 1 ? (
+                <>
+                  <View style={styles.deckIntro}>
+                    <View style={styles.welcomeMark}>
+                      <AppIcon
+                        name="layers"
+                        size={24}
+                        color={theme.colors.primary}
+                      />
+                    </View>
+                    <View style={styles.accountCopy}>
+                      <Typography variant="heading3">
+                        A good place to begin
+                      </Typography>
+                      <Typography color="muted">
+                        You can explore more decks in the library.
+                      </Typography>
+                    </View>
+                  </View>
+                  {decksLoading ? (
+                    <LoadingState
+                      message="Finding your starter decks…"
+                      className="justify-center"
+                    />
+                  ) : decksError ? (
+                    <FeedbackState
+                      title="Couldn't load decks"
+                      description={decksError}
+                      icon="cloudOff"
+                      actionLabel="Try again"
+                      onAction={() => void reloadDecks()}
+                    />
+                  ) : decks.length === 0 ? (
+                    <FeedbackState
+                      title="No starter decks yet"
+                      description="Try loading the library again to find your first deck."
+                      icon="library"
+                      actionLabel="Reload decks"
+                      onAction={() => void reloadDecks()}
+                    />
+                  ) : (
+                    <DecksMultiSelect
+                      decks={decks}
+                      selectedDeckIds={selectedDeckIds}
+                      onSelectDecks={handleSelectDecks}
+                    />
+                  )}
+                  {selectedDeckIds.length > 0 ? (
+                    <View
+                      style={styles.selectionNote}
+                      accessibilityLiveRegion="polite"
+                    >
+                      <AppIcon
+                        name="checkCircle"
+                        size={18}
+                        color={theme.colors.primary}
+                      />
+                      <Typography variant="caption" color="primary">
+                        {selectedDeckIds.length} deck
+                        {selectedDeckIds.length === 1 ? '' : 's'} ready for your
+                        first session
+                      </Typography>
+                    </View>
+                  ) : null}
+                </>
+              ) : (
+                <>
+                  <View style={styles.goalRow}>
+                    <Button
+                      title="−"
+                      variant="outline"
+                      size="lg"
+                      accessibilityLabel="Decrease daily goal by 5 cards"
+                      disabled={dailyGoal <= 5 || isSubmitting}
+                      onPress={() =>
+                        setDailyGoal((current) => Math.max(5, current - 5))
+                      }
+                    />
+                    <View
+                      style={styles.goalDial}
+                      accessible
+                      accessibilityLabel={`Daily goal: ${dailyGoal} cards`}
+                    >
+                      <Typography style={styles.goalNumber} color="primary">
+                        {dailyGoal}
+                      </Typography>
+                      <Typography variant="caption" color="muted">
+                        cards a day
+                      </Typography>
+                    </View>
+                    <Button
+                      title="+"
+                      variant="outline"
+                      size="lg"
+                      accessibilityLabel="Increase daily goal by 5 cards"
+                      disabled={dailyGoal >= 60 || isSubmitting}
+                      onPress={() =>
+                        setDailyGoal((current) => Math.min(60, current + 5))
+                      }
+                    />
+                  </View>
+                  <Typography
+                    variant="caption"
+                    color="muted"
+                    style={styles.goalHint}
+                  >
+                    A little focus today. More to remember tomorrow.
+                  </Typography>
+                  <View style={styles.toggleRow}>
+                    <View style={styles.accountCopy}>
+                      <Typography variant="body">A gentle nudge</Typography>
+                      <Typography variant="caption" color="muted">
+                        Save my preference for future daily reminders.
+                      </Typography>
+                    </View>
+                    <View style={styles.reminderSwitch}>
+                      <Switch
+                        value={reminderEnabled}
+                        onValueChange={setReminderEnabled}
+                        disabled={isSubmitting}
+                        hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
+                        accessibilityLabel="Daily reminder preference"
+                        accessibilityHint="Saves your preference for future daily reminders"
+                        trackColor={{
+                          false: theme.colors.muted,
+                          true: theme.colors.primary,
+                        }}
+                        thumbColor={theme.colors.foreground}
+                      />
+                    </View>
+                  </View>
+                  <View style={styles.readyNote}>
+                    <AppIcon
+                      name="checkCircle"
+                      size={20}
+                      color={theme.colors.primary}
+                    />
+                    <Typography variant="caption" style={styles.readyCopy}>
+                      {displayName.trim()}, your{' '}
+                      {selectedDeckIds.length === 1
+                        ? 'first deck is'
+                        : `${selectedDeckIds.length} decks are`}{' '}
+                      ready. Let’s make a little progress.
+                    </Typography>
+                  </View>
+                </>
+              )}
+            </MotiView>
+
+            {fieldError || userError ? (
+              <View style={styles.errorBox} accessibilityLiveRegion="polite">
+                <Typography variant="body" color="error">
+                  {fieldError || userError}
                 </Typography>
               </View>
-              <Switch
-                value={reminderEnabled}
-                onValueChange={setReminderEnabled}
-                trackColor={{
-                  false: theme.colors.muted,
-                  true: theme.colors.primary,
-                }}
-                thumbColor="#ffffff"
+            ) : null}
+
+            <View style={styles.actions}>
+              <Button
+                title={
+                  step === 0
+                    ? 'Choose starter decks'
+                    : step === 1
+                      ? 'Set my daily rhythm'
+                      : 'Let’s begin'
+                }
+                accessibilityLabel={
+                  step === 2 ? 'Finish setup and start learning' : undefined
+                }
+                icon={
+                  <AppIcon
+                    name="chevronRight"
+                    size={18}
+                    color={theme.colors.primaryForeground}
+                  />
+                }
+                iconPosition="right"
+                size="lg"
+                onPress={() => void handleContinue()}
+                loading={isSubmitting}
+                fullWidth
               />
+              {step > 0 ? (
+                <Pressable
+                  style={styles.backLink}
+                  disabled={isSubmitting}
+                  accessibilityRole="button"
+                  accessibilityLabel="Back to the previous setup step"
+                  accessibilityState={{ disabled: isSubmitting }}
+                  onPress={() => {
+                    Keyboard.dismiss();
+                    setFieldError(null);
+                    setStep((current) => current - 1);
+                  }}
+                >
+                  <Typography variant="caption" color="muted">
+                    Back
+                  </Typography>
+                </Pressable>
+              ) : (
+                <Typography
+                  variant="caption"
+                  color="muted"
+                  style={styles.footerNote}
+                >
+                  A few choices. Then you're ready to explore.
+                </Typography>
+              )}
             </View>
           </View>
-
-          {fieldError || userError ? (
-            <Typography variant="small" color="error">
-              {fieldError || userError}
-            </Typography>
-          ) : null}
-
-          <Button
-            title="Finish setup"
-            onPress={() => void handleFinish()}
-            loading={isSubmitting}
-            fullWidth
-          />
-        </Card>
-      </ScrollView>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: theme.colors.background,
-  },
+  screen: { flex: 1, backgroundColor: theme.colors.background },
+  flex: { flex: 1 },
   content: {
-    padding: theme.spacing.lg,
+    flexGrow: 1,
+    paddingHorizontal: theme.spacing.xxl,
+    paddingVertical: theme.spacing.xxl,
+  },
+  shell: {
+    width: '100%',
+    maxWidth: 520,
+    alignSelf: 'center',
+    gap: theme.spacing.xxl,
+  },
+  masthead: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     gap: theme.spacing.lg,
   },
-  header: {
-    gap: theme.spacing.xs,
-    marginBottom: theme.spacing.sm,
+  brand: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.sm },
+  brandName: {
+    fontSize: 24,
+    lineHeight: 32,
+    fontFamily: theme.fontFamily.medium,
+    letterSpacing: -0.8,
   },
-  headerTitle: {
-    textAlign: 'left',
-  },
-  headerSubtitle: {
-    textAlign: 'left',
-  },
-  card: {
-    gap: theme.spacing.lg,
-  },
-  section: {
+  steps: {
+    flexDirection: 'row',
     gap: theme.spacing.sm,
+    marginTop: theme.spacing.md,
   },
-  input: {
-    minHeight: 48,
-    borderRadius: theme.borderRadius.lg,
+  step: { flex: 1, gap: theme.spacing.sm },
+  stepTrack: {
+    height: 3,
+    borderRadius: 2,
+    backgroundColor: theme.colors.border,
+  },
+  stepTrackActive: { backgroundColor: theme.colors.primary },
+  stepLabel: { fontSize: 11, lineHeight: 16 },
+  header: { gap: theme.spacing.md },
+  eyebrow: {
+    fontSize: 10,
+    lineHeight: 16,
+    letterSpacing: 1.5,
+    fontFamily: theme.fontFamily.medium,
+  },
+  title: {
+    fontSize: 36,
+    lineHeight: 40,
+    letterSpacing: -1.4,
+    fontFamily: theme.fontFamily.medium,
+  },
+  subtitle: { fontSize: 15, lineHeight: 23 },
+  panel: {
+    gap: theme.spacing.xxl,
+    backgroundColor: theme.colors.card,
     borderWidth: 1,
-    borderColor: theme.colors.input,
-    backgroundColor: theme.colors.background,
-    paddingHorizontal: theme.spacing.md,
-    color: theme.colors.foreground,
-    fontFamily: theme.fontFamily.sans,
-    fontSize: theme.typography.body.fontSize,
-    lineHeight: theme.typography.body.lineHeight,
+    borderColor: theme.colors.border,
+    borderRadius: theme.borderRadius.xxl,
+    padding: theme.spacing.xl,
+  },
+  welcomeMark: {
+    width: 48,
+    height: 48,
+    backgroundColor: theme.colors.primaryLight,
+    borderRadius: theme.borderRadius.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  accountRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.md,
+    paddingTop: theme.spacing.lg,
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.border,
+  },
+  accountCopy: { flex: 1, minWidth: 0, gap: theme.spacing.xs },
+  deckIntro: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.md,
+  },
+  selectionNote: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.sm,
+    flexWrap: 'wrap',
   },
   goalRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    gap: theme.spacing.md,
+    gap: theme.spacing.sm,
   },
-  goalValue: {
+  goalDial: {
     flex: 1,
     alignItems: 'center',
+    justifyContent: 'center',
     gap: theme.spacing.xs,
+    paddingVertical: theme.spacing.xl,
   },
+  goalNumber: {
+    fontSize: 64,
+    lineHeight: 70,
+    letterSpacing: -3,
+    fontFamily: theme.fontFamily.medium,
+  },
+  goalHint: { textAlign: 'center', marginTop: -theme.spacing.md },
   toggleRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: theme.spacing.md,
-    paddingTop: theme.spacing.sm,
+    gap: theme.spacing.lg,
+    paddingVertical: theme.spacing.lg,
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: theme.colors.border,
   },
-  toggleCopy: {
-    flex: 1,
-    gap: theme.spacing.xs,
+  readyNote: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.md,
+  },
+  reminderSwitch: { minHeight: 44, justifyContent: 'center' },
+  readyCopy: { flex: 1 },
+  actions: { gap: theme.spacing.sm },
+  backLink: { minHeight: 44, alignItems: 'center', justifyContent: 'center' },
+  footerNote: { textAlign: 'center', paddingVertical: theme.spacing.md },
+  errorBox: {
+    backgroundColor: theme.colors.destructive.light,
+    borderRadius: theme.borderRadius.lg,
+    padding: theme.spacing.md,
   },
 });
 

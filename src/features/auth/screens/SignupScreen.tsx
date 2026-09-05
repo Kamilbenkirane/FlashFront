@@ -67,15 +67,20 @@ const SignupScreen: React.FC<SignupScreenProps> = ({ navigation }) => {
 
   return (
     <AuthScaffold
-      title="Create account"
-      subtitle="Your account keeps study progress private and synced to you."
+      title="Your learning, your space."
+      subtitle="Create an account to keep your decks and progress together."
+      onBack={() => {
+        clearAuthError();
+        navigation.goBack();
+      }}
       error={authError}
       footer={
         <View style={styles.footerLinkRow}>
-          <Typography variant="small" color="muted">
+          <Typography variant="caption" color="muted">
             Already have an account?
           </Typography>
           <Pressable
+            style={styles.footerLink}
             onPress={() => {
               clearAuthError();
               navigation.navigate('Login');
@@ -84,7 +89,7 @@ const SignupScreen: React.FC<SignupScreenProps> = ({ navigation }) => {
             accessibilityLabel="Sign in instead"
             hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
           >
-            <Typography variant="small" color="primary">
+            <Typography variant="caption" color="primary">
               Sign in
             </Typography>
           </Pressable>
@@ -147,6 +152,7 @@ const SignupScreen: React.FC<SignupScreenProps> = ({ navigation }) => {
       <View style={styles.actions}>
         <Button
           title="Create account"
+          size="lg"
           onPress={() => void handleSubmit()}
           loading={isSubmitting}
           fullWidth
@@ -162,9 +168,15 @@ const styles = StyleSheet.create({
   },
   footerLinkRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     justifyContent: 'center',
     alignItems: 'center',
     gap: 4,
+  },
+  footerLink: {
+    minHeight: 44,
+    justifyContent: 'center',
+    paddingHorizontal: 4,
   },
 });
 

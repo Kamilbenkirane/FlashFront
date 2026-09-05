@@ -4,7 +4,6 @@ import { StyleSheet } from 'react-native';
 export const createRecencySuccessChartStyles = (theme: Theme) =>
   StyleSheet.create({
     panel: {
-      marginVertical: theme.spacing.sm,
       gap: theme.spacing.lg,
     },
     header: {
@@ -12,7 +11,6 @@ export const createRecencySuccessChartStyles = (theme: Theme) =>
     },
     filterRow: {
       flexDirection: 'row',
-      flexWrap: 'wrap',
       gap: theme.spacing.sm,
     },
     filterButton: {
@@ -25,6 +23,7 @@ export const createRecencySuccessChartStyles = (theme: Theme) =>
       gap: theme.spacing.sm,
     },
     detailHeader: {
+      flex: 1,
       gap: 2,
     },
     detailStatsRow: {
@@ -55,8 +54,7 @@ export const createRecencySuccessChartStyles = (theme: Theme) =>
     plotSurface: {
       flex: 1,
       height: 180,
-      borderRadius: theme.borderRadius.xl,
-      borderWidth: 1,
+      borderRadius: 0,
       overflow: 'hidden',
     },
     axisRow: {
@@ -64,7 +62,7 @@ export const createRecencySuccessChartStyles = (theme: Theme) =>
       gap: theme.spacing.xs,
     },
     axisSlot: {
-      flex: 1,
+      width: 88,
       minHeight: 64,
       borderRadius: theme.borderRadius.lg,
       borderWidth: 1,

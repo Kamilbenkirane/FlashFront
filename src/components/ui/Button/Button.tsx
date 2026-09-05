@@ -18,30 +18,30 @@ const sizeConfig: Record<
   }
 > = {
   sm: {
-    minHeight: 32,
+    minHeight: 44,
     paddingHorizontal: 12,
     paddingVertical: 7,
     textStyle: {
       fontSize: 13,
-      lineHeight: 18,
+      lineHeight: 22,
     },
   },
   md: {
-    minHeight: 36,
+    minHeight: 50,
     paddingHorizontal: 16,
     paddingVertical: 9,
     textStyle: {
-      fontSize: 14,
-      lineHeight: 18,
+      fontSize: 15,
+      lineHeight: 22,
     },
   },
   lg: {
-    minHeight: 40,
+    minHeight: 56,
     paddingHorizontal: 20,
     paddingVertical: 10,
     textStyle: {
-      fontSize: 14,
-      lineHeight: 18,
+      fontSize: 15,
+      lineHeight: 22,
     },
   },
 };
@@ -120,14 +120,7 @@ export const Button: React.FC<ButtonProps> = ({
         animate={({ hovered, pressed }) => {
           'worklet';
           return {
-            scale:
-              prefersReducedMotion || isDisabled
-                ? 1
-                : pressed
-                  ? 0.98
-                  : hovered
-                    ? 1.01
-                    : 1,
+            scale: prefersReducedMotion || isDisabled ? 1 : pressed ? 0.98 : 1,
           };
         }}
         transition={{
@@ -198,7 +191,7 @@ const styles = StyleSheet.create({
   },
   base: {
     minWidth: 44,
-    borderRadius: theme.borderRadius.lg,
+    borderRadius: theme.borderRadius.full,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
@@ -210,7 +203,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   text: {
-    fontFamily: theme.fontFamily.medium,
+    fontFamily: theme.fontFamily.semibold,
     textAlign: 'center',
   },
   iconLeft: {

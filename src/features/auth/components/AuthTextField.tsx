@@ -44,14 +44,41 @@ export const AuthTextField: React.FC<AuthTextFieldProps> = ({
   returnKeyType,
 }) => {
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
   const isSecureField = secureTextEntry;
 
   return (
     <View style={styles.container}>
-      <View style={styles.labelRow}>
-        <Typography variant="caption" color="muted">
-          {label}
-        </Typography>
+      <Typography variant="caption" style={styles.label}>
+        {label}
+      </Typography>
+
+      <View
+        style={[
+          styles.inputRow,
+          isFocused && styles.inputFocused,
+          error ? styles.inputError : undefined,
+        ]}
+      >
+        <TextInput
+          value={value}
+          onChangeText={onChangeText}
+          placeholder={placeholder}
+          placeholderTextColor={theme.colors.placeholder}
+          style={styles.input}
+          autoCapitalize={autoCapitalize}
+          autoCorrect={autoCorrect}
+          keyboardType={keyboardType}
+          autoComplete={autoComplete}
+          secureTextEntry={isSecureField && !isPasswordVisible}
+          accessibilityLabel={label}
+          accessibilityHint={error || helperText || placeholder}
+          selectionColor={theme.colors.primary}
+          onFocus={() => setIsFocused(true)}
+          onBlur={() => setIsFocused(false)}
+          onSubmitEditing={onSubmitEditing}
+          returnKeyType={returnKeyType}
+        />
         {isSecureField ? (
           <Pressable
             onPress={() => setIsPasswordVisible((current) => !current)}
@@ -63,7 +90,6 @@ export const AuthTextField: React.FC<AuthTextFieldProps> = ({
                 ? 'Hides the password characters'
                 : 'Shows the password characters'
             }
-            hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
           >
             <Typography variant="caption" color="primary">
               {isPasswordVisible ? 'Hide' : 'Show'}
@@ -72,33 +98,16 @@ export const AuthTextField: React.FC<AuthTextFieldProps> = ({
         ) : null}
       </View>
 
-      <TextInput
-        value={value}
-        onChangeText={onChangeText}
-        placeholder={placeholder}
-        placeholderTextColor={theme.colors.placeholder}
-        style={[styles.input, error ? styles.inputError : undefined]}
-        autoCapitalize={autoCapitalize}
-        autoCorrect={autoCorrect}
-        keyboardType={keyboardType}
-        autoComplete={autoComplete}
-        secureTextEntry={isSecureField && !isPasswordVisible}
-        accessibilityLabel={label}
-        accessibilityHint={error || helperText || placeholder}
-        onSubmitEditing={onSubmitEditing}
-        returnKeyType={returnKeyType}
-      />
-
       {error ? (
         <Typography
-          variant="small"
+          variant="caption"
           color="error"
           accessibilityLiveRegion="polite"
         >
           {error}
         </Typography>
       ) : helperText ? (
-        <Typography variant="small" color="muted">
+        <Typography variant="caption" color="muted">
           {helperText}
         </Typography>
       ) : null}
@@ -108,31 +117,40 @@ export const AuthTextField: React.FC<AuthTextFieldProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    gap: theme.spacing.xs,
+    gap: theme.spacing.sm,
   },
-  labelRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+  label: {
+    fontFamily: theme.fontFamily.medium,
   },
   visibilityToggle: {
-    minHeight: 32,
+    minHeight: 52,
+    minWidth: 56,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: theme.spacing.xs,
-    marginRight: -theme.spacing.xs,
+    paddingHorizontal: theme.spacing.md,
   },
-  input: {
-    minHeight: 48,
+  inputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    minHeight: 54,
     borderRadius: theme.borderRadius.lg,
     borderWidth: 1,
     borderColor: theme.colors.input,
     backgroundColor: theme.colors.background,
+  },
+  input: {
+    flex: 1,
+    minWidth: 0,
+    minHeight: 52,
     paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.md,
     color: theme.colors.foreground,
     fontFamily: theme.fontFamily.sans,
-    fontSize: theme.typography.body.fontSize,
-    lineHeight: theme.typography.body.lineHeight,
+    fontSize: 16,
+    lineHeight: 22,
+  },
+  inputFocused: {
+    borderColor: theme.colors.primary,
   },
   inputError: {
     borderColor: theme.colors.destructive.DEFAULT,

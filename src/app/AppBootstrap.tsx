@@ -7,11 +7,11 @@ import {
   SpaceGrotesk_600SemiBold,
   SpaceGrotesk_700Bold,
 } from '@expo-google-fonts/space-grotesk';
-import { NavigationContainer } from '@react-navigation/native';
+import { DarkTheme, NavigationContainer } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 import React, { type ErrorInfo, type ReactNode, useCallback } from 'react';
-import { ActivityIndicator, Text, View } from 'react-native';
+import { ActivityIndicator, StatusBar, Text, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import {
   SafeAreaProvider,
@@ -129,7 +129,23 @@ const AppBootstrap = () => {
       <ErrorBoundary>
         <SafeAreaProvider initialMetrics={initialWindowMetrics}>
           <AppProviders>
-            <NavigationContainer>
+            <StatusBar
+              barStyle="light-content"
+              backgroundColor={theme.colors.background}
+            />
+            <NavigationContainer
+              theme={{
+                ...DarkTheme,
+                colors: {
+                  ...DarkTheme.colors,
+                  background: theme.colors.background,
+                  card: theme.colors.card,
+                  text: theme.colors.foreground,
+                  border: theme.colors.border,
+                  primary: theme.colors.primary,
+                },
+              }}
+            >
               <RootNavigator />
             </NavigationContainer>
           </AppProviders>

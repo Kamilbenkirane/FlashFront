@@ -43,7 +43,7 @@ export const AnalyticsChart: React.FC<AnalyticsChartProps> = ({
                 size={20}
                 strokeWidth={2.15}
               />
-              <Typography variant="body">{type.toUpperCase()} Chart</Typography>
+              <Typography variant="body">Room to grow</Typography>
             </View>
             <Typography
               variant="caption"

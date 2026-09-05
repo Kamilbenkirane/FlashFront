@@ -1,4 +1,4 @@
-import { Card } from '@/components/ui/Card';
+import { ShuffleMark } from '@/components/ui/Brand/ShuffleMark';
 import { Typography } from '@/components/ui/Typography';
 import { AppIcon } from '@/components/ui/icons';
 import { theme } from '@/tokens/theme';
@@ -7,6 +7,7 @@ import type { ReactNode } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
+  Pressable,
   ScrollView,
   StyleSheet,
   View,
@@ -20,6 +21,7 @@ interface AuthScaffoldProps {
   footer?: ReactNode;
   error?: string | null;
   notice?: string | null;
+  onBack?: () => void;
 }
 
 export const AuthScaffold: React.FC<AuthScaffoldProps> = ({
@@ -29,6 +31,7 @@ export const AuthScaffold: React.FC<AuthScaffoldProps> = ({
   footer,
   error,
   notice,
+  onBack,
 }) => {
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -44,56 +47,75 @@ export const AuthScaffold: React.FC<AuthScaffoldProps> = ({
           }
           showsVerticalScrollIndicator={false}
         >
-          <View style={styles.hero}>
-            <View style={styles.heroBadge}>
-              <AppIcon color={theme.colors.primary} name="flash" size={24} />
+          <View style={styles.shell}>
+            <View style={styles.masthead}>
+              {onBack ? (
+                <Pressable
+                  onPress={onBack}
+                  style={({ pressed }) => [
+                    styles.backButton,
+                    pressed && styles.backButtonPressed,
+                  ]}
+                  accessibilityRole="button"
+                  accessibilityLabel="Go back"
+                >
+                  <View style={styles.backIcon}>
+                    <AppIcon
+                      name="chevronRight"
+                      size={20}
+                      color={theme.colors.foreground}
+                    />
+                  </View>
+                </Pressable>
+              ) : null}
+              <View style={styles.brand}>
+                <ShuffleMark size={32} />
+                <Typography style={styles.brandName}>Shuffle</Typography>
+              </View>
             </View>
-            <Typography variant="heading1" style={styles.heroTitle}>
-              FlashFront
-            </Typography>
-            <Typography
-              variant="body"
-              color="muted"
-              style={styles.heroSubtitle}
-            >
-              Study with synced progress, starter decks, and a real account.
-            </Typography>
-          </View>
 
-          <Card variant="raised" padding="lg" style={styles.card}>
             <View style={styles.header}>
-              <Typography variant="heading2">{title}</Typography>
-              <Typography variant="body" color="muted">
+              <Typography
+                variant="caption"
+                color="primary"
+                style={styles.eyebrow}
+              >
+                A LITTLE CURIOSITY. EVERY DAY.
+              </Typography>
+              <Typography accessibilityRole="header" style={styles.title}>
+                {title}
+              </Typography>
+              <Typography variant="body" color="muted" style={styles.subtitle}>
                 {subtitle}
               </Typography>
             </View>
 
-            {error ? (
-              <View
-                style={[styles.messageBox, styles.errorBox]}
-                accessibilityLiveRegion="polite"
-              >
-                <Typography variant="small" color="error">
-                  {error}
-                </Typography>
-              </View>
-            ) : null}
+            <View style={styles.card}>
+              {error ? (
+                <View
+                  style={[styles.messageBox, styles.errorBox]}
+                  accessibilityLiveRegion="polite"
+                >
+                  <Typography variant="body" color="error">
+                    {error}
+                  </Typography>
+                </View>
+              ) : null}
 
-            {notice ? (
-              <View
-                style={[styles.messageBox, styles.noticeBox]}
-                accessibilityLiveRegion="polite"
-              >
-                <Typography variant="small" color="muted">
-                  {notice}
-                </Typography>
-              </View>
-            ) : null}
+              {notice ? (
+                <View
+                  style={[styles.messageBox, styles.noticeBox]}
+                  accessibilityLiveRegion="polite"
+                >
+                  <Typography variant="body">{notice}</Typography>
+                </View>
+              ) : null}
 
-            <View style={styles.body}>{children}</View>
-          </Card>
+              <View style={styles.body}>{children}</View>
+            </View>
 
-          {footer ? <View style={styles.footer}>{footer}</View> : null}
+            {footer ? <View style={styles.footer}>{footer}</View> : null}
+          </View>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -111,38 +133,76 @@ const styles = StyleSheet.create({
   content: {
     flexGrow: 1,
     justifyContent: 'center',
-    padding: theme.spacing.lg,
-    gap: theme.spacing.lg,
+    paddingHorizontal: theme.spacing.xxl,
+    paddingVertical: theme.spacing.xxxl,
   },
-  hero: {
+  shell: {
+    width: '100%',
+    maxWidth: 480,
+    alignSelf: 'center',
+    gap: theme.spacing.xxl,
+  },
+  masthead: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: theme.spacing.lg,
+  },
+  brand: {
+    flexDirection: 'row',
     alignItems: 'center',
     gap: theme.spacing.sm,
-    paddingHorizontal: theme.spacing.lg,
   },
-  heroBadge: {
-    width: 56,
-    height: 56,
+  brandName: {
+    fontSize: 24,
+    lineHeight: 32,
+    letterSpacing: -0.8,
+    fontFamily: theme.fontFamily.medium,
+  },
+  backButton: {
+    width: 44,
+    height: 44,
     borderRadius: theme.borderRadius.full,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: theme.colors.primaryLight,
     borderWidth: 1,
     borderColor: theme.colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  heroTitle: {
-    textAlign: 'center',
+  backButtonPressed: {
+    backgroundColor: theme.colors.secondary,
   },
-  heroSubtitle: {
-    textAlign: 'center',
+  backIcon: {
+    transform: [{ rotate: '180deg' }],
   },
   card: {
+    padding: theme.spacing.xl,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: theme.borderRadius.xxl,
+    backgroundColor: theme.colors.card,
     gap: theme.spacing.md,
   },
   header: {
-    gap: theme.spacing.xs,
+    gap: theme.spacing.md,
+  },
+  eyebrow: {
+    fontSize: 10,
+    lineHeight: 16,
+    fontFamily: theme.fontFamily.medium,
+    letterSpacing: 1.5,
+  },
+  title: {
+    fontSize: 36,
+    lineHeight: 41,
+    letterSpacing: -1.5,
+    fontFamily: theme.fontFamily.medium,
+  },
+  subtitle: {
+    fontSize: 15,
+    lineHeight: 23,
   },
   body: {
-    gap: theme.spacing.md,
+    gap: theme.spacing.xl,
   },
   footer: {
     gap: theme.spacing.sm,
@@ -157,7 +217,7 @@ const styles = StyleSheet.create({
     borderColor: theme.colors.destructive.light,
   },
   noticeBox: {
-    backgroundColor: theme.colors.secondary,
+    backgroundColor: theme.colors.primaryLight,
     borderColor: theme.colors.border,
   },
 });

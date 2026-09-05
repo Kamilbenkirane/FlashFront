@@ -16,7 +16,7 @@ export const StudyChatMessageContent: React.FC<
       content={content}
       textColor={theme.colors.foreground}
       fontSize={theme.typography.body.fontSize}
-      lineHeight={theme.typography.body.lineHeight}
+      lineHeight={theme.typography.body.lineHeight + 2}
       textAlign="left"
       verticalAlign="top"
       fillContainer={false}
@@ -32,5 +32,6 @@ export const StudyChatMessageContent: React.FC<
 const styles = StyleSheet.create({
   content: {
     width: '100%',
+    minWidth: 0,
   },
 });

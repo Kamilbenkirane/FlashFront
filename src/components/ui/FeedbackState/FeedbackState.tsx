@@ -25,7 +25,7 @@ export const FeedbackState: React.FC<FeedbackStateProps> = ({
 }) => {
   return (
     <View style={styles.container} testID={testID}>
-      <Card variant="outline" padding="lg" style={styles.card}>
+      <Card variant="default" padding="lg" style={styles.card}>
         <View style={styles.iconWrap}>
           <AppIcon color={theme.colors.primary} name={icon} size={28} />
         </View>
@@ -58,11 +58,14 @@ const styles = StyleSheet.create({
   },
   card: {
     alignItems: 'center',
+    width: '100%',
+    maxWidth: 560,
+    alignSelf: 'center',
     gap: theme.spacing.md,
   },
   iconWrap: {
-    width: 56,
-    height: 56,
+    width: 64,
+    height: 64,
     borderRadius: theme.borderRadius.full,
     alignItems: 'center',
     justifyContent: 'center',

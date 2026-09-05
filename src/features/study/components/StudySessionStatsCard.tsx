@@ -1,7 +1,5 @@
-import { Card } from '@/components/ui/Card';
 import { Typography } from '@/components/ui/Typography';
 import { theme } from '@/tokens/theme';
-import type React from 'react';
 import { StyleSheet, View } from 'react-native';
 
 interface StudySessionStatsCardProps {
@@ -9,61 +7,39 @@ interface StudySessionStatsCardProps {
   incorrectCount: number;
   accuracy: number;
 }
-
-export const StudySessionStatsCard: React.FC<StudySessionStatsCardProps> = ({
+export const StudySessionStatsCard = ({
   correctCount,
   incorrectCount,
   accuracy,
-}) => {
-  return (
-    <Card variant="raised" padding="lg" style={styles.statsCard}>
-      <Typography variant="caption" color="muted" style={styles.statsTitle}>
-        Session Stats
-      </Typography>
-      <View style={styles.statsRow}>
-        <View style={styles.statItem}>
-          <Typography variant="heading3" color="success">
-            {correctCount}
-          </Typography>
-          <Typography variant="caption" color="muted">
-            Correct
-          </Typography>
-        </View>
-        <View style={styles.statItem}>
-          <Typography variant="heading3" color="error">
-            {incorrectCount}
-          </Typography>
-          <Typography variant="caption" color="muted">
-            Incorrect
-          </Typography>
-        </View>
-        <View style={styles.statItem}>
-          <Typography variant="heading3" color="primary">
-            {`${Math.round(accuracy * 100)}%`}
-          </Typography>
-          <Typography variant="caption" color="muted">
-            Accuracy
-          </Typography>
-        </View>
+}: StudySessionStatsCardProps) => (
+  <View style={styles.row}>
+    {[
+      { value: `${correctCount}`, label: 'Recalled' },
+      { value: `${incorrectCount}`, label: 'Revisited' },
+      { value: `${Math.round(accuracy * 100)}%`, label: 'Recall rate' },
+    ].map((stat) => (
+      <View key={stat.label} style={styles.item}>
+        <Typography style={styles.value}>{stat.value}</Typography>
+        <Typography variant="small" color="muted">
+          {stat.label}
+        </Typography>
       </View>
-    </Card>
-  );
-};
-
+    ))}
+  </View>
+);
 const styles = StyleSheet.create({
-  statsCard: {
-    marginTop: theme.spacing.lg,
-  },
-  statsTitle: {
-    textAlign: 'left',
-    marginBottom: theme.spacing.md,
-    color: theme.colors.mutedForeground,
-  },
-  statsRow: {
+  row: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
+    paddingVertical: 20,
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.border,
+    marginTop: 24,
   },
-  statItem: {
-    alignItems: 'center',
+  item: { flex: 1, alignItems: 'center', gap: 5 },
+  value: {
+    fontFamily: theme.fontFamily.medium,
+    fontSize: 25,
+    lineHeight: 32,
+    color: theme.colors.foreground,
   },
 });

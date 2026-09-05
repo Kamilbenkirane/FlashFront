@@ -52,7 +52,7 @@ export const Card: React.FC<CardProps> = ({
 
 const styles = StyleSheet.create({
   base: {
-    borderRadius: theme.borderRadius.xl,
+    borderRadius: theme.borderRadius.xxl,
     overflow: 'hidden',
     borderWidth: 1,
   },
@@ -74,7 +74,7 @@ const styles = StyleSheet.create({
     ...theme.shadows.sm,
   },
   variantRaised: {
-    backgroundColor: theme.colors.card,
+    backgroundColor: theme.colors.surfaceRaised,
     borderColor: theme.colors.border,
     ...theme.shadows.md,
   },

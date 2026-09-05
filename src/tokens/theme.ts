@@ -41,7 +41,9 @@ const colors = {
   active: palette.active,
   hoverSubtle: palette.hoverSubtle,
   overlay: palette.overlay,
-  card: palette.surfaceRaised,
+  card: palette.navy,
+  gold: palette.gold,
+  navy: palette.navy,
   cardForeground: palette.foreground,
   popover: palette.background,
   popoverForeground: palette.foreground,
@@ -56,25 +58,31 @@ const fontFamily = {
 };
 
 const typography = {
+  display: {
+    fontSize: 40,
+    lineHeight: 46,
+    fontFamily: fontFamily.medium,
+    letterSpacing: -1.8,
+  },
   heading1: {
-    fontSize: 22,
+    fontSize: 32,
     fontFamily: fontFamily.semibold,
-    lineHeight: 29,
+    lineHeight: 38,
   },
   heading2: {
-    fontSize: 18,
+    fontSize: 24,
     fontFamily: fontFamily.semibold,
-    lineHeight: 24,
+    lineHeight: 30,
   },
   heading3: {
-    fontSize: 16,
+    fontSize: 18,
     fontFamily: fontFamily.medium,
-    lineHeight: 22,
+    lineHeight: 25,
   },
   body: {
-    fontSize: 14,
+    fontSize: 15,
     fontFamily: fontFamily.sans,
-    lineHeight: 21,
+    lineHeight: 23,
   },
   caption: {
     fontSize: 13,
@@ -82,14 +90,14 @@ const typography = {
     lineHeight: 18,
   },
   button: {
-    fontSize: 14,
+    fontSize: 15,
     fontFamily: fontFamily.medium,
     lineHeight: 18,
   },
   small: {
-    fontSize: 11,
+    fontSize: 12,
     fontFamily: fontFamily.sans,
-    lineHeight: 15,
+    lineHeight: 17,
   },
 };
 
@@ -105,33 +113,33 @@ const spacing = {
 
 const borderRadius = {
   none: 0,
-  sm: 4,
-  md: 6,
-  lg: 8,
-  xl: 12,
-  xxl: 16,
+  sm: 8,
+  md: 12,
+  lg: 16,
+  xl: 20,
+  xxl: 28,
   full: 9999,
 };
 
 const shadows = {
   sm: {
-    shadowColor: '#000',
+    shadowColor: '#020C13',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
+    shadowOpacity: 0.12,
     shadowRadius: 8,
     elevation: 1,
   },
   md: {
-    shadowColor: '#000',
+    shadowColor: '#020C13',
     shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.08,
+    shadowOpacity: 0.18,
     shadowRadius: 16,
     elevation: 2,
   },
   lg: {
-    shadowColor: '#000',
+    shadowColor: '#020C13',
     shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.12,
+    shadowOpacity: 0.24,
     shadowRadius: 24,
     elevation: 4,
   },

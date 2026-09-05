@@ -15,7 +15,7 @@ permissions:
 jobs:
   ios:
     name: iOS TestFlight
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
     runs-on: macos-26
     timeout-minutes: 120
     steps:
@@ -51,6 +51,7 @@ jobs:
         run: |
           bun run typecheck
           bun run test
+          python3 scripts/check-ios-branding.py
 
       - name: Build iOS on this runner
         env:
@@ -63,6 +64,16 @@ jobs:
             --local \
             --output "$RUNNER_TEMP/flashfront.ipa" \
             --non-interactive
+
+      - name: Verify the signed app name and icon
+        run: python3 scripts/check-ios-branding.py "$RUNNER_TEMP/flashfront.ipa"
+
+      - name: Save the verified iOS build
+        uses: actions/upload-artifact@v4
+        with:
+          name: shuffle-ios
+          path: ${{ runner.temp }}/flashfront.ipa
+          retention-days: 7
 
       - name: Upload to TestFlight
         env:

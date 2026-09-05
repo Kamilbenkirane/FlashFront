@@ -4,7 +4,6 @@ import { DeckCard } from '@/features/library/components/DeckCard';
 import useTabScreenSpacing from '@/hooks/useTabScreenSpacing';
 import type { Deck } from '@/interfaces';
 import { theme } from '@/tokens/theme';
-import { MotiView } from 'moti';
 import type React from 'react';
 import { FlatList, StyleSheet, View } from 'react-native';
 
@@ -17,6 +16,7 @@ export type LibraryBodyState =
   | 'ready';
 
 interface LibraryContentProps {
+  header: React.ReactElement;
   bodyState: LibraryBodyState;
   filteredDecks: Deck[];
   libraryError: string | null;
@@ -32,9 +32,11 @@ interface LibraryContentProps {
   isSubscribed: (deck: Deck) => boolean;
   onSubscriptionToggle: (deck: Deck, subscribe: boolean) => Promise<boolean>;
   onDeckPress: (deck: Deck) => void;
+  onClearFilters: () => void;
 }
 
 export const LibraryContent: React.FC<LibraryContentProps> = ({
+  header,
   bodyState,
   filteredDecks,
   libraryError,
@@ -50,145 +52,107 @@ export const LibraryContent: React.FC<LibraryContentProps> = ({
   isSubscribed,
   onSubscriptionToggle,
   onDeckPress,
+  onClearFilters,
 }) => {
-  const {
-    bottomSpacing,
-    scrollContentContainerStyle,
-    scrollIndicatorInsets,
-    viewportOffsetStyle,
-  } = useTabScreenSpacing();
-  const stateContainerStyle = [
-    styles.stateContainer,
-    viewportOffsetStyle,
-    { paddingBottom: bottomSpacing },
-  ];
-
-  const renderDeckCard = ({
-    item: deck,
-    index,
-  }: {
-    item: Deck;
-    index: number;
-  }) => (
-    <MotiView
-      style={{ width: cardWidth, maxWidth: '100%' }}
-      from={{ opacity: 0, translateY: 50, scale: 0.9 }}
-      animate={{ opacity: 1, translateY: 0, scale: 1 }}
-      transition={{
-        type: 'spring',
-        delay: index * 100,
-        damping: 15,
-        stiffness: 200,
-      }}
-    >
-      <DeckCard
-        deck={deck}
-        isSubscribed={isSubscribed(deck)}
-        isSubscriptionPending={pendingDeckId === deck.deck_id}
-        onSubscriptionToggle={onSubscriptionToggle}
-        onPress={onDeckPress}
-        testID={`deck-card-${deck.deck_id}`}
-      />
-    </MotiView>
-  );
+  const { scrollContentContainerStyle, scrollIndicatorInsets } =
+    useTabScreenSpacing();
+  let emptyState: React.ReactNode = null;
 
   switch (bodyState) {
     case 'loading':
-      return (
-        <View style={stateContainerStyle}>
-          <LoadingState
-            message="Loading deck library..."
-            className="flex-1 justify-center"
-          />
-        </View>
-      );
+      emptyState = <LoadingState message="Gathering your next discoveries…" />;
+      break;
     case 'libraryError':
-      return (
-        <View style={stateContainerStyle}>
-          <FeedbackState
-            title="Couldn't load the deck library"
-            description={libraryError ?? undefined}
-            icon="cloudOff"
-            actionLabel="Retry"
-            onAction={() => void reloadLibrary()}
-          />
-        </View>
-      );
-    case 'subscriptionError':
-      return (
-        <View style={stateContainerStyle}>
-          <FeedbackState
-            title="Couldn't load subscriptions"
-            description={subscribedDecksError ?? undefined}
-            icon="cloudOff"
-            actionLabel="Retry"
-            onAction={() => void reloadSubscribedDecks()}
-          />
-        </View>
-      );
-    case 'empty':
-      return (
-        <View style={stateContainerStyle}>
-          <FeedbackState
-            title="No decks available"
-            description="The shared deck library is empty right now."
-            icon="library"
-          />
-        </View>
-      );
-    case 'filteredEmpty':
-      return (
-        <View style={stateContainerStyle}>
-          <FeedbackState
-            title="No decks match your filters"
-            description={
-              showSubscribedOnly
-                ? 'Try turning off the subscribed-only filter or subscribe to more decks.'
-                : 'Try a different search term or clear the current subject filter.'
-            }
-            icon="search"
-          />
-        </View>
-      );
-    case 'ready':
-      return (
-        <FlatList
-          key={`library-grid-${numColumns}`}
-          style={viewportOffsetStyle}
-          data={filteredDecks}
-          renderItem={renderDeckCard}
-          keyExtractor={(item) => item.deck_id.toString()}
-          numColumns={numColumns}
-          contentContainerStyle={[
-            styles.gridContainer,
-            { paddingHorizontal: gridHorizontalPadding },
-            scrollContentContainerStyle,
-          ]}
-          columnWrapperStyle={
-            numColumns > 1
-              ? [styles.row, { columnGap: gridColumnGap }]
-              : undefined
-          }
-          showsVerticalScrollIndicator={false}
-          scrollIndicatorInsets={scrollIndicatorInsets}
-          ItemSeparatorComponent={() => <View style={styles.separator} />}
+      emptyState = (
+        <FeedbackState
+          title="Couldn't load the collection"
+          description={libraryError ?? undefined}
+          icon="cloudOff"
+          actionLabel="Try again"
+          onAction={() => void reloadLibrary()}
         />
       );
+      break;
+    case 'subscriptionError':
+      emptyState = (
+        <FeedbackState
+          title="Couldn't load your decks"
+          description={subscribedDecksError ?? undefined}
+          icon="cloudOff"
+          actionLabel="Try again"
+          onAction={() => void reloadSubscribedDecks()}
+        />
+      );
+      break;
+    case 'empty':
+      emptyState = (
+        <FeedbackState
+          title="The collection is on its way"
+          description="There are no shared decks available just yet."
+          icon="library"
+        />
+      );
+      break;
+    case 'filteredEmpty':
+      emptyState = (
+        <FeedbackState
+          title={
+            showSubscribedOnly ? 'Make this space yours' : 'No decks found'
+          }
+          description={
+            showSubscribedOnly
+              ? 'Explore the collection or clear your filters to find a deck for your next session.'
+              : 'Try another search or explore all subjects.'
+          }
+          icon={showSubscribedOnly ? 'layers' : 'search'}
+          actionLabel="Explore all decks"
+          onAction={onClearFilters}
+        />
+      );
+      break;
+    case 'ready':
+      break;
   }
+
+  return (
+    <FlatList
+      key={`library-grid-${numColumns}`}
+      data={bodyState === 'ready' ? filteredDecks : []}
+      ListHeaderComponent={header}
+      ListEmptyComponent={
+        <View style={styles.stateContainer}>{emptyState}</View>
+      }
+      renderItem={({ item: deck }) => (
+        <View style={{ width: cardWidth, maxWidth: '100%' }}>
+          <DeckCard
+            deck={deck}
+            isSubscribed={isSubscribed(deck)}
+            isSubscriptionPending={pendingDeckId === deck.deck_id}
+            onSubscriptionToggle={onSubscriptionToggle}
+            onPress={onDeckPress}
+            testID={`deck-card-${deck.deck_id}`}
+          />
+        </View>
+      )}
+      keyExtractor={(item) => item.deck_id.toString()}
+      numColumns={numColumns}
+      contentContainerStyle={[
+        { paddingHorizontal: gridHorizontalPadding },
+        scrollContentContainerStyle,
+      ]}
+      columnWrapperStyle={
+        numColumns > 1 ? { columnGap: gridColumnGap } : undefined
+      }
+      keyboardShouldPersistTaps="handled"
+      keyboardDismissMode="on-drag"
+      showsVerticalScrollIndicator={false}
+      scrollIndicatorInsets={scrollIndicatorInsets}
+      ItemSeparatorComponent={() => <View style={styles.separator} />}
+    />
+  );
 };
 
 const styles = StyleSheet.create({
-  stateContainer: {
-    flex: 1,
-    paddingHorizontal: theme.spacing.lg,
-  },
-  gridContainer: {
-    paddingBottom: theme.spacing.sm,
-  },
-  row: {
-    justifyContent: 'flex-start',
-  },
-  separator: {
-    height: theme.spacing.sm,
-  },
+  stateContainer: { minHeight: 240, justifyContent: 'center' },
+  separator: { height: theme.spacing.lg },
 });
