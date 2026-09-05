@@ -1,7 +1,9 @@
-# FlashFront
+# Shuffle
 
 Expo app for studying flashcards, managing deck subscriptions, viewing review
 analytics, and discussing cards with the study assistant.
+
+See the [design rationale and visual checks](docs/redesign.md).
 
 ## Development
 
@@ -9,6 +11,8 @@ Run `bun install`, copy `.env.example` to `.env.local`, and run `bun dev` to sta
 Expo and the sibling `../flashcard-learning-system` API together. The backend
 needs its own dependencies and `.env` configured. Run `bun start` to start only
 Expo, or `bun ios` to build a development client.
+
+See [authentication email setup](docs/auth.md) for password recovery and app redirects.
 
 ## Checks
 

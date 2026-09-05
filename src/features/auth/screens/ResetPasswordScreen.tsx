@@ -102,6 +102,15 @@ const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({
           loading={isSubmitting}
           fullWidth
         />
+        <Button
+          title="Request another link"
+          variant="ghost"
+          onPress={() => {
+            clearAuthError();
+            navigation.navigate('ForgotPassword');
+          }}
+          fullWidth
+        />
       </View>
     </AuthScaffold>
   );

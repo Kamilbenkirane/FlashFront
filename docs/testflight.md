@@ -3,8 +3,8 @@
 Every push to `main`, including a merged PR, runs **Deploy TestFlight**. It
 typechecks the app, builds a signed IPA on GitHub's `macos-26` runner with
 `eas build --local`, and uploads directly to Apple using `fastlane pilot`.
-It uses the same release route as Celeste Chat; no paid Expo build or submission
-service is used. EAS stores the signing credentials and increments build numbers.
+No paid Expo build or submission service is used. EAS stores the signing
+credentials and increments build numbers.
 Releases queue instead of cancelling an upload when another PR merges.
 
 The workflow can also be run manually from GitHub Actions on a chosen branch.

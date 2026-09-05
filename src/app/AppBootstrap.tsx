@@ -7,7 +7,6 @@ import {
   SpaceGrotesk_600SemiBold,
   SpaceGrotesk_700Bold,
 } from '@expo-google-fonts/space-grotesk';
-import { DarkTheme, NavigationContainer } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 import React, { type ErrorInfo, type ReactNode, useCallback } from 'react';
@@ -133,21 +132,7 @@ const AppBootstrap = () => {
               barStyle="light-content"
               backgroundColor={theme.colors.background}
             />
-            <NavigationContainer
-              theme={{
-                ...DarkTheme,
-                colors: {
-                  ...DarkTheme.colors,
-                  background: theme.colors.background,
-                  card: theme.colors.card,
-                  text: theme.colors.foreground,
-                  border: theme.colors.border,
-                  primary: theme.colors.primary,
-                },
-              }}
-            >
-              <RootNavigator />
-            </NavigationContainer>
+            <RootNavigator />
           </AppProviders>
         </SafeAreaProvider>
       </ErrorBoundary>

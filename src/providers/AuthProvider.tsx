@@ -51,6 +51,7 @@ interface AuthContextType {
   authError: string | null;
   pendingEmail: string | null;
   requiresPasswordReset: boolean;
+  recoveryLinkVersion: number;
   signIn: (email: string, password: string) => Promise<AuthActionResult>;
   signUp: (email: string, password: string) => Promise<AuthActionResult>;
   signOut: () => Promise<AuthActionResult>;
@@ -70,6 +71,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   const [authError, setAuthError] = useState<string | null>(null);
   const [pendingEmail, setPendingEmail] = useState<string | null>(null);
   const [requiresPasswordReset, setRequiresPasswordReset] = useState(false);
+  // Remount for each new link, but keep the navigator when the reset completes.
+  const [recoveryLinkVersion, setRecoveryLinkVersion] = useState(0);
   const [recoveryTokenHash, setRecoveryTokenHash] = useState<string | null>(
     null,
   );
@@ -149,8 +152,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
         return;
       }
 
-      if (type === 'recovery' && tokenHash) {
+      if (type === 'recovery') {
+        if (!tokenHash) {
+          applyAuthError('This recovery link is invalid or has expired.');
+          return;
+        }
         setRecoveryTokenHash(tokenHash);
+        setRecoveryLinkVersion((version) => version + 1);
         setRequiresPasswordReset(true);
         setAuthError(null);
         return;
@@ -200,19 +208,19 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
       if (initialParams?.type !== 'recovery' && !getAccessToken()) {
         await refreshSession();
       }
-
-      if (!isMounted) {
-        return;
-      }
-
-      setAuthLoading(false);
     };
 
     registerSessionRefreshHandler(refreshSession);
-    void hydrateSession();
+    void hydrateSession()
+      .catch(toActionError)
+      .finally(() => {
+        if (isMounted) {
+          setAuthLoading(false);
+        }
+      });
 
     const urlSubscription = Linking.addEventListener('url', ({ url }) => {
-      void handleAuthUrl(url);
+      void handleAuthUrl(url).catch(toActionError);
     });
 
     return () => {
@@ -220,7 +228,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
       registerSessionRefreshHandler(null);
       urlSubscription.remove();
     };
-  }, [handleAuthUrl, refreshSession]);
+  }, [handleAuthUrl, refreshSession, toActionError]);
 
   const signIn = useCallback(
     async (email: string, password: string): Promise<AuthActionResult> => {
@@ -367,6 +375,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
       authError,
       pendingEmail,
       requiresPasswordReset,
+      recoveryLinkVersion,
       signIn,
       signUp,
       signOut,
@@ -381,6 +390,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
       authError,
       pendingEmail,
       requiresPasswordReset,
+      recoveryLinkVersion,
       signIn,
       signUp,
       signOut,
