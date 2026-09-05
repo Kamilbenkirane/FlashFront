@@ -24,10 +24,10 @@ jobs:
       - name: Check release credentials
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-          FASTLANE_APPLE_APPLICATION_SPECIFIC_PASSWORD: ${{ secrets.FASTLANE_APPLE_APPLICATION_SPECIFIC_PASSWORD }}
+          APP_STORE_CONNECT_API_KEY: ${{ secrets.APP_STORE_CONNECT_API_KEY }}
         run: |
           : "${EXPO_TOKEN:?Set the EXPO_TOKEN repository secret}"
-          : "${FASTLANE_APPLE_APPLICATION_SPECIFIC_PASSWORD:?Set the FASTLANE_APPLE_APPLICATION_SPECIFIC_PASSWORD repository secret}"
+          : "${APP_STORE_CONNECT_API_KEY:?Set the APP_STORE_CONNECT_API_KEY repository secret}"
 
       - uses: actions/setup-node@v4
         with:
@@ -64,11 +64,13 @@ jobs:
 
       - name: Upload to TestFlight
         env:
-          FASTLANE_APPLE_APPLICATION_SPECIFIC_PASSWORD: ${{ secrets.FASTLANE_APPLE_APPLICATION_SPECIFIC_PASSWORD }}
+          APP_STORE_CONNECT_API_KEY: ${{ secrets.APP_STORE_CONNECT_API_KEY }}
         run: |
+          umask 077
+          trap 'rm -f "$RUNNER_TEMP/app-store-connect.json"' EXIT
+          printf '%s' "$APP_STORE_CONNECT_API_KEY" > "$RUNNER_TEMP/app-store-connect.json"
           fastlane pilot upload \
             --ipa "$RUNNER_TEMP/flashfront.ipa" \
             --apple_id "$(jq -er '.submit.production.ios.ascAppId' eas.json)" \
-            --username "$(jq -er '.submit.production.ios.appleId' eas.json)" \
-            --team_id "$(jq -er '.submit.production.ios.appleTeamId' eas.json)" \
+            --api_key_path "$RUNNER_TEMP/app-store-connect.json" \
             --skip_waiting_for_build_processing true

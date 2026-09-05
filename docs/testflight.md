@@ -16,8 +16,10 @@ Add these [GitHub Actions repository secrets](https://github.com/Kamilbenkirane/
 
 - `EXPO_TOKEN`: an [Expo access token](https://expo.dev/accounts/kams96/settings/access-tokens)
   for the account that owns `@kams96/FlashFront`.
-- `FASTLANE_APPLE_APPLICATION_SPECIFIC_PASSWORD`: an Apple app-specific password
-  for the Apple ID in `eas.json`, as used by Celeste Chat.
+- `APP_STORE_CONNECT_API_KEY`: the existing FlashFront Apple API key in
+  [Fastlane JSON format](https://docs.fastlane.tools/app-store-connect-api/#using-fastlane-api-key-json-file),
+  with `key_id`, `issuer_id`, and `key` (the `.p8` contents). Fastlane uploads
+  directly to Apple using this key; no Apple password or interactive login is needed.
 
 The existing EAS project must have valid App Store signing credentials for
 `com.kams96.FlashFrontKB24`. If they need renewal, run `eas credentials --platform ios`
