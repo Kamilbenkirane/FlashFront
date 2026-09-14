@@ -9,6 +9,12 @@ import {
   deleteCurrentUserAccountRequest,
   getCurrentUserRequest,
 } from '@/services/backendClient';
+import {
+  cacheKeys,
+  readCachedValue,
+  removeCachedValue,
+  writeCachedValue,
+} from '@/services/dataCache';
 import { createDeckSubscription } from '@/services/subscriptions/subscriptionService';
 import { getErrorMessage } from '@/utils/errorMessage';
 import type React from 'react';
@@ -61,8 +67,25 @@ interface UserProviderProps {
   children: ReactNode;
 }
 
+const isSameUser = (left: User | null, right: User | null) =>
+  left === right ||
+  (left !== null &&
+    right !== null &&
+    `${left.user_id}` === `${right.user_id}` &&
+    left.user_name === right.user_name &&
+    left.email === right.email &&
+    left.subscription_date === right.subscription_date);
+
+const persistCachedUser = (identityId: string, user: User | null) =>
+  user
+    ? writeCachedValue(cacheKeys.userProfile(identityId), user)
+    : removeCachedValue(cacheKeys.userProfile(identityId));
+
 export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
-  const { authLoading, authUser, session } = useAuth();
+  const { authLoading, authUser } = useAuth();
+  // Keyed on the identity, not the session object: a rotated access token
+  // must not reload the profile or unmount the app.
+  const identityId = authUser?.id ?? null;
   const [user, setUser] = useState<User | null>(null);
   const [userLoading, setUserLoading] = useState(true);
   const [userError, setUserError] = useState<string | null>(null);
@@ -71,38 +94,56 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
   const [onboardingLoading, setOnboardingLoading] = useState(true);
 
   const refreshUser = useCallback(async () => {
-    if (!session || !authUser) {
+    if (!identityId) {
       setUser(null);
       setUserLoading(false);
       setUserError(null);
       return;
     }
 
-    setUserLoading(true);
+    // The saved profile opens the app instantly, online or not; the server
+    // answer then replaces it quietly when it arrives.
+    const cachedUser = await readCachedValue<User>(
+      cacheKeys.userProfile(identityId),
+    );
+    if (cachedUser) {
+      setUser((current) =>
+        isSameUser(current, cachedUser) ? current : cachedUser,
+      );
+      setUserLoading(false);
+    } else {
+      setUser(null);
+      setUserLoading(true);
+    }
     setUserError(null);
 
-    const nextUser = await getCurrentUserRequest().catch((error: unknown) => {
-      setUserError(getErrorMessage(error, 'Could not load your profile.'));
-      return null;
-    });
-
-    setUser(nextUser);
-    setUserLoading(false);
-  }, [authUser, session]);
+    try {
+      const nextUser = await getCurrentUserRequest();
+      setUser((current) =>
+        isSameUser(current, nextUser) ? current : nextUser,
+      );
+      await persistCachedUser(identityId, nextUser);
+    } catch (error) {
+      if (!cachedUser) {
+        setUserError(getErrorMessage(error, 'Could not load your profile.'));
+      }
+    } finally {
+      setUserLoading(false);
+    }
+  }, [identityId]);
 
   const refreshOnboarding = useCallback(async () => {
-    if (!authUser) {
+    if (!identityId) {
       setOnboardingPreferences(null);
       setOnboardingLoading(false);
       return;
     }
 
     setOnboardingLoading(true);
-    const identityId = authUser.id;
     const nextPreferences = await getOnboardingPreferences(identityId);
     setOnboardingPreferences(nextPreferences);
     setOnboardingLoading(false);
-  }, [authUser]);
+  }, [identityId]);
 
   const completeOnboarding = useCallback(
     async (input: CompleteOnboardingInput): Promise<UserMutationResult> => {
@@ -138,6 +179,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
 
         nextUser = createdUser;
         setUser(createdUser);
+        await persistCachedUser(authUser.id, createdUser);
       }
 
       for (const deckId of input.selectedDeckIds) {
@@ -195,6 +237,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
     }
 
     await clearOnboardingPreferences(authUser.id);
+    await persistCachedUser(authUser.id, null);
     setOnboardingPreferences(null);
     setUser(null);
     setUserError(null);

@@ -320,16 +320,6 @@ export const StudyContent: React.FC<StudyContentProps> = ({
             />
           )}
         </View>
-        {isReviewProcessing ? (
-          <Typography
-            variant="small"
-            color="muted"
-            style={styles.reviewHint}
-            accessibilityLiveRegion="polite"
-          >
-            Saving review…
-          </Typography>
-        ) : null}
         {reviewFeedback ? (
           <Card style={styles.feedback}>
             <Typography
@@ -400,6 +390,5 @@ const styles = StyleSheet.create({
   centered: { textAlign: 'center' },
   studyWidth: { width: '100%', maxWidth: 640, alignSelf: 'center' },
   reviewActions: { paddingTop: 24 },
-  reviewHint: { textAlign: 'center', paddingTop: 14 },
   feedback: { marginTop: 16 },
 });

@@ -9,7 +9,7 @@ import {
 } from '@expo-google-fonts/space-grotesk';
 import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
-import React, { type ErrorInfo, type ReactNode, useCallback } from 'react';
+import React, { type ErrorInfo, type ReactNode } from 'react';
 import { ActivityIndicator, StatusBar, Text, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import {
@@ -95,20 +95,17 @@ class ErrorBoundary extends React.Component<
 }
 
 const AppBootstrap = () => {
-  const [fontsLoaded] = useFonts({
+  const [fontsLoaded, fontError] = useFonts({
     'SpaceGrotesk-Regular': SpaceGrotesk_400Regular,
     'SpaceGrotesk-Medium': SpaceGrotesk_500Medium,
     'SpaceGrotesk-SemiBold': SpaceGrotesk_600SemiBold,
     'SpaceGrotesk-Bold': SpaceGrotesk_700Bold,
   });
 
-  const onLayoutRootView = useCallback(async () => {
-    if (fontsLoaded) {
-      await SplashScreen.hideAsync();
-    }
-  }, [fontsLoaded]);
-
-  if (!fontsLoaded) {
+  // A font that fails to load must not keep the app on the splash forever;
+  // the system font takes over. RootNavigator hides the splash once the
+  // stored session and profile are restored.
+  if (!fontsLoaded && !fontError) {
     return (
       <View
         style={{
@@ -124,7 +121,7 @@ const AppBootstrap = () => {
   }
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }} onLayout={onLayoutRootView}>
+    <GestureHandlerRootView style={{ flex: 1 }}>
       <ErrorBoundary>
         <SafeAreaProvider initialMetrics={initialWindowMetrics}>
           <AppProviders>
