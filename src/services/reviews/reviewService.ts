@@ -1,8 +1,15 @@
 import type { StudyReviewDraft } from '@/domain/study/models/Flashcard';
 import type { ReviewMutation } from '@/services/backendClient';
-import { createCurrentReviewRequest } from '@/services/backendClient';
-import { enqueueReviewOperation } from '@/services/outbox';
-import { runWithConnectivityFallback } from '@/services/runWithConnectivityFallback';
+import { isDeviceOnline } from '@/services/connectivity';
+import {
+  enqueueReviewOperation,
+  flushPendingOperations,
+} from '@/services/outbox';
+
+export interface CreateReviewResult {
+  queued: boolean;
+  offline: boolean;
+}
 
 const createReviewClientEventId = () =>
   `review-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
@@ -14,23 +21,25 @@ const toReviewMutation = (
   client_event_id: review.client_event_id ?? createReviewClientEventId(),
 });
 
+// A review is always written to the local queue first, so the study flow never
+// waits on the network. Delivery happens in the background and is retried on
+// reconnection or when the app comes back to the foreground.
 export const createReview = async (
   reviewDraft:
     | (StudyReviewDraft & { client_event_id?: string })
     | null
     | undefined,
-) => {
+): Promise<CreateReviewResult> => {
   if (!reviewDraft) {
-    return { savedLocally: false };
+    return { queued: false, offline: false };
   }
 
-  const review = toReviewMutation(reviewDraft);
+  await enqueueReviewOperation(toReviewMutation(reviewDraft));
 
-  return runWithConnectivityFallback({
-    runOnline: () => createCurrentReviewRequest(review),
-    runOffline: async () => {
-      await enqueueReviewOperation(review);
-    },
-    offlineResult: { savedLocally: true },
-  });
+  const offline = !(await isDeviceOnline());
+  if (!offline) {
+    void flushPendingOperations().catch(() => false);
+  }
+
+  return { queued: true, offline };
 };

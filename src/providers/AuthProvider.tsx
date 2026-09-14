@@ -1,4 +1,5 @@
 import {
+  type AuthExchangeResult,
   logoutRequest,
   refreshSessionRequest,
   resendVerificationEmailRequest,
@@ -11,13 +12,21 @@ import {
 import { mapAuthError } from '@/services/auth/authErrors';
 import { getAuthRedirectUrl } from '@/services/auth/authRedirect';
 import {
+  isDefinitiveAuthRejection,
+  isSessionExpiringSoon,
+} from '@/services/auth/authSession';
+import {
   clearStoredRefreshToken,
+  clearStoredSession,
   getStoredRefreshToken,
+  getStoredSession,
   saveRefreshToken,
+  saveStoredSession,
 } from '@/services/auth/authStorage';
 import { getAuthUrlParams } from '@/services/auth/authUrl';
 import {
   getAccessToken,
+  refreshAccessToken,
   registerSessionRefreshHandler,
   setActiveSession,
 } from '@/services/auth/sessionState';
@@ -26,6 +35,11 @@ import type {
   AppSession,
   AuthOtpType,
 } from '@/services/auth/types';
+import { clearDataCache } from '@/services/dataCache';
+import {
+  clearPendingOperations,
+  flushPendingOperations,
+} from '@/services/outbox';
 import * as Linking from 'expo-linking';
 import type React from 'react';
 import {
@@ -37,6 +51,8 @@ import {
   useMemo,
   useState,
 } from 'react';
+
+const SIGN_OUT_FLUSH_TIMEOUT_MS = 5_000;
 
 interface AuthActionResult {
   error: string | null;
@@ -104,10 +120,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
       setActiveSession(nextSession);
 
       if (!nextSession) {
-        await clearStoredRefreshToken();
+        await Promise.all([clearStoredRefreshToken(), clearStoredSession()]);
         return;
       }
 
+      await saveStoredSession(nextSession);
       if (refreshToken) {
         await saveRefreshToken(refreshToken);
       }
@@ -117,6 +134,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
 
   const clearLocalAuthState = useCallback(async () => {
     await applySession(null);
+    await Promise.all([clearDataCache(), clearPendingOperations()]);
     setPendingEmail(null);
     setRequiresPasswordReset(false);
     setRecoveryTokenHash(null);
@@ -129,11 +147,21 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
       return null;
     }
 
-    const result = await refreshSessionRequest(storedRefreshToken).catch(
-      () => null,
-    );
+    let result: AuthExchangeResult;
+    try {
+      result = await refreshSessionRequest(storedRefreshToken);
+    } catch (error) {
+      if (isDefinitiveAuthRejection(error)) {
+        await clearLocalAuthState();
+        return null;
+      }
 
-    if (!result?.session || !result.refreshToken) {
+      // Offline, timed out, or the server is down: keep the local session so
+      // the app stays usable. The next request will try the refresh again.
+      return null;
+    }
+
+    if (!result.session || !result.refreshToken) {
       await clearLocalAuthState();
       return null;
     }
@@ -205,8 +233,33 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
         await handleAuthUrl(initialUrl);
       }
 
-      if (initialParams?.type !== 'recovery' && !getAccessToken()) {
+      if (initialParams?.type === 'recovery' || getAccessToken()) {
+        return;
+      }
+
+      const [storedSession, storedRefreshToken] = await Promise.all([
+        getStoredSession(),
+        getStoredRefreshToken(),
+      ]);
+
+      if (!storedRefreshToken) {
+        await applySession(null);
+        return;
+      }
+
+      if (!storedSession) {
+        // Nothing usable locally yet (first launch after an update): the
+        // network has to answer before the app knows who is signed in.
         await refreshSession();
+        return;
+      }
+
+      // Open with the last known session right away. A token close to expiry
+      // is refreshed in the background, through the shared single-flight path
+      // so a concurrent 401 retry cannot spend the refresh token twice.
+      await applySession(storedSession);
+      if (isSessionExpiringSoon(storedSession)) {
+        void refreshAccessToken();
       }
     };
 
@@ -228,7 +281,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
       registerSessionRefreshHandler(null);
       urlSubscription.remove();
     };
-  }, [handleAuthUrl, refreshSession, toActionError]);
+  }, [applySession, handleAuthUrl, refreshSession, toActionError]);
 
   const signIn = useCallback(
     async (email: string, password: string): Promise<AuthActionResult> => {
@@ -279,6 +332,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   );
 
   const signOut = useCallback(async (): Promise<AuthActionResult> => {
+    // Give queued reviews a last chance to reach this account, without
+    // holding the sign-out hostage to a network that will not answer.
+    await Promise.race([
+      flushPendingOperations().catch(() => false),
+      new Promise((resolve) => setTimeout(resolve, SIGN_OUT_FLUSH_TIMEOUT_MS)),
+    ]);
+
     const storedRefreshToken = await getStoredRefreshToken();
     if (storedRefreshToken) {
       await logoutRequest(storedRefreshToken).catch(() => null);

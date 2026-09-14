@@ -131,7 +131,7 @@ export const Flashcard: React.FC<FlashcardProps> = ({
             accessibilityLabel={`${revealed ? 'Answer' : 'Question'}. ${accessibleCardText(currentText)}`}
             accessibilityHint={
               disabled
-                ? 'Saving your review.'
+                ? 'Recording your review.'
                 : revealed
                   ? 'Tap to see the question again. Review buttons follow the card.'
                   : 'Try to recall, then double tap to reveal the answer.'

@@ -5,6 +5,7 @@ import type {
   SessionData,
   User,
 } from '../interfaces';
+import { ApiError, fetchWithTimeout } from './apiError';
 import { getAccessToken, refreshAccessToken } from './auth/sessionState';
 import { buildApiUrl } from './runtimeConfig';
 import type {
@@ -249,7 +250,7 @@ const requestJson = async <T>(
   allowNotFound = false,
   hasRetried = false,
 ): Promise<T | null> => {
-  const response = await fetch(buildApiUrl(path), {
+  const response = await fetchWithTimeout(buildApiUrl(path), {
     headers: await buildHeaders(init?.headers),
     ...init,
   });
@@ -266,7 +267,7 @@ const requestJson = async <T>(
   }
 
   if (!response.ok) {
-    throw new Error(await parseErrorMessage(response));
+    throw new ApiError(await parseErrorMessage(response), response.status);
   }
 
   if (response.status === 204) {
