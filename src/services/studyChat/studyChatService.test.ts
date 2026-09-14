@@ -76,8 +76,8 @@ describe('streamStudyChatReply', () => {
     await streamStudyChatReply({
       cardId: 12,
       deckIds: [4, 5],
-      model: 'gpt-5.4-mini',
-      imageModel: 'gemini-3.1-flash-image-preview',
+      model: 'gpt-5.6-terra',
+      imageModel: 'gemini-3.1-flash-image',
       messages: [{ role: 'user', content: 'Show me a graph.' }],
       signal: new AbortController().signal,
       onEvent: (event) => {
@@ -161,8 +161,8 @@ describe('streamStudyChatReply', () => {
     await streamStudyChatReply({
       cardId: 12,
       deckIds: [4, 5],
-      model: 'gpt-5.4-mini',
-      imageModel: 'gemini-3.1-flash-image-preview',
+      model: 'gpt-5.6-terra',
+      imageModel: 'gemini-3.1-flash-image',
       messages: [{ role: 'user', content: 'Show me an image.' }],
       signal: new AbortController().signal,
       onEvent: (event) => {
@@ -232,8 +232,8 @@ describe('streamStudyChatReply', () => {
     await streamStudyChatReply({
       cardId: 12,
       deckIds: [4, 5],
-      model: 'gpt-5.4-mini',
-      imageModel: 'gemini-3.1-flash-image-preview',
+      model: 'gpt-5.6-terra',
+      imageModel: 'gemini-3.1-flash-image',
       messages: [{ role: 'user', content: 'Split this into cleaner cards.' }],
       signal: new AbortController().signal,
       onEvent: (event) => {
