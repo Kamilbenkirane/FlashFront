@@ -67,6 +67,20 @@ describe('authentication email links', () => {
     ).toEqual({
       type: 'recovery',
       tokenHash: 'fixture-token',
+      refreshToken: null,
+      errorDescription: null,
+    });
+  });
+
+  it('reads the session Supabase returns after Google sign-in', () => {
+    expect(
+      getAuthUrlParams(
+        'flashfront://auth/callback#access_token=access&expires_in=3600&refresh_token=refresh&token_type=bearer',
+      ),
+    ).toEqual({
+      type: null,
+      tokenHash: null,
+      refreshToken: 'refresh',
       errorDescription: null,
     });
   });
@@ -81,5 +95,9 @@ describe('authentication email links', () => {
     expect(mapAuthError('Token has expired or is invalid')).toContain(
       'Request a new email',
     );
+  });
+
+  it('treats a denied Google consent screen as a cancellation', () => {
+    expect(mapAuthError('access_denied')).toBe('Google sign-in was canceled.');
   });
 });

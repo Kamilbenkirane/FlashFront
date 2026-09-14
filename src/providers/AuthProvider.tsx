@@ -16,6 +16,7 @@ import {
   saveRefreshToken,
 } from '@/services/auth/authStorage';
 import { getAuthUrlParams } from '@/services/auth/authUrl';
+import { openGoogleSignIn } from '@/services/auth/oauth';
 import {
   getAccessToken,
   registerSessionRefreshHandler,
@@ -35,6 +36,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react';
 
@@ -54,6 +56,7 @@ interface AuthContextType {
   recoveryLinkVersion: number;
   signIn: (email: string, password: string) => Promise<AuthActionResult>;
   signUp: (email: string, password: string) => Promise<AuthActionResult>;
+  signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<AuthActionResult>;
   sendPasswordReset: (email: string) => Promise<AuthActionResult>;
   resendVerificationEmail: (email?: string) => Promise<AuthActionResult>;
@@ -76,6 +79,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   const [recoveryTokenHash, setRecoveryTokenHash] = useState<string | null>(
     null,
   );
+  // The auth browser delivers Google's redirect itself; on Android the same
+  // URL also reaches the link listener, which must not exchange it twice.
+  const isGoogleSignInActive = useRef(false);
 
   const clearAuthError = useCallback(() => {
     setAuthError(null);
@@ -143,9 +149,35 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     return result.session.accessToken;
   }, [applySession, clearLocalAuthState]);
 
+  // Google sign-in ends with a Supabase refresh token. Exchanging it through
+  // the backend's refresh endpoint yields the same session, user, and device
+  // registration as a password sign-in, so no new backend route is needed.
+  const completeOAuthSession = useCallback(
+    async (refreshToken: string) => {
+      const result =
+        await refreshSessionRequest(refreshToken).catch(toActionError);
+
+      if ('error' in result) {
+        return;
+      }
+
+      if (!result.session || !result.refreshToken) {
+        applyAuthError('Could not create an authenticated session.');
+        return;
+      }
+
+      await applySession(result.session, result.refreshToken);
+      setPendingEmail(null);
+      setRequiresPasswordReset(false);
+      setAuthError(null);
+    },
+    [applyAuthError, applySession, toActionError],
+  );
+
   const handleAuthUrl = useCallback(
     async (url: string) => {
-      const { tokenHash, type, errorDescription } = getAuthUrlParams(url);
+      const { tokenHash, type, refreshToken, errorDescription } =
+        getAuthUrlParams(url);
 
       if (errorDescription) {
         applyAuthError(errorDescription);
@@ -161,6 +193,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
         setRecoveryLinkVersion((version) => version + 1);
         setRequiresPasswordReset(true);
         setAuthError(null);
+        return;
+      }
+
+      if (refreshToken) {
+        if (!isGoogleSignInActive.current) {
+          await completeOAuthSession(refreshToken);
+        }
         return;
       }
 
@@ -192,7 +231,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
 
       setAuthError(null);
     },
-    [applyAuthError, applySession],
+    [applyAuthError, applySession, completeOAuthSession],
   );
 
   useEffect(() => {
@@ -277,6 +316,30 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     },
     [applyAuthError, applySession, clearAuthError],
   );
+
+  const signInWithGoogle = useCallback(async () => {
+    clearAuthError();
+    isGoogleSignInActive.current = true;
+
+    try {
+      const { refreshToken, error } = await openGoogleSignIn(
+        getAuthRedirectUrl('auth/callback'),
+      );
+
+      if (error) {
+        setAuthError(error);
+        return;
+      }
+
+      if (refreshToken) {
+        await completeOAuthSession(refreshToken);
+      }
+    } catch (error) {
+      toActionError(error);
+    } finally {
+      isGoogleSignInActive.current = false;
+    }
+  }, [clearAuthError, completeOAuthSession, toActionError]);
 
   const signOut = useCallback(async (): Promise<AuthActionResult> => {
     const storedRefreshToken = await getStoredRefreshToken();
@@ -378,6 +441,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
       recoveryLinkVersion,
       signIn,
       signUp,
+      signInWithGoogle,
       signOut,
       sendPasswordReset,
       resendVerificationEmail,
@@ -393,6 +457,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
       recoveryLinkVersion,
       signIn,
       signUp,
+      signInWithGoogle,
       signOut,
       sendPasswordReset,
       resendVerificationEmail,

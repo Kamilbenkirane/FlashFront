@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/Button';
 import { Typography } from '@/components/ui/Typography';
 import { AuthScaffold } from '@/features/auth/components/AuthScaffold';
 import { AuthTextField } from '@/features/auth/components/AuthTextField';
+import { GoogleSignInOption } from '@/features/auth/components/GoogleSignInOption';
 import { useAuth } from '@/providers/AuthProvider';
 import type React from 'react';
 import { useState } from 'react';
@@ -154,6 +155,7 @@ const SignupScreen: React.FC<SignupScreenProps> = ({ navigation }) => {
           fullWidth
         />
       </View>
+      <GoogleSignInOption />
     </AuthScaffold>
   );
 };

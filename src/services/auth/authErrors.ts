@@ -33,6 +33,12 @@ export const mapAuthError = (message: string) => {
   ) {
     return 'This link is invalid or has expired. Request a new email and open it on the device running Shuffle.';
   }
+  if (
+    normalized.includes('access_denied') ||
+    normalized.includes('access denied')
+  ) {
+    return 'Google sign-in was canceled.';
+  }
   if (normalized.includes('network')) {
     return 'Could not reach the API. Check your connection and try again.';
   }

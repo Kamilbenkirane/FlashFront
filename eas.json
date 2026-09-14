@@ -8,19 +8,22 @@
       "developmentClient": true,
       "distribution": "internal",
       "env": {
-        "EXPO_PUBLIC_API_URL": "http://127.0.0.1:5001"
+        "EXPO_PUBLIC_API_URL": "http://127.0.0.1:5001",
+        "EXPO_PUBLIC_SUPABASE_URL": "https://ynouixvprefkbscxldan.supabase.co"
       }
     },
     "preview": {
       "distribution": "internal",
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://flashcard-learning-system-cr-521314648273.us-central1.run.app"
+        "EXPO_PUBLIC_API_URL": "https://flashcard-learning-system-cr-521314648273.us-central1.run.app",
+        "EXPO_PUBLIC_SUPABASE_URL": "https://ynouixvprefkbscxldan.supabase.co"
       }
     },
     "production": {
       "autoIncrement": true,
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://flashcard-learning-system-cr-521314648273.us-central1.run.app"
+        "EXPO_PUBLIC_API_URL": "https://flashcard-learning-system-cr-521314648273.us-central1.run.app",
+        "EXPO_PUBLIC_SUPABASE_URL": "https://ynouixvprefkbscxldan.supabase.co"
       }
     }
   },

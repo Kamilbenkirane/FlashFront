@@ -19,6 +19,8 @@ export const getAuthUrlParams = (url: string) => {
   return {
     type: params.get('type'),
     tokenHash: params.get('token_hash'),
+    // Present when Supabase redirects back from Google with a session.
+    refreshToken: params.get('refresh_token'),
     errorDescription: params.get('error_description') || params.get('error'),
   };
 };

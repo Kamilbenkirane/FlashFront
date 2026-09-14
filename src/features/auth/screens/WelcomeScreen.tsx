@@ -2,6 +2,7 @@ import type { AuthStackScreenProps } from '@/app/navigation/types';
 import { ShuffleMark } from '@/components/ui/Brand/ShuffleMark';
 import { Button } from '@/components/ui/Button';
 import { Typography } from '@/components/ui/Typography';
+import { GoogleSignInOption } from '@/features/auth/components/GoogleSignInOption';
 import { useAuth } from '@/providers/AuthProvider';
 import { theme } from '@/tokens/theme';
 import type React from 'react';
@@ -97,6 +98,7 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ navigation }) => {
                 fullWidth
               />
             </View>
+            <GoogleSignInOption />
           </View>
         </View>
       </ScrollView>
