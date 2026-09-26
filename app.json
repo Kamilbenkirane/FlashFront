@@ -44,6 +44,10 @@
           "resizeMode": "contain",
           "backgroundColor": "#061D2A"
         }
+      ],
+      [
+        "expo-audio",
+        { "microphonePermission": false, "recordAudioAndroid": false }
       ]
     ],
     "owner": "kams96"

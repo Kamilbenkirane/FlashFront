@@ -1,1 +1,7 @@
-export { ChessBoard, type Arrow, type Promotion } from './ChessBoard';
+export {
+  ChessBoard,
+  PopIn,
+  type Arrow,
+  type Badge,
+  type Promotion,
+} from './ChessBoard';

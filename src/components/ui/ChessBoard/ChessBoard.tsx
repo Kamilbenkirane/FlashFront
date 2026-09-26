@@ -1,12 +1,35 @@
+import useReducedMotion from '@/hooks/useReducedMotion';
+import { triggerHaptic } from '@/utils/haptics';
 import { Chess, type Color, type Square } from 'chess.js';
-import { type ReactElement, useMemo, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import {
+  type ReactElement,
+  type ReactNode,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
+import {
+  Animated,
+  Easing,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+  type ViewStyle,
+} from 'react-native';
 import Svg, { G, Line, Polygon, SvgXml } from 'react-native-svg';
+import { movedPieces, placement } from './motion';
 import { PIECES, type PieceKey } from './pieces';
 
-// ponytail: Book Move's board (tap to move, promotion picker, arrows) without its slide animation, shake, flash and badges
+// ponytail: Book Move's board (tap to move, promotion picker, arrows, sliding pieces, badges, shake, flash) on RN Animated
 
 const FILES = 'abcdefgh';
+const SQUARES = [...'12345678'].flatMap((r) =>
+  [...FILES].map((f) => `${f}${r}` as Square),
+);
+const SLIDE_MS = 200;
 const NAMES: Record<string, string> = {
   p: 'pawn',
   n: 'knight',
@@ -33,6 +56,13 @@ export interface Arrow {
   color: string;
 }
 
+/** A round label on a square's top-right corner, chess.com Game Review style ("??", "★"). */
+export interface Badge {
+  square: Square;
+  glyph: string;
+  color: string;
+}
+
 interface ChessBoardProps {
   fen: string;
   orientation: Color;
@@ -42,6 +72,12 @@ interface ChessBoardProps {
   interactive: boolean;
   onMove?: (from: Square, to: Square, promotion?: Promotion) => void;
   arrows?: Arrow[];
+  badges?: Badge[];
+  /** Change the value to shake the board. */
+  shakeKey?: number;
+  /** Square flashed once in `flashColor` when it is set. */
+  flashSquare?: Square;
+  flashColor?: string;
 }
 
 /** Centre of a square for the given orientation and square size. */
@@ -57,7 +93,34 @@ const Piece = ({ piece, size }: { piece: PieceKey; size: number }) => (
   <SvgXml xml={PIECES[piece]} width={size} height={size} />
 );
 
-/** Tap-to-select, tap-to-move chess board. */
+/** Scales its content in from 60% when it mounts: remount it (new key) to pop again. */
+export function PopIn({
+  style,
+  children,
+}: {
+  style?: ViewStyle;
+  children: ReactNode;
+}) {
+  const [scale] = useState(() => new Animated.Value(0.6));
+  useEffect(() => {
+    Animated.spring(scale, {
+      toValue: 1,
+      friction: 4,
+      tension: 160,
+      useNativeDriver: true,
+    }).start();
+  }, [scale]);
+  return (
+    <Animated.View
+      pointerEvents="none"
+      style={[style, { transform: [{ scale }] }]}
+    >
+      {children}
+    </Animated.View>
+  );
+}
+
+/** Tap-to-select, tap-to-move chess board whose pieces slide to their new squares. */
 export function ChessBoard({
   fen,
   orientation,
@@ -66,9 +129,15 @@ export function ChessBoard({
   interactive,
   onMove,
   arrows,
+  badges,
+  shakeKey,
+  flashSquare,
+  flashColor = '#ca3431',
 }: ChessBoardProps) {
+  const reduceMotion = useReducedMotion();
   const sq = size / 8;
   const chess = useMemo(() => new Chess(fen), [fen]);
+  const pieces = useMemo(() => [...placement(fen)], [fen]);
   const [selection, setSelection] = useState<Square | null>(null);
   const [promotion, setPromotion] = useState<{
     from: Square;
@@ -84,17 +153,80 @@ export function ChessBoard({
     ? (chess.findPiece({ type: 'k', color: chess.turn() })[0] ?? null)
     : null;
 
+  // A piece that arrived from elsewhere starts offset by the distance travelled and slides home.
+  const prevFen = useRef(fen);
+  const [xy] = useState(
+    () => new Map(SQUARES.map((s) => [s, new Animated.ValueXY()] as const)),
+  );
+  useLayoutEffect(() => {
+    for (const v of xy.values()) {
+      v.stopAnimation();
+      v.setValue({ x: 0, y: 0 });
+    }
+    const moves =
+      prevFen.current === fen || reduceMotion
+        ? []
+        : movedPieces(prevFen.current, fen);
+    prevFen.current = fen;
+    Animated.parallel(
+      moves.map(({ from, to }) => {
+        const v = xy.get(to)!;
+        const a = centre(from, orientation, sq);
+        const b = centre(to, orientation, sq);
+        v.setValue({ x: a.x - b.x, y: a.y - b.y });
+        return Animated.timing(v, {
+          toValue: { x: 0, y: 0 },
+          duration: SLIDE_MS,
+          easing: Easing.out(Easing.quad),
+          useNativeDriver: true,
+        });
+      }),
+    ).start();
+  }, [fen, orientation, sq, xy, reduceMotion]);
+
+  const [shake] = useState(() => new Animated.Value(0));
+  useEffect(() => {
+    if (!shakeKey || reduceMotion) return;
+    Animated.sequence(
+      [6, -6, 6, -6, 6, 0].map((x) =>
+        Animated.timing(shake, {
+          toValue: x,
+          duration: 50,
+          useNativeDriver: true,
+        }),
+      ),
+    ).start();
+  }, [shakeKey, shake, reduceMotion]);
+
+  const [flash] = useState(() => new Animated.Value(0));
+  useEffect(() => {
+    if (!flashSquare) return;
+    flash.setValue(0.7);
+    Animated.timing(flash, {
+      toValue: 0,
+      duration: 400,
+      useNativeDriver: true,
+    }).start();
+  }, [flashSquare, flash]);
+
+  const play = (from: Square, to: Square, promo?: Promotion) => {
+    triggerHaptic('impact');
+    onMove?.(from, to, promo);
+  };
+
   const tap = (square: Square) => {
     if (!interactive) return;
     const target = targets.find((t) => t.to === square);
     if (selected && target) {
       if (target.promotion) setPromotion({ from: selected, to: square });
-      else onMove?.(selected, square);
+      else play(selected, square);
       setSelection(null);
       return;
     }
     const piece = chess.get(square);
-    setSelection(piece && piece.color === chess.turn() ? square : null);
+    const pick = piece && piece.color === chess.turn() ? square : null;
+    if (pick && pick !== selected) triggerHaptic('selection');
+    setSelection(pick);
   };
 
   const squares: ReactElement[] = [];
@@ -105,7 +237,6 @@ export function ChessBoard({
       const square = `${FILES[file]}${rank + 1}` as Square;
       const dark = (file + rank) % 2 === 0;
       const piece = chess.get(square);
-      const target = targets.find((t) => t.to === square);
       const coordColor = dark ? COLORS.light : COLORS.dark;
       squares.push(
         <Pressable
@@ -132,6 +263,15 @@ export function ChessBoard({
           {checked === square && (
             <View style={[StyleSheet.absoluteFill, styles.check]} />
           )}
+          {flashSquare === square && (
+            <Animated.View
+              pointerEvents="none"
+              style={[
+                StyleSheet.absoluteFill,
+                { backgroundColor: flashColor, opacity: flash },
+              ]}
+            />
+          )}
           {f === 0 && (
             <Text
               style={[styles.coord, { color: coordColor, top: 1, left: 2 }]}
@@ -146,47 +286,60 @@ export function ChessBoard({
               {FILES[file]}
             </Text>
           )}
-          {piece && (
-            <View pointerEvents="none">
-              <Piece
-                piece={`${piece.color}${piece.type.toUpperCase()}` as PieceKey}
-                size={sq}
-              />
-            </View>
-          )}
-          {target &&
-            (target.captured ? (
-              <View
-                pointerEvents="none"
-                style={[
-                  StyleSheet.absoluteFill,
-                  styles.ring,
-                  { borderRadius: sq / 2 },
-                ]}
-              />
-            ) : (
-              <View
-                pointerEvents="none"
-                style={[
-                  styles.dot,
-                  {
-                    width: sq / 3,
-                    height: sq / 3,
-                    borderRadius: sq / 6,
-                    left: sq / 3,
-                    top: sq / 3,
-                  },
-                ]}
-              />
-            ))}
         </Pressable>,
       );
     }
   }
 
+  const corner = (square: Square) => {
+    const c = centre(square, orientation, sq);
+    return { left: c.x - sq / 2, top: c.y - sq / 2 };
+  };
+
   return (
-    <View style={{ width: size, height: size }}>
+    <Animated.View
+      style={{ width: size, height: size, transform: [{ translateX: shake }] }}
+    >
       <View style={styles.grid}>{squares}</View>
+      <View style={StyleSheet.absoluteFill} pointerEvents="none">
+        {pieces.map(([square, key]) => (
+          <Animated.View
+            key={square}
+            style={[
+              styles.layer,
+              corner(square),
+              {
+                width: sq,
+                height: sq,
+                zIndex: lastMove?.to === square ? 2 : 1,
+                transform: xy.get(square)!.getTranslateTransform(),
+              },
+            ]}
+          >
+            <Piece piece={key} size={sq} />
+          </Animated.View>
+        ))}
+        {targets.map((t) => {
+          const c = centre(t.to, orientation, sq);
+          const d = t.captured ? sq : sq / 3;
+          return (
+            <View
+              key={t.to}
+              style={[
+                styles.layer,
+                t.captured ? styles.ring : styles.dot,
+                {
+                  left: c.x - d / 2,
+                  top: c.y - d / 2,
+                  width: d,
+                  height: d,
+                  borderRadius: d / 2,
+                },
+              ]}
+            />
+          );
+        })}
+      </View>
       {arrows?.length ? (
         <Svg
           pointerEvents="none"
@@ -233,6 +386,31 @@ export function ChessBoard({
           </G>
         </Svg>
       ) : null}
+      {badges?.map((b) => {
+        const c = centre(b.square, orientation, sq);
+        const d = sq * 0.46;
+        // centred on the square's top-right corner, clamped inside the board
+        const left = Math.min(Math.max(c.x + sq * 0.4 - d / 2, 0), size - d);
+        const top = Math.min(Math.max(c.y - sq * 0.4 - d / 2, 0), size - d);
+        return (
+          <PopIn
+            key={`${b.square}${b.glyph}`}
+            style={{
+              ...styles.badge,
+              left,
+              top,
+              width: d,
+              height: d,
+              borderRadius: d / 2,
+              backgroundColor: b.color,
+            }}
+          >
+            <Text style={[styles.badgeText, { fontSize: d * 0.5 }]}>
+              {b.glyph}
+            </Text>
+          </PopIn>
+        );
+      })}
       {interactive && promotion && (
         <Pressable
           style={[StyleSheet.absoluteFill, styles.promoBackdrop]}
@@ -247,7 +425,7 @@ export function ChessBoard({
                 accessibilityRole="button"
                 accessibilityLabel={`Promote to ${NAMES[t]}`}
                 onPress={() => {
-                  onMove?.(promotion.from, promotion.to, t);
+                  play(promotion.from, promotion.to, t);
                   setPromotion(null);
                 }}
               >
@@ -260,12 +438,13 @@ export function ChessBoard({
           </View>
         </Pressable>
       )}
-    </View>
+    </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
   grid: { flexDirection: 'row', flexWrap: 'wrap' },
+  layer: { position: 'absolute' },
   highlight: { backgroundColor: COLORS.highlight },
   selected: { backgroundColor: COLORS.selected },
   check: { backgroundColor: COLORS.check },
@@ -275,12 +454,26 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     lineHeight: 12,
   },
-  dot: { position: 'absolute', backgroundColor: COLORS.hint },
+  dot: { backgroundColor: COLORS.hint },
   ring: { borderWidth: 5, borderColor: COLORS.hint },
+  badge: {
+    position: 'absolute',
+    zIndex: 3,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
+    shadowColor: '#000000',
+    shadowOpacity: 0.35,
+    shadowRadius: 3,
+    shadowOffset: { width: 0, height: 1 },
+  },
+  badgeText: { color: '#FFFFFF', fontWeight: '800' },
   promoBackdrop: {
     backgroundColor: 'rgba(0,0,0,0.6)',
     alignItems: 'center',
     justifyContent: 'center',
+    zIndex: 4,
   },
   promoRow: {
     flexDirection: 'row',

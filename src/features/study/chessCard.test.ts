@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { outcomeFor, parseChessCard } from './chessCard';
+import { BADGE, applyMove, outcomeFor, parseChessCard } from './chessCard';
 
 const recto = JSON.stringify({
   type: 'chess',
@@ -49,5 +49,28 @@ describe('chess cards', () => {
     const card = parseChessCard(recto, verso)!;
     expect(outcomeFor(card, 'e7e8q')).toBe('remembered');
     expect(outcomeFor(card, 'e7e8n')).toBe('forgotten');
+  });
+
+  it('plays a move and tells a capture from a quiet move', () => {
+    const fen = 'k7/8/8/3p4/4P3/8/8/K7 w - - 0 1';
+    expect(applyMove(fen, 'e4d5')).toMatchObject({
+      san: 'exd5',
+      capture: true,
+    });
+    expect(applyMove(fen, 'e4e5')).toMatchObject({ san: 'e5', capture: false });
+  });
+
+  it('has a badge for every label a card can hold', () => {
+    for (const label of [
+      'book',
+      'best',
+      'excellent',
+      'good',
+      'inaccuracy',
+      'mistake',
+      'miss',
+      'blunder',
+    ])
+      expect(BADGE[label]?.glyph).toBeTruthy();
   });
 });
