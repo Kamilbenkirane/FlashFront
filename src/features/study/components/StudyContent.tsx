@@ -10,6 +10,8 @@ import type {
   StudyReviewOutcome,
 } from '@/domain/study/models/Flashcard';
 import DecksMultiSelect from '@/features/library/components/DecksMultiSelect';
+import { parseChessCard } from '@/features/study/chessCard';
+import { ChessCard } from '@/features/study/components/ChessCard/ChessCard';
 import { Flashcard } from '@/features/study/components/Flashcard/Flashcard';
 import { FlashcardMetaStrip } from '@/features/study/components/FlashcardMetaStrip';
 import { StudyReviewDock } from '@/features/study/components/StudyReviewDock';
@@ -278,6 +280,10 @@ export const StudyContent: React.FC<StudyContentProps> = ({
     );
   }
 
+  const chessCard = currentCard
+    ? parseChessCard(currentCard.recto, currentCard.verso)
+    : null;
+
   return (
     <ScrollView
       contentContainerStyle={contentStyle}
@@ -286,40 +292,52 @@ export const StudyContent: React.FC<StudyContentProps> = ({
       keyboardShouldPersistTaps="handled"
     >
       <View style={styles.studyWidth}>
-        <Flashcard
-          cardToken={currentCardToken}
-          revealed={isRevealed}
-          disabled={isReviewProcessing}
-          flashcard={currentCard}
-          onFlip={(revealed) =>
-            setRevealedCardToken(revealed ? currentCardToken : null)
-          }
-          style={{ minHeight: Math.max(280, Math.min(height - 400, 420)) }}
-          onSwipedLeft={onForgottenReview}
-          onSwipedRight={onRememberedReview}
-          testID="study-flashcard"
-        />
+        {chessCard ? (
+          <ChessCard
+            key={currentCardToken}
+            card={chessCard}
+            disabled={isReviewProcessing}
+            onRemembered={onRememberedReview}
+            onForgotten={onForgottenReview}
+          />
+        ) : (
+          <Flashcard
+            cardToken={currentCardToken}
+            revealed={isRevealed}
+            disabled={isReviewProcessing}
+            flashcard={currentCard}
+            onFlip={(revealed) =>
+              setRevealedCardToken(revealed ? currentCardToken : null)
+            }
+            style={{ minHeight: Math.max(280, Math.min(height - 400, 420)) }}
+            onSwipedLeft={onForgottenReview}
+            onSwipedRight={onRememberedReview}
+            testID="study-flashcard"
+          />
+        )}
         <FlashcardMetaStrip flashcard={currentCard} />
-        <View style={styles.reviewActions}>
-          {isRevealed ? (
-            <StudyReviewDock
-              disabled={isReviewProcessing}
-              pendingOutcome={pendingReviewOutcome}
-              onForgotten={onForgottenReview}
-              onRemembered={onRememberedReview}
-              onKnown={onKnownReview}
-            />
-          ) : (
-            <Button
-              title="Reveal answer"
-              size="lg"
-              fullWidth
-              disabled={isReviewProcessing}
-              onPress={() => setRevealedCardToken(currentCardToken)}
-              testID="reveal-answer"
-            />
-          )}
-        </View>
+        {chessCard ? null : (
+          <View style={styles.reviewActions}>
+            {isRevealed ? (
+              <StudyReviewDock
+                disabled={isReviewProcessing}
+                pendingOutcome={pendingReviewOutcome}
+                onForgotten={onForgottenReview}
+                onRemembered={onRememberedReview}
+                onKnown={onKnownReview}
+              />
+            ) : (
+              <Button
+                title="Reveal answer"
+                size="lg"
+                fullWidth
+                disabled={isReviewProcessing}
+                onPress={() => setRevealedCardToken(currentCardToken)}
+                testID="reveal-answer"
+              />
+            )}
+          </View>
+        )}
         {isReviewProcessing ? (
           <Typography
             variant="small"
