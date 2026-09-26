@@ -105,8 +105,11 @@ export const StudyContent: React.FC<StudyContentProps> = ({
   const [revealedCardToken, setRevealedCardToken] = useState<number | null>(
     null,
   );
+  // chess cards passed in a row this session
+  const [combo, setCombo] = useState(0);
   useEffect(() => {
     setRevealedCardToken(null);
+    setCombo(0);
   }, [sessionData]);
   const isRevealed = revealedCardToken === currentCardToken;
   const draftSelection =
@@ -297,8 +300,15 @@ export const StudyContent: React.FC<StudyContentProps> = ({
             key={currentCardToken}
             card={chessCard}
             disabled={isReviewProcessing}
-            onRemembered={onRememberedReview}
-            onForgotten={onForgottenReview}
+            combo={combo}
+            onPass={() => {
+              setCombo((c) => c + 1);
+              onRememberedReview();
+            }}
+            onFail={() => {
+              setCombo(0);
+              onForgottenReview();
+            }}
           />
         ) : (
           <Flashcard

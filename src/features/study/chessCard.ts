@@ -1,4 +1,5 @@
 import type { StudyReviewOutcome } from '@/domain/study/models/Flashcard';
+import { Chess } from 'chess.js';
 
 // A chess card is a normal flashcard whose recto/verso hold JSON (exported by Book Move's scripts/export-decks.ts):
 //   recto: {"type":"chess","fen":"<you to move>","lastMove":"<uci>"}
@@ -14,6 +15,28 @@ export interface ChessCardData {
 
 /** Engine labels that count as knowing the position; anything else (inaccuracy, mistake, miss, blunder) is forgotten. */
 const PASSING = new Set(['book', 'best', 'excellent', 'good']);
+
+/** chess.com Game Review badges: glyph and colour per engine label. */
+export const BADGE: Record<
+  string,
+  { name: string; glyph: string; color: string }
+> = {
+  book: { name: 'Book move', glyph: '📖', color: '#a88865' },
+  best: { name: 'Best move', glyph: '★', color: '#96bc4b' },
+  excellent: { name: 'Excellent', glyph: '!', color: '#96bc4b' },
+  good: { name: 'Good', glyph: '✓', color: '#96af8b' },
+  inaccuracy: { name: 'Inaccuracy', glyph: '?!', color: '#f0c15c' },
+  mistake: { name: 'Mistake', glyph: '?', color: '#e6912c' },
+  miss: { name: 'Miss', glyph: '?', color: '#ee6b55' },
+  blunder: { name: 'Blunder', glyph: '??', color: '#ca3431' },
+};
+
+/** Plays a uci move from a position: the position after it, its SAN, and whether it captures. */
+export function applyMove(fen: string, uci: string) {
+  const chess = new Chess(fen);
+  const move = chess.move(uci);
+  return { fen: chess.fen(), san: move.san, capture: Boolean(move.captured) };
+}
 
 export function parseChessCard(
   recto: string,
