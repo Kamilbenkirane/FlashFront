@@ -1,3 +1,4 @@
+import { ApiError, fetchWithTimeout } from '@/services/apiError';
 import type {
   AppAuthUser,
   AppSession,
@@ -61,7 +62,7 @@ const parseErrorMessage = async (response: Response) => {
 };
 
 const requestJson = async <T>(path: string, init?: RequestInit): Promise<T> => {
-  const response = await fetch(buildApiUrl(path), {
+  const response = await fetchWithTimeout(buildApiUrl(path), {
     headers: {
       'Content-Type': 'application/json',
       ...(init?.headers || {}),
@@ -70,7 +71,7 @@ const requestJson = async <T>(path: string, init?: RequestInit): Promise<T> => {
   });
 
   if (!response.ok) {
-    throw new Error(await parseErrorMessage(response));
+    throw new ApiError(await parseErrorMessage(response), response.status);
   }
 
   if (response.status === 204) {

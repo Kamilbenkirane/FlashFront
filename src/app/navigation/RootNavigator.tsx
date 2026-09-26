@@ -7,8 +7,19 @@ import { useAuth } from '@/providers/AuthProvider';
 import { useUser } from '@/providers/UserProvider';
 import { theme } from '@/tokens/theme';
 import { DarkTheme, NavigationContainer } from '@react-navigation/native';
+import * as SplashScreen from 'expo-splash-screen';
 import type React from 'react';
+import { useEffect } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
+
+// Local bootstrap (fonts, stored session, cached profile) takes a few tens of
+// milliseconds; keeping the splash over it avoids a spinner flash. Past this
+// delay the app shows its own loading state instead of a frozen splash.
+const SPLASH_FALLBACK_MS = 2000;
+
+const hideSplashScreen = () => {
+  void SplashScreen.hideAsync().catch(() => undefined);
+};
 
 const RootNavigator: React.FC = () => {
   const { recoveryLinkVersion } = useAuth();
@@ -44,10 +55,24 @@ const RootScreens: React.FC = () => {
     refreshUser,
   } = useUser();
 
-  if (
+  const isBootstrapping =
     authLoading ||
-    (!requiresPasswordReset && session && (userLoading || onboardingLoading))
-  ) {
+    (!requiresPasswordReset &&
+      Boolean(session) &&
+      (userLoading || onboardingLoading));
+
+  useEffect(() => {
+    if (!isBootstrapping) {
+      hideSplashScreen();
+    }
+  }, [isBootstrapping]);
+
+  useEffect(() => {
+    const timeout = setTimeout(hideSplashScreen, SPLASH_FALLBACK_MS);
+    return () => clearTimeout(timeout);
+  }, []);
+
+  if (isBootstrapping) {
     return <LoadingState message="Preparing your workspace..." />;
   }
 

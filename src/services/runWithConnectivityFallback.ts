@@ -1,4 +1,4 @@
-import NetInfo from '@react-native-community/netinfo';
+import { isDeviceOnline } from '@/services/connectivity';
 
 interface ConnectivityFallbackOptions<TResult> {
   runOnline: () => Promise<TResult>;
@@ -11,8 +11,7 @@ export const runWithConnectivityFallback = async <TResult>({
   runOffline,
   offlineResult,
 }: ConnectivityFallbackOptions<TResult>) => {
-  const connectionInfo = await NetInfo.fetch();
-  if (!connectionInfo.isConnected) {
+  if (!(await isDeviceOnline())) {
     await runOffline();
     return offlineResult;
   }

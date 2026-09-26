@@ -5,6 +5,7 @@ interface MMKVInstance {
   getString(key: string): string | undefined;
   set(key: string, value: string): void;
   delete(key: string): void;
+  clearAll(): void;
 }
 
 export class StorageAdapter {
@@ -59,6 +60,24 @@ export class StorageAdapter {
       await AsyncStorage.removeItem(`${this.id}_${key}`);
     } catch (error) {
       console.warn('AsyncStorage remove error', error);
+    }
+  }
+
+  async clearAll(): Promise<void> {
+    if (this.mmkv) {
+      this.mmkv.clearAll();
+      return;
+    }
+    try {
+      const prefix = `${this.id}_`;
+      const ownKeys = (await AsyncStorage.getAllKeys()).filter((key) =>
+        key.startsWith(prefix),
+      );
+      if (ownKeys.length > 0) {
+        await AsyncStorage.multiRemove(ownKeys);
+      }
+    } catch (error) {
+      console.warn('AsyncStorage clear error', error);
     }
   }
 }

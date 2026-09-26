@@ -1,5 +1,6 @@
-import useAsyncResource from '@/hooks/useAsyncResource';
+import useCachedResource from '@/hooks/useCachedResource';
 import { listDecks } from '@/services/backendClient';
+import { cacheKeys } from '@/services/dataCache';
 import type { Deck } from '../interfaces';
 
 const EMPTY_DECKS: Deck[] = [];
@@ -10,7 +11,8 @@ const useDeckLibrary = () => {
     isLoading,
     error,
     reload,
-  } = useAsyncResource({
+  } = useCachedResource({
+    cacheKey: cacheKeys.deckLibrary(),
     initialData: EMPTY_DECKS,
     load: listDecks,
     fallbackErrorMessage: 'Could not load the deck library.',

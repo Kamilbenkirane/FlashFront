@@ -20,6 +20,9 @@ interface UseStudyChatOptions {
   deckIds: (string | number)[];
   modelId: string;
   imageModelId: string;
+  // History is only fetched while the chat is open, so studying a card never
+  // costs a request on its own.
+  enabled?: boolean;
   onCurrentCardPatched?: (card: StudyChatCommittedFlashcard) => void;
   onNewCardCreated?: (card: StudyChatCommittedFlashcard) => void;
 }
@@ -124,6 +127,7 @@ const useStudyChat = ({
   deckIds,
   modelId,
   imageModelId,
+  enabled = true,
   onCurrentCardPatched,
   onNewCardCreated,
 }: UseStudyChatOptions) => {
@@ -136,6 +140,7 @@ const useStudyChat = ({
     Record<string, StudyChatProposalActionState>
   >({});
   const abortControllerRef = useRef<AbortController | null>(null);
+  const historyCardIdRef = useRef<string | number | null>(null);
 
   const stopStreaming = useCallback(() => {
     abortControllerRef.current?.abort();
@@ -144,20 +149,27 @@ const useStudyChat = ({
   }, []);
 
   useEffect(() => {
-    let isCancelled = false;
-
     stopStreaming();
     setDraft('');
     setError(null);
     setProposalActions({});
+    setMessages([]);
+    setIsLoadingHistory(false);
+    historyCardIdRef.current = null;
+  }, [currentCardId, stopStreaming]);
 
-    if (currentCardId === null) {
-      setMessages([]);
-      setIsLoadingHistory(false);
-      return () => {
-        isCancelled = true;
-      };
+  useEffect(() => {
+    if (
+      !enabled ||
+      currentCardId === null ||
+      historyCardIdRef.current === currentCardId
+    ) {
+      return;
     }
+
+    let isCancelled = false;
+    let isSettled = false;
+    historyCardIdRef.current = currentCardId;
 
     setIsLoadingHistory(true);
     void getStudyChatHistoryRequest(currentCardId)
@@ -179,6 +191,7 @@ const useStudyChat = ({
         );
       })
       .finally(() => {
+        isSettled = true;
         if (!isCancelled) {
           setIsLoadingHistory(false);
         }
@@ -186,8 +199,12 @@ const useStudyChat = ({
 
     return () => {
       isCancelled = true;
+      // Closed before the history arrived: fetch again on the next open.
+      if (!isSettled && historyCardIdRef.current === currentCardId) {
+        historyCardIdRef.current = null;
+      }
     };
-  }, [currentCardId, stopStreaming]);
+  }, [currentCardId, enabled]);
 
   useEffect(() => stopStreaming, [stopStreaming]);
 

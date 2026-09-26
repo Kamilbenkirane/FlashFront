@@ -11,23 +11,29 @@ import {
 } from '@/features/study/components/StudyContent';
 import { StudyHeader } from '@/features/study/components/StudyHeader';
 import useStudyChat from '@/features/study/hooks/useStudyChat';
+import useCachedResource from '@/hooks/useCachedResource';
 import useSessionData from '@/hooks/useSessionData';
 import useStudySession from '@/hooks/useStudySession';
 import useSubscribedDecks from '@/hooks/useSubscribedDecks';
-import useSyncLocalReviews from '@/hooks/useSyncLocalReviews';
 import { useAuth } from '@/providers/AuthProvider';
 import { useUser } from '@/providers/UserProvider';
 import {
   getStudyChatImageModelsRequest,
   getStudyChatModelsRequest,
 } from '@/services/backendClient';
+import { cacheKeys } from '@/services/dataCache';
 import { createReview } from '@/services/reviews/reviewService';
+import {
+  applyReviewToStudyCardsSnapshot,
+  patchStudyCardInSnapshot,
+  upsertStudyCardInSnapshot,
+} from '@/services/studyCardsCache';
 import {
   STUDY_CHAT_BACKEND_KEY_MESSAGE,
   STUDY_CHAT_DEFAULT_IMAGE_MODEL_ID,
   STUDY_CHAT_DEFAULT_MODEL_ID,
   type StudyChatCommittedFlashcard,
-  type StudyChatModelOption,
+  type StudyChatModelsResponse,
 } from '@/services/studyChat/types';
 import {
   clearLastStudiedDeckIds,
@@ -42,12 +48,25 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+const EMPTY_STUDY_CHAT_MODELS: StudyChatModelsResponse = {
+  models: [],
+  defaultModel: '',
+};
+
 const areSameDeckIds = (
   left: (string | number)[],
   right: (string | number)[],
 ) =>
   left.length === right.length &&
   left.every((deckId, index) => `${deckId}` === `${right[index]}`);
+
+const pickAvailableModelId = (
+  currentModelId: string,
+  { models, defaultModel }: StudyChatModelsResponse,
+) =>
+  models.some((model) => model.id === currentModelId)
+    ? currentModelId
+    : defaultModel;
 
 type FlashcardScreenProps = AppTabScreenProps<'Flashcard'>;
 
@@ -60,6 +79,7 @@ const FlashcardScreen = ({ navigation, route }: FlashcardScreenProps) => {
   const {
     decks,
     isLoading: isDecksLoading,
+    hasLoaded: hasDecksLoaded,
     error: decksError,
     reload: reloadDecks,
   } = useSubscribedDecks();
@@ -69,17 +89,16 @@ const FlashcardScreen = ({ navigation, route }: FlashcardScreenProps) => {
     setResolvedInitialDeckSelectionIdentityId,
   ] = useState<string | null>(null);
   const hasInteractedWithDeckSelectionRef = useRef(false);
-  const hasObservedSubscribedDeckLoadRef = useRef(false);
+  const identityId = authUser?.id ?? null;
   const {
     sessionData,
     isLoading: isSessionLoading,
     error: sessionError,
     reload: reloadSession,
-  } = useSessionData(activeDecksIds);
+  } = useSessionData(identityId, activeDecksIds);
   const {
     currentCard,
     currentCardToken,
-    reviewCount,
     stats: sessionStats,
     submitReview,
     patchCard,
@@ -93,22 +112,30 @@ const FlashcardScreen = ({ navigation, route }: FlashcardScreenProps) => {
     tone: 'warning' | 'error';
     message: string;
   } | null>(null);
-  const [studyChatModels, setStudyChatModels] = useState<
-    StudyChatModelOption[]
-  >([]);
-  const [isStudyChatModelsLoading, setIsStudyChatModelsLoading] =
-    useState(false);
-  const [studyChatModelsError, setStudyChatModelsError] = useState<
-    string | null
-  >(null);
-  const [studyChatImageModels, setStudyChatImageModels] = useState<
-    StudyChatModelOption[]
-  >([]);
-  const [isStudyChatImageModelsLoading, setIsStudyChatImageModelsLoading] =
-    useState(false);
-  const [studyChatImageModelsError, setStudyChatImageModelsError] = useState<
-    string | null
-  >(null);
+  const {
+    data: studyChatModelsData,
+    isLoading: isStudyChatModelsLoading,
+    error: studyChatModelsError,
+  } = useCachedResource<StudyChatModelsResponse>({
+    cacheKey: identityId ? cacheKeys.studyChatModels(identityId) : null,
+    initialData: EMPTY_STUDY_CHAT_MODELS,
+    load: getStudyChatModelsRequest,
+    fallbackErrorMessage: 'Could not load study chat models.',
+    enabled: Boolean(user),
+  });
+  const {
+    data: studyChatImageModelsData,
+    isLoading: isStudyChatImageModelsLoading,
+    error: studyChatImageModelsError,
+  } = useCachedResource<StudyChatModelsResponse>({
+    cacheKey: identityId ? cacheKeys.studyChatImageModels(identityId) : null,
+    initialData: EMPTY_STUDY_CHAT_MODELS,
+    load: getStudyChatImageModelsRequest,
+    fallbackErrorMessage: 'Could not load study chat image models.',
+    enabled: Boolean(user),
+  });
+  const studyChatModels = studyChatModelsData.models;
+  const studyChatImageModels = studyChatImageModelsData.models;
   const [sessionSettings, setSessionSettings] = useState<SessionSettings>({
     studyChatModelId: STUDY_CHAT_DEFAULT_MODEL_ID,
     studyChatImageModelId: STUDY_CHAT_DEFAULT_IMAGE_MODEL_ID,
@@ -118,7 +145,6 @@ const FlashcardScreen = ({ navigation, route }: FlashcardScreenProps) => {
   const selectedDeckId = routeParams?.selectedDeckId;
   const selectedDeckName = routeParams?.selectedDeckName;
   const autoStart = routeParams?.autoStart;
-  const identityId = authUser?.id ?? null;
   const hasResolvedInitialDeckSelection =
     identityId !== null &&
     resolvedInitialDeckSelectionIdentityId === identityId;
@@ -146,8 +172,6 @@ const FlashcardScreen = ({ navigation, route }: FlashcardScreenProps) => {
         ? `${activeDeckLabel}`
         : `${activeDecksIds.length} decks`;
 
-  useSyncLocalReviews(reviewCount);
-
   useEffect(() => {
     setSessionPaused(false);
     setContinuePastGoal(false);
@@ -155,18 +179,11 @@ const FlashcardScreen = ({ navigation, route }: FlashcardScreenProps) => {
 
   useEffect(() => {
     hasInteractedWithDeckSelectionRef.current = false;
-    hasObservedSubscribedDeckLoadRef.current = false;
     setResolvedInitialDeckSelectionIdentityId(null);
     setActiveDecksIds([]);
     setSessionPaused(false);
     setContinuePastGoal(false);
   }, [identityId]);
-
-  useEffect(() => {
-    if (user && isDecksLoading) {
-      hasObservedSubscribedDeckLoadRef.current = true;
-    }
-  }, [isDecksLoading, user]);
 
   useEffect(() => {
     if (!identityId || !selectedDeckId || !autoStart) {
@@ -191,14 +208,15 @@ const FlashcardScreen = ({ navigation, route }: FlashcardScreenProps) => {
     });
   }, [autoStart, identityId, navigation, selectedDeckId]);
 
+  // Restore the last studied decks as soon as a deck list is known, whether
+  // it came from the local cache or from the server.
   useEffect(() => {
     if (
       !user ||
       !identityId ||
       hasResolvedInitialDeckSelection ||
+      !hasDecksLoaded ||
       isDecksLoading ||
-      !hasObservedSubscribedDeckLoadRef.current ||
-      Boolean(decksError) ||
       !shouldRestoreLastStudiedDeckIds({
         routeSelectedDeckId: selectedDeckId,
         autoStart,
@@ -243,7 +261,7 @@ const FlashcardScreen = ({ navigation, route }: FlashcardScreenProps) => {
   }, [
     autoStart,
     availableDeckIds,
-    decksError,
+    hasDecksLoaded,
     hasResolvedInitialDeckSelection,
     identityId,
     isDecksLoading,
@@ -265,126 +283,36 @@ const FlashcardScreen = ({ navigation, route }: FlashcardScreenProps) => {
   }, [activeDecksIds, identityId, resolvedInitialDeckSelectionIdentityId]);
 
   useEffect(() => {
-    if (!user) {
-      setStudyChatModels([]);
-      setStudyChatModelsError(null);
-      setIsStudyChatModelsLoading(false);
+    if (studyChatModelsData.models.length === 0) {
       return;
     }
 
-    let isCancelled = false;
-
-    setIsStudyChatModelsLoading(true);
-    setStudyChatModelsError(null);
-
-    void getStudyChatModelsRequest()
-      .then(({ models, defaultModel }) => {
-        if (isCancelled) {
-          return;
-        }
-
-        setStudyChatModels(models);
-        setSessionSettings((currentSettings) => {
-          const currentModelStillAvailable = models.some(
-            (model) => model.id === currentSettings.studyChatModelId,
-          );
-          const nextModelId = currentModelStillAvailable
-            ? currentSettings.studyChatModelId
-            : defaultModel;
-
-          return nextModelId === currentSettings.studyChatModelId
-            ? currentSettings
-            : { ...currentSettings, studyChatModelId: nextModelId };
-        });
-      })
-      .catch((error) => {
-        if (isCancelled) {
-          return;
-        }
-
-        setStudyChatModels([]);
-        setStudyChatModelsError(
-          error instanceof Error
-            ? error.message
-            : 'Could not load study chat models.',
-        );
-        setSessionSettings((currentSettings) =>
-          currentSettings.studyChatModelId === ''
-            ? currentSettings
-            : { ...currentSettings, studyChatModelId: '' },
-        );
-      })
-      .finally(() => {
-        if (!isCancelled) {
-          setIsStudyChatModelsLoading(false);
-        }
-      });
-
-    return () => {
-      isCancelled = true;
-    };
-  }, [user]);
+    setSessionSettings((currentSettings) => {
+      const nextModelId = pickAvailableModelId(
+        currentSettings.studyChatModelId,
+        studyChatModelsData,
+      );
+      return nextModelId === currentSettings.studyChatModelId
+        ? currentSettings
+        : { ...currentSettings, studyChatModelId: nextModelId };
+    });
+  }, [studyChatModelsData]);
 
   useEffect(() => {
-    if (!user) {
-      setStudyChatImageModels([]);
-      setStudyChatImageModelsError(null);
-      setIsStudyChatImageModelsLoading(false);
+    if (studyChatImageModelsData.models.length === 0) {
       return;
     }
 
-    let isCancelled = false;
-
-    setIsStudyChatImageModelsLoading(true);
-    setStudyChatImageModelsError(null);
-
-    void getStudyChatImageModelsRequest()
-      .then(({ models, defaultModel }) => {
-        if (isCancelled) {
-          return;
-        }
-
-        setStudyChatImageModels(models);
-        setSessionSettings((currentSettings) => {
-          const currentModelStillAvailable = models.some(
-            (model) => model.id === currentSettings.studyChatImageModelId,
-          );
-          const nextModelId = currentModelStillAvailable
-            ? currentSettings.studyChatImageModelId
-            : defaultModel;
-
-          return nextModelId === currentSettings.studyChatImageModelId
-            ? currentSettings
-            : { ...currentSettings, studyChatImageModelId: nextModelId };
-        });
-      })
-      .catch((error) => {
-        if (isCancelled) {
-          return;
-        }
-
-        setStudyChatImageModels([]);
-        setStudyChatImageModelsError(
-          error instanceof Error
-            ? error.message
-            : 'Could not load study chat image models.',
-        );
-        setSessionSettings((currentSettings) =>
-          currentSettings.studyChatImageModelId === ''
-            ? currentSettings
-            : { ...currentSettings, studyChatImageModelId: '' },
-        );
-      })
-      .finally(() => {
-        if (!isCancelled) {
-          setIsStudyChatImageModelsLoading(false);
-        }
-      });
-
-    return () => {
-      isCancelled = true;
-    };
-  }, [user]);
+    setSessionSettings((currentSettings) => {
+      const nextModelId = pickAvailableModelId(
+        currentSettings.studyChatImageModelId,
+        studyChatImageModelsData,
+      );
+      return nextModelId === currentSettings.studyChatImageModelId
+        ? currentSettings
+        : { ...currentSettings, studyChatImageModelId: nextModelId };
+    });
+  }, [studyChatImageModelsData]);
 
   useEffect(() => {
     if (!reviewFeedback) {
@@ -433,6 +361,8 @@ const FlashcardScreen = ({ navigation, route }: FlashcardScreenProps) => {
     setContinuePastGoal(false);
   }, [identityId]);
 
+  // The next card is computed locally and the review is queued on the device,
+  // so nothing here waits on the network.
   const submitSessionReview = useCallback(
     async (outcome: StudyReviewOutcome) => {
       if (pendingReviewOutcome || !currentCard) {
@@ -444,14 +374,16 @@ const FlashcardScreen = ({ navigation, route }: FlashcardScreenProps) => {
 
       try {
         const reviewDraft = submitReview(outcome);
-        const result = await createReview(reviewDraft);
-        const savedLocally =
-          typeof result === 'object' &&
-          result !== null &&
-          'savedLocally' in result &&
-          result.savedLocally === true;
+        if (reviewDraft && identityId) {
+          void applyReviewToStudyCardsSnapshot(
+            identityId,
+            activeDecksIds,
+            reviewDraft,
+          );
+        }
 
-        if (savedLocally) {
+        const result = await createReview(reviewDraft);
+        if (result.queued && result.offline) {
           setReviewFeedback({
             tone: 'warning',
             message:
@@ -468,24 +400,34 @@ const FlashcardScreen = ({ navigation, route }: FlashcardScreenProps) => {
         setPendingReviewOutcome(null);
       }
     },
-    [currentCard, pendingReviewOutcome, submitReview],
+    [
+      activeDecksIds,
+      currentCard,
+      identityId,
+      pendingReviewOutcome,
+      submitReview,
+    ],
   );
 
   const handleStudyChatCardPatched = useCallback(
     (flashcard: StudyChatCommittedFlashcard) => {
-      patchCard({
+      const patch = {
         cardId: flashcard.cardId,
         recto: flashcard.recto,
         verso: flashcard.verso,
         difficulty: flashcard.difficulty,
-      });
+      };
+      patchCard(patch);
+      if (identityId) {
+        void patchStudyCardInSnapshot(identityId, activeDecksIds, patch);
+      }
     },
-    [patchCard],
+    [activeDecksIds, identityId, patchCard],
   );
 
   const handleStudyChatCardCreated = useCallback(
     (flashcard: StudyChatCommittedFlashcard) => {
-      insertCard({
+      const card = {
         card_id: flashcard.cardId,
         recto: flashcard.recto,
         verso: flashcard.verso,
@@ -493,9 +435,13 @@ const FlashcardScreen = ({ navigation, route }: FlashcardScreenProps) => {
         lastReviewTimestamp: null,
         streak: 0,
         success: null,
-      });
+      };
+      insertCard(card);
+      if (identityId) {
+        void upsertStudyCardInSnapshot(identityId, activeDecksIds, card);
+      }
     },
-    [insertCard],
+    [activeDecksIds, identityId, insertCard],
   );
 
   const studyChat = useStudyChat({
@@ -503,6 +449,7 @@ const FlashcardScreen = ({ navigation, route }: FlashcardScreenProps) => {
     deckIds: activeDecksIds,
     modelId: sessionSettings.studyChatModelId,
     imageModelId: sessionSettings.studyChatImageModelId,
+    enabled: showStudyChat,
     onCurrentCardPatched: handleStudyChatCardPatched,
     onNewCardCreated: handleStudyChatCardCreated,
   });
@@ -542,8 +489,11 @@ const FlashcardScreen = ({ navigation, route }: FlashcardScreenProps) => {
       : activeDecksIds.length > 1
         ? `${activeDecksIds.length} decks in session`
         : 'Study session';
+  // A deck list that failed to load with nothing cached must surface its
+  // error instead of waiting forever for a selection to restore.
   const isResolvingInitialDeckSelection =
-    userLoading || (Boolean(user) && !hasResolvedInitialDeckSelection);
+    userLoading ||
+    (Boolean(user) && !hasResolvedInitialDeckSelection && !decksError);
 
   let studyContentState: StudyContentState = 'active';
   if (activeDecksIds.length === 0) {

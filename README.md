@@ -14,6 +14,21 @@ Expo, or `bun ios` to build a development client.
 
 See [authentication email setup](docs/auth.md) for password recovery and app redirects.
 
+## Offline and startup
+
+The app opens from what it last saw, then talks to the server in the background:
+
+- The last session, profile, decks, study cards, analytics, and assistant model
+  lists are cached on the device (`src/services/dataCache.ts`). Screens show the
+  cached value at once and refresh it silently; a request that fails while
+  cached data is shown never turns into an error screen.
+- Losing the network never signs you out. The stored session is restored on
+  launch and only a deliberate rejection from the auth server clears it.
+- Reviews are always written to the local outbox first and synced in the
+  background, on reconnection, and when the app returns to the foreground. The
+  cards of a session are a snapshot taken when it starts, kept in step with
+  your reviews locally; the server copy is used at the next session start.
+
 ## Checks
 
 ```bash

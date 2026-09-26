@@ -1,4 +1,6 @@
+import { createAsyncLock } from '@/utils/asyncLock';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { type ApiError, isDefinitiveRequestError } from './apiError';
 import {
   type ReviewMutation,
   type SubscriptionMutation,
@@ -20,6 +22,10 @@ interface OutboxItem {
 }
 
 const OUTBOX_KEY = 'flashfront.outbox.v1';
+
+// Every read-modify-write of the stored queue goes through this lock so an
+// item enqueued while a flush is running can never be dropped by a stale write.
+const withOutboxLock = createAsyncLock();
 
 const createOutboxId = (prefix: string) =>
   `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
@@ -79,14 +85,21 @@ const compactSubscriptionQueue = (
   return [...remainingItems, nextItem];
 };
 
-const appendOutboxItem = async (item: OutboxItem) => {
-  const items = await readOutbox();
-  const nextItems = item.type.startsWith('subscription.')
-    ? compactSubscriptionQueue(items, item)
-    : [...items, item];
-  await writeOutbox(nextItems);
-  return item;
-};
+const appendOutboxItem = (item: OutboxItem) =>
+  withOutboxLock(async () => {
+    const items = await readOutbox();
+    const nextItems = item.type.startsWith('subscription.')
+      ? compactSubscriptionQueue(items, item)
+      : [...items, item];
+    await writeOutbox(nextItems);
+    return item;
+  });
+
+const removeOutboxItem = (itemId: string) =>
+  withOutboxLock(async () => {
+    const items = await readOutbox();
+    await writeOutbox(items.filter((item) => item.id !== itemId));
+  });
 
 export const enqueueReviewOperation = async (review: ReviewMutation) => {
   return appendOutboxItem({
@@ -117,6 +130,17 @@ export const enqueueSubscriptionDelete = async (
     payload: subscription,
   });
 
+// Drops everything still queued, e.g. when the account signs out so nothing
+// is ever delivered under another account's token.
+export const clearPendingOperations = () =>
+  withOutboxLock(() => writeOutbox([]));
+
+// Reviews still waiting to reach the server, oldest first.
+export const getPendingReviewMutations = async (): Promise<ReviewMutation[]> =>
+  (await withOutboxLock(readOutbox))
+    .filter((item) => item.type === 'review.create')
+    .map((item) => item.payload as ReviewMutation);
+
 const deliverOutboxItem = async (item: OutboxItem) => {
   if (item.type === 'review.create') {
     await createCurrentReviewRequest(item.payload as ReviewMutation);
@@ -138,22 +162,51 @@ const deliverOutboxItem = async (item: OutboxItem) => {
   return false;
 };
 
-export const flushPendingOperations = async () => {
-  const items = await readOutbox();
-  if (items.length === 0) {
-    return true;
-  }
+// An item the server refused outright would block everything queued behind it
+// forever, so it is dropped. Anything transient keeps its place for a retry.
+const shouldDropRejectedItem = (error: unknown) =>
+  isDefinitiveRequestError(error) && (error as ApiError).status !== 401;
 
-  const remainingItems = [...items];
+const deliverPendingItems = async (): Promise<boolean> => {
+  const items = await withOutboxLock(readOutbox);
+
   for (const item of items) {
     try {
       await deliverOutboxItem(item);
-      remainingItems.shift();
-      await writeOutbox(remainingItems);
     } catch (error) {
-      return false;
+      if (!shouldDropRejectedItem(error)) {
+        return false;
+      }
+      console.warn(`Dropping outbox item ${item.id} rejected by the server`);
     }
+
+    await removeOutboxItem(item.id);
   }
 
   return true;
+};
+
+let inFlightFlush: Promise<boolean> | null = null;
+let flushRequestedWhileInFlight = false;
+
+// Only one flush runs at a time. A request made while one is running makes
+// it go around once more, so items added mid-flight are picked up too.
+export const flushPendingOperations = (): Promise<boolean> => {
+  if (inFlightFlush) {
+    flushRequestedWhileInFlight = true;
+    return inFlightFlush;
+  }
+
+  inFlightFlush = (async () => {
+    let delivered = true;
+    do {
+      flushRequestedWhileInFlight = false;
+      delivered = await deliverPendingItems();
+    } while (delivered && flushRequestedWhileInFlight);
+    return delivered;
+  })().finally(() => {
+    inFlightFlush = null;
+  });
+
+  return inFlightFlush;
 };

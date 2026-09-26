@@ -1,10 +1,9 @@
-export const STUDY_CHAT_DEFAULT_MODEL_ID = 'gemini-3-flash-preview';
-export const STUDY_CHAT_DEFAULT_IMAGE_MODEL_ID =
-  'gemini-3.1-flash-image-preview';
+export const STUDY_CHAT_DEFAULT_MODEL_ID = 'gemini-3.8-flash';
+export const STUDY_CHAT_DEFAULT_IMAGE_MODEL_ID = 'gemini-3.1-flash-image';
 export const STUDY_CHAT_BACKEND_KEY_MESSAGE =
-  'Study chat needs one backend provider key in flashcard-learning-system/.env: OPENAI_API_KEY, GOOGLE_API_KEY, or ANTHROPIC_API_KEY.';
+  'Study chat needs one backend provider key in flashcard-learning-system/.env: GOOGLE_API_KEY, OPENAI_API_KEY, ANTHROPIC_API_KEY, MISTRAL_API_KEY, XAI_API_KEY, or GROQ_API_KEY.';
 export const STUDY_CHAT_IMAGE_BACKEND_KEY_MESSAGE =
-  'Study chat image generation needs one backend provider key in flashcard-learning-system/.env: GOOGLE_API_KEY or BYTEPLUS_API_KEY.';
+  'Study chat image generation needs one backend provider key in flashcard-learning-system/.env: GOOGLE_API_KEY, OPENAI_API_KEY, BFL_API_KEY, BYTEPLUS_API_KEY, or XAI_API_KEY.';
 
 export interface StudyChatModelOption {
   id: string;
