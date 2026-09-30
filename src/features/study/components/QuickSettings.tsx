@@ -13,7 +13,7 @@ import {
 import { theme } from '@/tokens/theme';
 import { triggerHaptic } from '@/utils/haptics';
 import type React from 'react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -39,6 +39,105 @@ export interface QuickSettingsProps {
   testID?: string;
 }
 
+const ModelPicker = ({
+  kind,
+  visible,
+  models,
+  loading,
+  error,
+  selectedId,
+  onSelect,
+}: {
+  kind: 'text' | 'image';
+  visible: boolean;
+  models: StudyChatModelOption[];
+  loading: boolean;
+  error: string | null;
+  selectedId: string;
+  onSelect: (id: string) => void;
+}) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const isImage = kind === 'image';
+  const selectedLabel =
+    models.find((model) => model.id === selectedId)?.label ??
+    (isImage ? 'Select an image model' : 'Select a model');
+
+  useEffect(() => {
+    if (!visible) setIsOpen(false);
+  }, [visible]);
+
+  return (
+    <View style={styles.studyChatSection}>
+      <Typography variant="heading3">
+        {isImage ? 'Image model' : 'Text model'}
+      </Typography>
+      {loading ? (
+        <Typography variant="small" color="muted">
+          {isImage ? 'Loading image models…' : 'Loading models…'}
+        </Typography>
+      ) : models.length === 0 ? (
+        <Typography variant="small" color={error ? 'error' : 'muted'}>
+          {error ||
+            (isImage
+              ? STUDY_CHAT_IMAGE_BACKEND_KEY_MESSAGE
+              : STUDY_CHAT_BACKEND_KEY_MESSAGE)}
+        </Typography>
+      ) : (
+        <View style={styles.modelPickerSection}>
+          <Pressable
+            onPress={() => {
+              triggerHaptic('selection');
+              setIsOpen((current) => !current);
+            }}
+            style={styles.modelPickerTrigger}
+            accessibilityRole="button"
+            accessibilityLabel={
+              isImage
+                ? 'Change study chat image model'
+                : 'Change study chat model'
+            }
+            accessibilityHint={
+              isImage
+                ? 'Shows the list of available image models.'
+                : 'Shows the list of available models.'
+            }
+            accessibilityState={{ expanded: isOpen }}
+          >
+            <Typography variant="body" style={styles.modelLabel}>
+              {selectedLabel}
+            </Typography>
+            <AppIcon
+              color={theme.colors.mutedForeground}
+              name={isOpen ? 'chevronUp' : 'chevronDown'}
+              size={18}
+            />
+          </Pressable>
+          {isOpen ? (
+            <View style={styles.modelButtons}>
+              {models.map((model) => (
+                <View key={model.id} style={styles.modelButtonCell}>
+                  <Button
+                    title={model.label}
+                    variant={selectedId === model.id ? 'primary' : 'secondary'}
+                    size="lg"
+                    fullWidth
+                    onPress={() => {
+                      triggerHaptic('selection');
+                      onSelect(model.id);
+                      setIsOpen(false);
+                    }}
+                    accessibilityState={{ selected: selectedId === model.id }}
+                  />
+                </View>
+              ))}
+            </View>
+          ) : null}
+        </View>
+      )}
+    </View>
+  );
+};
+
 export const QuickSettings: React.FC<QuickSettingsProps> = ({
   visible,
   onClose,
@@ -57,58 +156,6 @@ export const QuickSettings: React.FC<QuickSettingsProps> = ({
 }) => {
   const prefersReducedMotion = useReducedMotion();
   const insets = useSafeAreaInsets();
-  const [isModelPickerOpen, setIsModelPickerOpen] = useState(false);
-  const [isImageModelPickerOpen, setIsImageModelPickerOpen] = useState(false);
-
-  useEffect(() => {
-    if (!visible) {
-      setIsModelPickerOpen(false);
-      setIsImageModelPickerOpen(false);
-    }
-  }, [visible]);
-
-  const selectedModelLabel = useMemo(() => {
-    const selectedModel = studyChatModels.find(
-      (model) => model.id === sessionSettings.studyChatModelId,
-    );
-    return selectedModel?.label ?? 'Select a model';
-  }, [sessionSettings.studyChatModelId, studyChatModels]);
-
-  const selectedImageModelLabel = useMemo(() => {
-    const selectedModel = studyChatImageModels.find(
-      (model) => model.id === sessionSettings.studyChatImageModelId,
-    );
-    return selectedModel?.label ?? 'Select an image model';
-  }, [sessionSettings.studyChatImageModelId, studyChatImageModels]);
-
-  const handleSettingChange = (
-    key: string,
-    value: boolean | string | number,
-  ) => {
-    triggerHaptic('selection');
-    onSettingsChange({ ...sessionSettings, [key]: value });
-  };
-
-  const handleModelPickerToggle = () => {
-    triggerHaptic('selection');
-    setIsModelPickerOpen((currentValue) => !currentValue);
-  };
-
-  const handleImageModelPickerToggle = () => {
-    triggerHaptic('selection');
-    setIsImageModelPickerOpen((currentValue) => !currentValue);
-  };
-
-  const handleModelSelect = (modelId: string) => {
-    handleSettingChange('studyChatModelId', modelId);
-    setIsModelPickerOpen(false);
-  };
-
-  const handleImageModelSelect = (modelId: string) => {
-    handleSettingChange('studyChatImageModelId', modelId);
-    setIsImageModelPickerOpen(false);
-  };
-
   const handleClose = () => {
     triggerHaptic('impact');
     onClose();
@@ -178,133 +225,34 @@ export const QuickSettings: React.FC<QuickSettingsProps> = ({
                   />
                 </View>
 
-                <View style={styles.studyChatSection}>
-                  <Typography variant="heading3">Text model</Typography>
-                  {isStudyChatModelsLoading ? (
-                    <Typography variant="small" color="muted">
-                      Loading models…
-                    </Typography>
-                  ) : studyChatModels.length === 0 ? (
-                    <Typography
-                      variant="small"
-                      color={studyChatModelsError ? 'error' : 'muted'}
-                    >
-                      {studyChatModelsError || STUDY_CHAT_BACKEND_KEY_MESSAGE}
-                    </Typography>
-                  ) : (
-                    <View style={styles.modelPickerSection}>
-                      <Pressable
-                        onPress={handleModelPickerToggle}
-                        style={styles.modelPickerTrigger}
-                        accessibilityRole="button"
-                        accessibilityLabel="Change study chat model"
-                        accessibilityHint="Shows the list of available models."
-                        accessibilityState={{ expanded: isModelPickerOpen }}
-                      >
-                        <Typography variant="body" style={styles.modelLabel}>
-                          {selectedModelLabel}
-                        </Typography>
-                        <AppIcon
-                          color={theme.colors.mutedForeground}
-                          name={isModelPickerOpen ? 'chevronUp' : 'chevronDown'}
-                          size={18}
-                        />
-                      </Pressable>
-
-                      {isModelPickerOpen ? (
-                        <View style={styles.modelButtons}>
-                          {studyChatModels.map((model) => (
-                            <View key={model.id} style={styles.modelButtonCell}>
-                              <Button
-                                title={model.label}
-                                variant={
-                                  sessionSettings.studyChatModelId === model.id
-                                    ? 'primary'
-                                    : 'secondary'
-                                }
-                                size="lg"
-                                fullWidth
-                                onPress={() => handleModelSelect(model.id)}
-                                accessibilityState={{
-                                  selected:
-                                    sessionSettings.studyChatModelId ===
-                                    model.id,
-                                }}
-                              />
-                            </View>
-                          ))}
-                        </View>
-                      ) : null}
-                    </View>
-                  )}
-                </View>
-
-                <View style={styles.studyChatSection}>
-                  <Typography variant="heading3">Image model</Typography>
-                  {isStudyChatImageModelsLoading ? (
-                    <Typography variant="small" color="muted">
-                      Loading image models…
-                    </Typography>
-                  ) : studyChatImageModels.length === 0 ? (
-                    <Typography
-                      variant="small"
-                      color={studyChatImageModelsError ? 'error' : 'muted'}
-                    >
-                      {studyChatImageModelsError ||
-                        STUDY_CHAT_IMAGE_BACKEND_KEY_MESSAGE}
-                    </Typography>
-                  ) : (
-                    <View style={styles.modelPickerSection}>
-                      <Pressable
-                        onPress={handleImageModelPickerToggle}
-                        style={styles.modelPickerTrigger}
-                        accessibilityRole="button"
-                        accessibilityLabel="Change study chat image model"
-                        accessibilityHint="Shows the list of available image models."
-                        accessibilityState={{
-                          expanded: isImageModelPickerOpen,
-                        }}
-                      >
-                        <Typography variant="body" style={styles.modelLabel}>
-                          {selectedImageModelLabel}
-                        </Typography>
-                        <AppIcon
-                          color={theme.colors.mutedForeground}
-                          name={
-                            isImageModelPickerOpen ? 'chevronUp' : 'chevronDown'
-                          }
-                          size={18}
-                        />
-                      </Pressable>
-
-                      {isImageModelPickerOpen ? (
-                        <View style={styles.modelButtons}>
-                          {studyChatImageModels.map((model) => (
-                            <View key={model.id} style={styles.modelButtonCell}>
-                              <Button
-                                title={model.label}
-                                variant={
-                                  sessionSettings.studyChatImageModelId ===
-                                  model.id
-                                    ? 'primary'
-                                    : 'secondary'
-                                }
-                                size="lg"
-                                fullWidth
-                                onPress={() => handleImageModelSelect(model.id)}
-                                accessibilityState={{
-                                  selected:
-                                    sessionSettings.studyChatImageModelId ===
-                                    model.id,
-                                }}
-                              />
-                            </View>
-                          ))}
-                        </View>
-                      ) : null}
-                    </View>
-                  )}
-                </View>
+                <ModelPicker
+                  kind="text"
+                  visible={visible}
+                  models={studyChatModels}
+                  loading={isStudyChatModelsLoading}
+                  error={studyChatModelsError}
+                  selectedId={sessionSettings.studyChatModelId}
+                  onSelect={(id) =>
+                    onSettingsChange({
+                      ...sessionSettings,
+                      studyChatModelId: id,
+                    })
+                  }
+                />
+                <ModelPicker
+                  kind="image"
+                  visible={visible}
+                  models={studyChatImageModels}
+                  loading={isStudyChatImageModelsLoading}
+                  error={studyChatImageModelsError}
+                  selectedId={sessionSettings.studyChatImageModelId}
+                  onSelect={(id) =>
+                    onSettingsChange({
+                      ...sessionSettings,
+                      studyChatImageModelId: id,
+                    })
+                  }
+                />
               </View>
             </ScrollView>
             <View style={styles.footer}>

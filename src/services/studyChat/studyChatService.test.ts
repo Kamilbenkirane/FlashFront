@@ -22,7 +22,8 @@ vi.mock('@/services/auth/sessionState', () => ({
   refreshAccessToken: refreshAccessTokenMock,
 }));
 
-vi.mock('@/services/backendClient', () => ({
+vi.mock('@/services/backendClient', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/services/backendClient')>()),
   buildHeaders: buildHeadersMock,
   parseErrorMessage: parseErrorMessageMock,
 }));

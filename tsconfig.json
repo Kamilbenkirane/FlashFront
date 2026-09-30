@@ -58,13 +58,7 @@
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true
   },
-  "include": [
-    "src/**/*",
-    "App.tsx",
-    "nativewind-env.d.ts",
-    "**/*.ts",
-    "**/*.tsx"
-  ],
+  "include": ["src/**/*", "App.tsx", "**/*.ts", "**/*.tsx"],
   "exclude": [
     "node_modules",
     "dist",

@@ -8,8 +8,7 @@ import { StudyChatMessageContent } from '@/features/study/components/StudyChatMe
 import { StudyChatProposalCard } from '@/features/study/components/StudyChatProposalCard';
 import useReducedMotion from '@/hooks/useReducedMotion';
 import type {
-  StudyChatFlashcardProposal,
-  StudyChatNewFlashcardProposal,
+  StudyChatProposal,
   StudyChatProposalActionState,
   StudyChatUiMessage,
 } from '@/services/studyChat/types';
@@ -56,20 +55,12 @@ interface StudyChatModalProps {
   draft: string;
   onChangeDraft: (value: string) => void;
   onSend: () => void;
-  getFlashcardProposalActionState: (
-    proposal: StudyChatFlashcardProposal,
+  getProposalActionState: (
+    proposal: StudyChatProposal,
   ) => StudyChatProposalActionState;
-  getNewFlashcardProposalActionState: (
-    proposal: StudyChatNewFlashcardProposal,
-  ) => StudyChatProposalActionState;
-  onToggleFlashcardProposalEditing: (
-    proposal: StudyChatFlashcardProposal,
-  ) => void;
-  onToggleNewFlashcardProposalEditing: (
-    proposal: StudyChatNewFlashcardProposal,
-  ) => void;
-  onChangeFlashcardProposalDraft: (
-    proposal: StudyChatFlashcardProposal,
+  onToggleProposalEditing: (proposal: StudyChatProposal) => void;
+  onChangeProposalDraft: (
+    proposal: StudyChatProposal,
     patch: Partial<
       Pick<
         StudyChatProposalActionState,
@@ -77,19 +68,7 @@ interface StudyChatModalProps {
       >
     >,
   ) => void;
-  onChangeNewFlashcardProposalDraft: (
-    proposal: StudyChatNewFlashcardProposal,
-    patch: Partial<
-      Pick<
-        StudyChatProposalActionState,
-        'proposedRecto' | 'proposedVerso' | 'proposedDifficulty'
-      >
-    >,
-  ) => void;
-  onValidateFlashcardProposal: (proposal: StudyChatFlashcardProposal) => void;
-  onValidateNewFlashcardProposal: (
-    proposal: StudyChatNewFlashcardProposal,
-  ) => void;
+  onValidateProposal: (proposal: StudyChatProposal) => void;
   isStreaming: boolean;
   error?: string | null;
 }
@@ -106,14 +85,10 @@ export const StudyChatModal: React.FC<StudyChatModalProps> = ({
   draft,
   onChangeDraft,
   onSend,
-  getFlashcardProposalActionState,
-  getNewFlashcardProposalActionState,
-  onToggleFlashcardProposalEditing,
-  onToggleNewFlashcardProposalEditing,
-  onChangeFlashcardProposalDraft,
-  onChangeNewFlashcardProposalDraft,
-  onValidateFlashcardProposal,
-  onValidateNewFlashcardProposal,
+  getProposalActionState,
+  onToggleProposalEditing,
+  onChangeProposalDraft,
+  onValidateProposal,
   isStreaming,
   error = null,
 }) => {
@@ -354,50 +329,24 @@ export const StudyChatModal: React.FC<StudyChatModalProps> = ({
                                 attachment={attachment}
                               />
                             ))}
-                            {proposals.map((proposal) => (
-                              <StudyChatProposalCard
-                                key={proposal.proposalId}
-                                kind="edit"
-                                proposal={proposal}
-                                state={getFlashcardProposalActionState(
-                                  proposal,
-                                )}
-                                onToggleEditing={() =>
-                                  onToggleFlashcardProposalEditing(proposal)
-                                }
-                                onValidate={() =>
-                                  onValidateFlashcardProposal(proposal)
-                                }
-                                onChangeDraft={(patch) =>
-                                  onChangeFlashcardProposalDraft(
-                                    proposal,
-                                    patch,
-                                  )
-                                }
-                              />
-                            ))}
-                            {newFlashcardProposals.map((proposal) => (
-                              <StudyChatProposalCard
-                                key={proposal.proposalId}
-                                kind="new"
-                                proposal={proposal}
-                                state={getNewFlashcardProposalActionState(
-                                  proposal,
-                                )}
-                                onToggleEditing={() =>
-                                  onToggleNewFlashcardProposalEditing(proposal)
-                                }
-                                onValidate={() =>
-                                  onValidateNewFlashcardProposal(proposal)
-                                }
-                                onChangeDraft={(patch) =>
-                                  onChangeNewFlashcardProposalDraft(
-                                    proposal,
-                                    patch,
-                                  )
-                                }
-                              />
-                            ))}
+                            {[...proposals, ...newFlashcardProposals].map(
+                              (proposal) => (
+                                <StudyChatProposalCard
+                                  key={`${'cardId' in proposal ? 'edit' : 'new'}:${proposal.proposalId}`}
+                                  proposal={proposal}
+                                  state={getProposalActionState(proposal)}
+                                  onToggleEditing={() =>
+                                    onToggleProposalEditing(proposal)
+                                  }
+                                  onValidate={() =>
+                                    onValidateProposal(proposal)
+                                  }
+                                  onChangeDraft={(patch) =>
+                                    onChangeProposalDraft(proposal, patch)
+                                  }
+                                />
+                              ),
+                            )}
                           </View>
                         )}
                       </View>

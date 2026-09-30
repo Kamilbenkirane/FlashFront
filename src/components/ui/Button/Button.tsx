@@ -56,8 +56,6 @@ export const Button: React.FC<ButtonProps> = ({
   fullWidth = false,
   icon,
   iconPosition = 'left',
-  className = '',
-  textClassName = '',
   testID,
   accessibilityLabel,
   accessibilityHint,
@@ -103,10 +101,7 @@ export const Button: React.FC<ButtonProps> = ({
   };
 
   return (
-    <View
-      className={className}
-      style={fullWidth ? styles.fullWidth : undefined}
-    >
+    <View style={fullWidth ? styles.fullWidth : undefined}>
       <MotiPressable
         style={styles.pressable}
         onPress={handlePress}
@@ -157,7 +152,6 @@ export const Button: React.FC<ButtonProps> = ({
                 <View style={styles.iconLeft}>{icon}</View>
               )}
               <Text
-                className={textClassName}
                 style={[
                   styles.text,
                   {

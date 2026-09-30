@@ -1,7 +1,6 @@
 import type { StyleProp, ViewStyle } from 'react-native';
 
 export type MathTextLayoutMode = 'fill' | 'auto';
-type MathTextFitMode = 'none' | 'shrinkToFit';
 
 export interface MathTextProps {
   content: string;
@@ -16,7 +15,4 @@ export interface MathTextProps {
   hideFromAccessibility?: boolean;
   style?: StyleProp<ViewStyle>;
   renderKey?: string;
-  fitMode?: MathTextFitMode;
-  minFontScale?: number;
-  fitStepPx?: number;
 }

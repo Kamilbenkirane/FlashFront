@@ -11,7 +11,6 @@ export interface FilterBarProps {
   showSubscribedOnly: boolean;
   onToggleSubscribed: () => void;
   subscribedCount: number;
-  className?: string;
   testID?: string;
 }
 
@@ -22,10 +21,9 @@ export const FilterBar: React.FC<FilterBarProps> = ({
   showSubscribedOnly,
   onToggleSubscribed,
   subscribedCount,
-  className = '',
   testID,
 }) => (
-  <View className={className} style={styles.container} testID={testID}>
+  <View style={styles.container} testID={testID}>
     <View style={styles.tabs} accessibilityRole="tablist">
       {[false, true].map((subscribed) => {
         const selected = showSubscribedOnly === subscribed;

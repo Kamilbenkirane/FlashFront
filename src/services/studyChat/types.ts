@@ -69,6 +69,10 @@ export interface StudyChatNewFlashcardProposal {
   userFeedbackSummary: string;
 }
 
+export type StudyChatProposal =
+  | StudyChatFlashcardProposal
+  | StudyChatNewFlashcardProposal;
+
 export interface StudyChatCommittedFlashcard {
   cardId: number;
   deckId: number;

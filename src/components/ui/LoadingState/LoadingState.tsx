@@ -8,12 +8,10 @@ export const LoadingState: React.FC<LoadingStateProps> = ({
   message = 'Loading...',
   size = 'large',
   overlay = false,
-  className = '',
   testID,
 }) => {
   return (
     <View
-      className={className}
       style={[styles.container, overlay && styles.overlay]}
       testID={testID}
       accessible
@@ -30,7 +28,6 @@ export const LoadingState: React.FC<LoadingStateProps> = ({
           variant="body"
           color="muted"
           style={styles.message}
-          className="text-center"
           accessibilityLiveRegion="polite"
         >
           {message}

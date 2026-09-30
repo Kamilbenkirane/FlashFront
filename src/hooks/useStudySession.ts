@@ -3,15 +3,13 @@ import type {
   StudyReviewOutcome,
 } from '@/domain/study/models/Flashcard';
 import {
-  type StudySessionProgress,
   type StudySessionState,
   createStudySessionState,
-  getStudySessionProgress,
   insertStudySessionCard,
   patchStudySessionCard,
   submitStudyReview,
 } from '@/domain/study/models/Session';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { SessionData } from '../interfaces';
 
 interface StudySessionStats {
@@ -53,12 +51,9 @@ const useStudySession = (sessionData: SessionData[] | null | undefined) => {
   const [stats, setStats] = useState<StudySessionStats>(cloneEmptyStats);
   const [reviewCount, setReviewCount] = useState(0);
   const sessionRef = useRef<StudySessionState | null>(null);
-  const sessionDataRef = useRef<SessionData[] | null | undefined>(sessionData);
 
   const hydrateSession = useCallback(
     (nextSessionData: SessionData[] | null | undefined) => {
-      sessionDataRef.current = nextSessionData;
-
       if (!nextSessionData || nextSessionData.length === 0) {
         sessionRef.current = null;
         setSessionState(null);
@@ -97,10 +92,6 @@ const useStudySession = (sessionData: SessionData[] | null | undefined) => {
     [],
   );
 
-  const resetSession = useCallback(() => {
-    hydrateSession(sessionDataRef.current);
-  }, [hydrateSession]);
-
   const patchCard = useCallback(
     (patch: {
       cardId: string | number;
@@ -131,19 +122,12 @@ const useStudySession = (sessionData: SessionData[] | null | undefined) => {
     setSessionState(nextSession);
   }, []);
 
-  const progress: StudySessionProgress = useMemo(
-    () => getStudySessionProgress(sessionState),
-    [sessionState],
-  );
-
   return {
     currentCard: sessionState?.currentCard ?? null,
     currentCardToken: sessionState?.currentCardToken ?? 0,
     stats,
     reviewCount,
-    progress,
     submitReview,
-    resetSession,
     patchCard,
     insertCard,
   };

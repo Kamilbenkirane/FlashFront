@@ -9,14 +9,12 @@ export interface CardProps extends ViewProps {
   variant?: CardVariant;
   padding?: CardPadding;
   children: React.ReactNode;
-  className?: string;
 }
 
 export const Card: React.FC<CardProps> = ({
   variant = 'default',
   padding = 'md',
   children,
-  className = '',
   style,
   ...props
 }) => {
@@ -36,7 +34,6 @@ export const Card: React.FC<CardProps> = ({
 
   return (
     <View
-      className={className}
       style={[
         styles.base,
         variantStyles[variant],

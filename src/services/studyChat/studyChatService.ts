@@ -1,38 +1,19 @@
 import { fetch } from 'expo/fetch';
 
 import { refreshAccessToken } from '@/services/auth/sessionState';
-import { buildHeaders, parseErrorMessage } from '@/services/backendClient';
+import {
+  buildHeaders,
+  mapStudyChatChartAttachmentRow,
+  mapStudyChatImageAttachmentRow,
+  parseErrorMessage,
+} from '@/services/backendClient';
 import { buildApiUrl } from '@/services/runtimeConfig';
 import type {
-  StudyChatChartAttachment,
   StudyChatFlashcardProposal,
-  StudyChatImageAttachment,
   StudyChatNewFlashcardProposal,
   StudyChatRequestMessage,
   StudyChatStreamEvent,
 } from '@/services/studyChat/types';
-
-interface StudyChatChartAttachmentRow {
-  artifact_id: string;
-  title: string;
-  summary: string;
-  caption: string;
-  alt_text: string;
-  chart_type: string;
-  data_mode: string;
-  image_path: string;
-  image_data_url: string;
-}
-
-interface StudyChatImageAttachmentRow {
-  artifact_id: string;
-  title: string;
-  summary: string;
-  caption: string;
-  alt_text: string;
-  image_path: string;
-  image_data_url: string;
-}
 
 interface StudyChatFlashcardProposalRow {
   proposal_id: string;
@@ -73,8 +54,8 @@ interface StudyChatStreamEventRow {
     | 'error';
   text?: string;
   status_label?: string;
-  chart?: StudyChatChartAttachmentRow;
-  image?: StudyChatImageAttachmentRow;
+  chart?: Parameters<typeof mapStudyChatChartAttachmentRow>[0];
+  image?: Parameters<typeof mapStudyChatImageAttachmentRow>[0];
   proposal?: StudyChatFlashcardProposalRow;
   new_flashcard_proposal?: StudyChatNewFlashcardProposalRow;
   message?: string;
@@ -89,32 +70,6 @@ interface StreamStudyChatReplyParams {
   signal: AbortSignal;
   onEvent: (event: StudyChatStreamEvent) => void;
 }
-
-const mapChartAttachmentRow = (
-  row: StudyChatChartAttachmentRow,
-): StudyChatChartAttachment => ({
-  artifactId: row.artifact_id,
-  title: row.title,
-  summary: row.summary,
-  caption: row.caption,
-  altText: row.alt_text,
-  chartType: row.chart_type,
-  dataMode: row.data_mode,
-  imagePath: row.image_path,
-  imageDataUrl: row.image_data_url || undefined,
-});
-
-const mapImageAttachmentRow = (
-  row: StudyChatImageAttachmentRow,
-): StudyChatImageAttachment => ({
-  artifactId: row.artifact_id,
-  title: row.title,
-  summary: row.summary,
-  caption: row.caption,
-  altText: row.alt_text,
-  imagePath: row.image_path,
-  imageDataUrl: row.image_data_url || undefined,
-});
 
 const mapFlashcardProposalRow = (
   row: StudyChatFlashcardProposalRow,
@@ -153,8 +108,8 @@ const mapStreamEventRow = (
   type: row.type,
   text: row.text,
   statusLabel: row.status_label,
-  chart: row.chart ? mapChartAttachmentRow(row.chart) : undefined,
-  image: row.image ? mapImageAttachmentRow(row.image) : undefined,
+  chart: row.chart ? mapStudyChatChartAttachmentRow(row.chart) : undefined,
+  image: row.image ? mapStudyChatImageAttachmentRow(row.image) : undefined,
   proposal: row.proposal ? mapFlashcardProposalRow(row.proposal) : undefined,
   newFlashcardProposal: row.new_flashcard_proposal
     ? mapNewFlashcardProposalRow(row.new_flashcard_proposal)

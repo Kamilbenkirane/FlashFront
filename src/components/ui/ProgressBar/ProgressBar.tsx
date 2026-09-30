@@ -24,7 +24,6 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
   showPercentage = true,
   color = 'primary',
   size = 'md',
-  className = '',
   testID,
 }) => {
   const prefersReducedMotion = useReducedMotion();
@@ -61,7 +60,7 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
 
   return (
     <View
-      className={`w-full ${className}`}
+      style={{ width: '100%' }}
       testID={testID}
       accessible
       accessibilityRole="progressbar"
@@ -69,7 +68,14 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
       accessibilityLabel={`Progress ${progress} of ${total}`}
     >
       {showLabel && (
-        <View className="flex-row justify-between items-center mb-1">
+        <View
+          style={{
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: theme.spacing.xs,
+          }}
+        >
           <Typography variant="caption" color="muted">
             {`${progress} / ${total}`}
           </Typography>
@@ -77,7 +83,7 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
             <Typography
               variant="caption"
               color="muted"
-              className="font-semibold"
+              style={{ fontWeight: '600' }}
             >
               {`${percentage}%`}
             </Typography>
